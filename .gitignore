@@ -14,4 +14,4 @@ __pycache__/
 .dockerignore
 .gcloudignore
 
-ew-agent-service-key.jsonew-agent-service-key.json
+ew-agent-service-key.json
