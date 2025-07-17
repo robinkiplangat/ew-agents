@@ -1,0 +1,33 @@
+# ElectionWatch Agent API Service Requirements
+# Minimal dependencies for running the FastAPI agent service
+
+# Core FastAPI service
+fastapi>=0.100.0
+uvicorn>=0.22.0
+python-dotenv>=1.0.0
+
+# HTTP clients for examples
+aiohttp>=3.8.0
+websockets>=11.0.0
+
+# Google ADK (optional - will fallback to enhanced coordinator if not available)
+google-adk==1.5.0
+google-cloud-aiplatform[agent_engines]==1.88.0
+
+# Enhanced coordinator dependencies
+pandas>=1.5.0
+numpy>=1.24.0
+
+# Database connections (for tools)
+neo4j==5.22.0
+pymongo>=4.0.0
+
+# ML dependencies (for tools)
+llama-index==0.10.53
+llama-index-embeddings-huggingface
+transformers>=4.30.0
+torch>=2.0.0
+
+# Optional - for full functionality
+langchain-community==0.2.10
+langgraph==0.1.13 

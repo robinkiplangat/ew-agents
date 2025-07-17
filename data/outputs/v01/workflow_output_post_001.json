@@ -1,0 +1,52 @@
+{
+  "workflow_results": {
+    "original_post": {
+      "id": "post_001",
+      "platform": "twitter",
+      "content": "The BVAS machines are malfunctioning again! They keep rejecting valid votes. This is clearly rigged! #Elections2024 #VoteRigging",
+      "author": "concerned_citizen_ng",
+      "timestamp": "2024-01-15T10:30:00Z",
+      "location": "Lagos, Nigeria",
+      "hashtags": [
+        "#Elections2024",
+        "#VoteRigging"
+      ],
+      "engagement": {
+        "likes": 245,
+        "retweets": 89,
+        "comments": 34
+      }
+    },
+    "processing_results": {}
+  },
+  "analysis_report": {
+    "summary": {
+      "post_id": "post_001",
+      "platform": "twitter",
+      "location": "Lagos, Nigeria",
+      "primary_concern": "Election integrity concerns detected",
+      "risk_level": "MEDIUM"
+    },
+    "detailed_findings": {},
+    "recommendations": [
+      "Monitor for similar content patterns",
+      "Track hashtag usage trends",
+      "Verify technical claims about BVAS machines",
+      "Cross-reference with official election updates"
+    ],
+    "metadata": {
+      "processing_timestamp": "2024-01-15T11:00:00Z",
+      "agents_used": [
+        "DataEng",
+        "OSINT",
+        "Lexicon",
+        "TrendAnalysis"
+      ],
+      "confidence_score": 0.0
+    }
+  },
+  "metadata": {
+    "processing_time": "2024-01-15T11:00:00Z",
+    "workflow_version": "1.0.0"
+  }
+}

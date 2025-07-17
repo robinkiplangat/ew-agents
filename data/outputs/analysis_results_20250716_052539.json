@@ -1,0 +1,53 @@
+{
+  "summary": {
+    "analysis_metadata": {
+      "source_file": "Sample_Nigeria_Election_tweets_22.csv",
+      "total_tweets_processed": 10,
+      "successful_analyses": 10,
+      "failed_analyses": 0,
+      "analysis_timestamp": "2025-07-16T05:25:59.402958",
+      "output_file": "data/outputs/analysis_results_20250716_052539.json"
+    },
+    "aggregate_findings": {
+      "detected_themes": [],
+      "risk_level_distribution": {
+        "MEDIUM": 3,
+        "HIGH": 7
+      },
+      "party_breakdown": {
+        "Labour": {
+          "count": 7,
+          "themes": [],
+          "risk_levels": [
+            "HIGH",
+            "HIGH",
+            "MEDIUM",
+            "MEDIUM",
+            "HIGH",
+            "HIGH",
+            "MEDIUM"
+          ]
+        },
+        "APC": {
+          "count": 3,
+          "themes": [],
+          "risk_levels": [
+            "HIGH",
+            "HIGH",
+            "HIGH"
+          ]
+        }
+      }
+    },
+    "recommendations": [
+      "Enhanced monitoring recommended for: Labour, APC"
+    ]
+  },
+  "detailed_results": [
+    {
+      "workflow_id": "workflow_b47d6671",
+      "user_request": "Analyze this Nigerian election tweet from Labour party:\nTweet: RT @davosala: @PeterObi on transit. As a Keke rider, I carry more than 100 passengers per day, which means in a month more than 2,000 passe…\nUser: _weyimi\nDate: October 10, 2022\nRetweets: 10,639\nPlease provide comprehensive analysis including narrative classification, coded language detection, and risk assessment.",
+      "request_type": "narrative_classification",
+      "status": "completed",
+      "task_results": {
+        "task_3ac4c768": 

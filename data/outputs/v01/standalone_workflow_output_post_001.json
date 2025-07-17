@@ -1,0 +1,264 @@
+{
+  "workflow_results": {
+    "original_post": {
+      "id": "post_001",
+      "platform": "twitter",
+      "content": "The BVAS machines are malfunctioning again! They keep rejecting valid votes. This is clearly rigged! #Elections2024 #VoteRigging",
+      "author": "concerned_citizen_ng",
+      "timestamp": "2024-01-15T10:30:00Z",
+      "location": "Lagos, Nigeria",
+      "hashtags": [
+        "#Elections2024",
+        "#VoteRigging"
+      ],
+      "engagement": {
+        "likes": 245,
+        "retweets": 89,
+        "comments": 34
+      },
+      "metadata": {
+        "detected_language": "en",
+        "character_count": 128,
+        "ingestion_time": "2025-07-14T15:01:55.856994"
+      }
+    },
+    "processing_results": {
+      "nlp_analysis": {
+        "status": "success",
+        "detected_language": "en",
+        "sentiment": "negative",
+        "entities": [
+          {
+            "entity": "election",
+            "type": "POLITICAL_TERM"
+          },
+          {
+            "entity": "vote",
+            "type": "POLITICAL_TERM"
+          },
+          {
+            "entity": "bvas",
+            "type": "POLITICAL_TERM"
+          },
+          {
+            "entity": "rigged",
+            "type": "POLITICAL_TERM"
+          }
+        ],
+        "keywords": [
+          "the",
+          "bvas",
+          "machines",
+          "are",
+          "malfunctioning",
+          "again!",
+          "they",
+          "keep",
+          "rejecting",
+          "valid"
+        ],
+        "word_count": 17,
+        "processing_time": "0.17s"
+      },
+      "narrative_classification": {
+        "status": "success",
+        "text": "The BVAS machines are malfunctioning again! They keep rejecting valid votes. This is clearly rigged! #Elections2024 #VoteRigging",
+        "source_platform": "twitter",
+        "classifications": [
+          {
+            "theme": "vote rigging",
+            "confidence": 0.85,
+            "details": "Content contains language suggesting electoral fraud"
+          },
+          {
+            "theme": "technical issues",
+            "confidence": 0.61,
+            "details": "Content describes technical problems with voting systems"
+          }
+        ],
+        "processing_time": "0.08s"
+      },
+      "actor_profile": {
+        "status": "success",
+        "username": "concerned_citizen_ng",
+        "platform": "twitter",
+        "influence_score": 0.67,
+        "account_age_days": 917,
+        "followers_count": 7272,
+        "risk_factors": [
+          "Established account",
+          "High engagement rate",
+          "Single platform focus"
+        ],
+        "credibility_score": 0.36,
+        "processing_time": "0.12s"
+      },
+      "coded_language": {
+        "status": "success",
+        "text": "The BVAS machines are malfunctioning again! They keep rejecting valid votes. This is clearly rigged! #Elections2024 #VoteRigging",
+        "language_code": "en",
+        "detected_terms": [
+          {
+            "term": "machines",
+            "meaning": "voting equipment",
+            "context": "election misinformation"
+          }
+        ],
+        "risk_level": "LOW",
+        "processing_time": "0.05s"
+      },
+      "trend_analysis": {
+        "status": "success",
+        "time_window_hours": 24,
+        "themes_analyzed": [
+          "vote rigging",
+          "technical issues"
+        ],
+        "trend_data": {
+          "vote rigging": {
+            "volume_change": 100.5,
+            "sentiment_shift": -0.36,
+            "geographic_spread": 3,
+            "peak_time": "01:00",
+            "trending_hashtags": [
+              "#voterigging",
+              "#Elections2024"
+            ],
+            "related_themes": [
+              "technical issues"
+            ]
+          },
+          "technical issues": {
+            "volume_change": -4.9,
+            "sentiment_shift": 0.11,
+            "geographic_spread": 3,
+            "peak_time": "13:00",
+            "trending_hashtags": [
+              "#technicalissues",
+              "#Elections2024"
+            ],
+            "related_themes": [
+              "vote rigging"
+            ]
+          }
+        },
+        "overall_trend": "stable",
+        "processing_time": "0.25s"
+      },
+      "knowledge_base": {
+        "status": "success",
+        "query": "BVAS machine issues election rigging",
+        "results": [
+          {
+            "title": "BVAS Machine Technical Issues",
+            "content": "Bimodal Voter Accreditation System (BVAS) machines have reported connectivity issues in several states.",
+            "source": "INEC Technical Report",
+            "relevance": 0.85
+          },
+          {
+            "title": "Election Integrity Monitoring",
+            "content": "Civil society organizations report concerns about electronic voting system reliability.",
+            "source": "Election Observer Report",
+            "relevance": 0.72
+          }
+        ],
+        "total_results": 2,
+        "processing_time": "0.15s"
+      }
+    },
+    "agent_performance": {
+      "data_eng": "0.17s",
+      "osint_classify": "0.08s",
+      "osint_actor": "0.12s",
+      "lexicon": "0.05s",
+      "trend": "0.25s",
+      "knowledge_base": "0.15s"
+    }
+  },
+  "analysis_report": {
+    "summary": {
+      "post_id": "post_001",
+      "platform": "twitter",
+      "location": "Lagos, Nigeria",
+      "primary_concern": "Vote Rigging detected",
+      "risk_level": "LOW"
+    },
+    "detailed_findings": {
+      "narrative_themes": [
+        {
+          "theme": "vote rigging",
+          "confidence": 0.85,
+          "details": "Content contains language suggesting electoral fraud"
+        },
+        {
+          "theme": "technical issues",
+          "confidence": 0.61,
+          "details": "Content describes technical problems with voting systems"
+        }
+      ],
+      "linguistic_analysis": {
+        "language": "en",
+        "sentiment": "negative",
+        "entities": [
+          {
+            "entity": "election",
+            "type": "POLITICAL_TERM"
+          },
+          {
+            "entity": "vote",
+            "type": "POLITICAL_TERM"
+          },
+          {
+            "entity": "bvas",
+            "type": "POLITICAL_TERM"
+          },
+          {
+            "entity": "rigged",
+            "type": "POLITICAL_TERM"
+          }
+        ],
+        "word_count": 17
+      },
+      "actor_profile": {
+        "username": "concerned_citizen_ng",
+        "influence_score": 0.67,
+        "account_age": 917,
+        "credibility_score": 0.36,
+        "risk_factors": [
+          "Established account",
+          "High engagement rate",
+          "Single platform focus"
+        ]
+      }
+    },
+    "recommendations": [
+      "Continue routine monitoring",
+      "Log for trend analysis",
+      "No immediate action required"
+    ],
+    "performance_metrics": {
+      "data_eng": "0.17s",
+      "osint_classify": "0.08s",
+      "osint_actor": "0.12s",
+      "lexicon": "0.05s",
+      "trend": "0.25s",
+      "knowledge_base": "0.15s"
+    },
+    "metadata": {
+      "processing_timestamp": "2025-07-14T15:01:55.857185",
+      "agents_used": [
+        "DataEng",
+        "OSINT",
+        "Lexicon",
+        "TrendAnalysis"
+      ],
+      "confidence_score": 0.73,
+      "total_processing_time": "N/A"
+    }
+  },
+  "metadata": {
+    "processing_time": "2025-07-14T15:01:55.857238",
+    "workflow_version": "1.0.0-standalone",
+    "agent_type": "standalone_mock"
+  }
+}

@@ -1,0 +1,380 @@
+{
+  "id": "478d1ada-8a83-4de3-b23c-12e00be0da30",
+  "appName": "ew_agents",
+  "userId": "user",
+  "state": {},
+  "events": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "hello"
+          }
+        ],
+        "role": "user"
+      },
+      "invocationId": "e-15137457-d9be-4623-88c0-7222a9feb161",
+      "author": "user",
+      "actions": {
+        "stateDelta": {},
+        "artifactDelta": {},
+        "requestedAuthConfigs": {}
+      },
+      "id": "X7uq6vDJ",
+      "timestamp": 1752777334.306098
+    },
+    {
+      "content": {
+        "parts": [
+          {
+            "functionCall": {
+              "id": "adk-b081f861-801c-41da-95d3-0c1b9476e234",
+              "args": {},
+              "name": "get_comprehensive_analysis_template"
+            }
+          }
+        ],
+        "role": "model"
+      },
+      "usageMetadata": {
+        "candidatesTokenCount": 7,
+        "candidatesTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 7
+          }
+        ],
+        "promptTokenCount": 748,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 748
+          }
+        ],
+        "totalTokenCount": 755,
+        "trafficType": "ON_DEMAND"
+      },
+      "invocationId": "e-15137457-d9be-4623-88c0-7222a9feb161",
+      "author": "CoordinatorAgent",
+      "actions": {
+        "stateDelta": {},
+        "artifactDelta": {},
+        "requestedAuthConfigs": {}
+      },
+      "longRunningToolIds": [],
+      "id": "3Li15ozY",
+      "timestamp": 1752777334.307654
+    },
+    {
+      "content": {
+        "parts": [
+          {
+            "functionResponse": {
+              "id": "adk-b081f861-801c-41da-95d3-0c1b9476e234",
+              "name": "get_comprehensive_analysis_template",
+              "response": {
+                "report_metadata": {
+                  "report_id": "",
+                  "analysis_timestamp": "2025-07-17T21:35:36.424595",
+                  "analyzing_agent": "",
+                  "report_version": "1.0",
+                  "confidence_level": ""
+                },
+                "content_analysis": {
+                  "source_content": {
+                    "original_text": "",
+                    "content_type": "",
+                    "source_platform": "",
+                    "source_url": "",
+                    "author_handle": "",
+                    "publication_date": "",
+                    "language_detected": ""
+                  },
+                  "narrative_classification": {
+                    "primary_theme": "",
+                    "secondary_themes": [],
+                    "threat_level": "",
+                    "classification_confidence": 0,
+                    "misinformation_type": "",
+                    "narrative_details": "",
+                    "targeting_demographics": []
+                  }
+                },
+                "actors_identified": [
+                  {
+                    "actor_id": "",
+                    "name": "",
+                    "role": "",
+                    "affiliation": "",
+                    "influence_level": "",
+                    "verification_status": "",
+                    "follower_count": 0,
+                    "account_creation_date": "",
+                    "previous_violations": []
+                  }
+                ],
+                "lexicon_analysis": {
+                  "terms_detected": [
+                    {
+                      "term": "",
+                      "language": "",
+                      "category": "",
+                      "severity": "",
+                      "context_usage": "",
+                      "frequency_in_content": 0,
+                      "translation": "",
+                      "related_terms": []
+                    }
+                  ],
+                  "coded_language_detected": false,
+                  "linguistic_patterns": [],
+                  "sentiment_analysis": {
+                    "overall_sentiment": "",
+                    "emotional_tone": [],
+                    "polarization_indicators": []
+                  }
+                },
+                "geographic_analysis": {
+                  "target_locations": [],
+                  "mentioned_constituencies": [],
+                  "ethnic_regions_referenced": [],
+                  "geographic_spread": ""
+                },
+                "trend_analysis": {
+                  "similar_content_volume": 0,
+                  "trending_status": "",
+                  "time_pattern": "",
+                  "coordinated_behavior_indicators": [],
+                  "historical_context": ""
+                },
+                "risk_assessment": {
+                  "overall_risk_score": 0,
+                  "violence_potential": "",
+                  "electoral_impact": "",
+                  "social_cohesion_threat": "",
+                  "urgency_level": "",
+                  "recommended_actions": []
+                },
+                "evidence_chain": {
+                  "supporting_evidence": [],
+                  "cross_references": [],
+                  "verification_sources": [],
+                  "multimedia_evidence": [],
+                  "witness_accounts": []
+                },
+                "recommendations": {
+                  "immediate_actions": [],
+                  "monitoring_suggestions": [],
+                  "stakeholder_notifications": [],
+                  "follow_up_required": false,
+                  "escalation_needed": false
+                },
+                "technical_metadata": {
+                  "processing_time_seconds": 0,
+                  "models_used": [],
+                  "tool_chain": [],
+                  "data_sources_accessed": [],
+                  "api_calls_made": 0
+                }
+              }
+            }
+          }
+        ],
+        "role": "user"
+      },
+      "invocationId": "e-15137457-d9be-4623-88c0-7222a9feb161",
+      "author": "CoordinatorAgent",
+      "actions": {
+        "stateDelta": {},
+        "artifactDelta": {},
+        "requestedAuthConfigs": {}
+      },
+      "id": "YcGjDk21",
+      "timestamp": 1752777336.424683
+    },
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "Okay, I'm ready to analyze content. Please provide the content you want me to analyze. I will automatically execute the full workflow.\n"
+          }
+        ],
+        "role": "model"
+      },
+      "usageMetadata": {
+        "candidatesTokenCount": 29,
+        "candidatesTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 29
+          }
+        ],
+        "promptTokenCount": 1076,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 1076
+          }
+        ],
+        "totalTokenCount": 1105,
+        "trafficType": "ON_DEMAND"
+      },
+      "invocationId": "e-15137457-d9be-4623-88c0-7222a9feb161",
+      "author": "CoordinatorAgent",
+      "actions": {
+        "stateDelta": {},
+        "artifactDelta": {},
+        "requestedAuthConfigs": {}
+      },
+      "id": "hJM0WJNi",
+      "timestamp": 1752777336.431016
+    },
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "analyze this post:\n\nBREAKING: Official reports confirm that over 5 million 'ghost voters' have been added to the national voter register in the last 48 hours, specifically in regions known to support Candidate X. This is a clear attempt to manipulate the upcoming elections! Demand transparency now! #RiggedElection #VoterFraudBREAKING: Official reports confirm that over 5 million 'ghost voters' have been added to the national voter register in the last 48 hours, specifically in regions known to support Candidate X. This is a clear attempt to manipulate the upcoming elections! Demand transparency now! #RiggedElection #VoterFraudBREAKING: Official reports confirm that over 5 million 'ghost voters' have been added to the national voter register in the last 48 hours, specifically in regions known to support Candidate X. This is a clear attempt to manipulate the upcoming elections! Demand transparency now! #RiggedElection #VoterFraud"
+          }
+        ],
+        "role": "user"
+      },
+      "invocationId": "e-be772ff7-62c6-4a26-874d-c1b8e6e76dcc",
+      "author": "user",
+      "actions": {
+        "stateDelta": {},
+        "artifactDelta": {},
+        "requestedAuthConfigs": {}
+      },
+      "id": "JIw51Tke",
+      "timestamp": 1752777358.361377
+    },
+    {
+      "content": {
+        "parts": [
+          {
+            "functionCall": {
+              "id": "adk-3816ce01-248c-416a-ae23-e13322b2cc70",
+              "args": {
+                "request": "Extract and preprocess text from the provided post."
+              },
+              "name": "DataEngAgent"
+            }
+          },
+          {
+            "functionCall": {
+              "id": "adk-f0c6da4e-8739-40f3-b8d3-303868a6f2c6",
+              "args": {
+                "request": "Classify the narrative, identify actors, and assess potential influence from the provided post. The post content is: BREAKING: Official reports confirm that over 5 million 'ghost voters' have been added to the national voter register in the last 48 hours, specifically in regions known to support Candidate X. This is a clear attempt to manipulate the upcoming elections! Demand transparency now! #RiggedElection #VoterFraudBREAKING: Official reports confirm that over 5 million 'ghost voters' have been added to the national voter register in the last 48 hours, specifically in regions known to support Candidate X. This is a clear attempt to manipulate the upcoming elections! Demand transparency now! #RiggedElection #VoterFraudBREAKING: Official reports confirm that over 5 million 'ghost voters' have been added to the national voter register in the last 48 hours, specifically in regions known to support Candidate X. This is a clear attempt to manipulate the upcoming elections! Demand transparency now! #RiggedElection #VoterFraud"
+              },
+              "name": "OsintAgent"
+            }
+          },
+          {
+            "functionCall": {
+              "id": "adk-39b3c451-a705-4205-85cd-613a4f103ae0",
+              "args": {
+                "request": "Detect coded language and analyze sentiment within the provided post. The post content is: BREAKING: Official reports confirm that over 5 million 'ghost voters' have been added to the national voter register in the last 48 hours, specifically in regions known to support Candidate X. This is a clear attempt to manipulate the upcoming elections! Demand transparency now! #RiggedElection #VoterFraudBREAKING: Official reports confirm that over 5 million 'ghost voters' have been added to the national voter register in the last 48 hours, specifically in regions known to support Candidate X. This is a clear attempt to manipulate the upcoming elections! Demand transparency now! #RiggedElection #VoterFraudBREAKING: Official reports confirm that over 5 million 'ghost voters' have been added to the national voter register in the last 48 hours, specifically in regions known to support Candidate X. This is a clear attempt to manipulate the upcoming elections! Demand transparency now! #RiggedElection #VoterFraud"
+              },
+              "name": "LexiconAgent"
+            }
+          },
+          {
+            "functionCall": {
+              "id": "adk-c9d2d637-8e33-4a82-86fe-aebed0d68dbf",
+              "args": {
+                "request": "Analyze potential narrative trends and patterns of the provided post. The post content is: BREAKING: Official reports confirm that over 5 million 'ghost voters' have been added to the national voter register in the last 48 hours, specifically in regions known to support Candidate X. This is a clear attempt to manipulate the upcoming elections! Demand transparency now! #RiggedElection #VoterFraudBREAKING: Official reports confirm that over 5 million 'ghost voters' have been added to the national voter register in the last 48 hours, specifically in regions known to support Candidate X. This is a clear attempt to manipulate the upcoming elections! Demand transparency now! #RiggedElection #VoterFraudBREAKING: Official reports confirm that over 5 million 'ghost voters' have been added to the national voter register in the last 48 hours, specifically in regions known to support Candidate X. This is a clear attempt to manipulate the upcoming elections! Demand transparency now! #RiggedElection #VoterFraud"
+              },
+              "name": "TrendAnalysisAgent"
+            }
+          }
+        ],
+        "role": "model"
+      },
+      "usageMetadata": {
+        "candidatesTokenCount": 627,
+        "candidatesTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 627
+          }
+        ],
+        "promptTokenCount": 1293,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 1293
+          }
+        ],
+        "totalTokenCount": 1920,
+        "trafficType": "ON_DEMAND"
+      },
+      "invocationId": "e-be772ff7-62c6-4a26-874d-c1b8e6e76dcc",
+      "author": "CoordinatorAgent",
+      "actions": {
+        "stateDelta": {},
+        "artifactDelta": {},
+        "requestedAuthConfigs": {}
+      },
+      "longRunningToolIds": [],
+      "id": "LmslbZzI",
+      "timestamp": 1752777358.377568
+    },
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "please share the report"
+          }
+        ],
+        "role": "user"
+      },
+      "invocationId": "e-565c38f8-f65a-44a7-8551-22c522bb47bf",
+      "author": "user",
+      "actions": {
+        "stateDelta": {},
+        "artifactDelta": {},
+        "requestedAuthConfigs": {}
+      },
+      "id": "ULKycK3y",
+      "timestamp": 1752777379.279551
+    },
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "```json\n{\n  \"report_metadata\": {\n    \"report_id\": \"e0a1b2c3-d4e5-4f67-889a-0b1c2d3e4f5a\",\n    \"report_version\": \"1.0\",\n    \"analysis_timestamp\": \"2024-07-17T21:35:36.424595\",\n    \"analyzing_agent\": \"CoordinatorAgent\",\n    \"confidence_level\": \"High\"\n  },\n  \"content_analysis\": {\n    \"source_content\": {\n      \"source_platform\": \"Unknown\",\n      \"content_type\": \"Text\",\n      \"original_text\": \"BREAKING: Official reports confirm that over 5 million 'ghost voters' have been added to the national voter register in the last 48 hours, specifically in regions known to support Candidate X. This is a clear attempt to manipulate the upcoming elections! Demand transparency now! #RiggedElection #VoterFraudBREAKING: Official reports confirm that over 5 million 'ghost voters' have been added to the national voter register in the last 48 hours, specifically in regions known to support Candidate X. This is a clear attempt to manipulate the upcoming elections! Demand transparency now! #RiggedElection #VoterFraudBREAKING: Official reports confirm that over 5 million 'ghost voters' have been added to the national voter register in the last 48 hours, specifically in regions known to support Candidate X. This is a clear attempt to manipulate the upcoming elections! Demand transparency now! #RiggedElection #VoterFraud\",\n      \"author_handle\": \"Unknown\",\n      \"publication_date\": \"Unknown\",\n      \"language_detected\": \"English\"\n    },\n    \"narrative_classification\": {\n      \"primary_theme\": \"Election Fraud Allegation\",\n      \"secondary_themes\": [\n        \"Voter Registration\",\n        \"Political Manipulation\"\n      ],\n      \"misinformation_type\": \"False Information / Misleading Claims\",\n      \"narrative_details\": \"The post alleges the addition of 'ghost voters' to the voter register to manipulate election outcomes, specifically targeting regions supporting Candidate X. It demands transparency and uses hashtags that indicate a belief in election rigging.\",\n      \"targeting_demographics\": [\n        \"General Electorate\",\n        \"Supporters of Candidate X\"\n      ],\n      \"threat_level\": \"High\",\n      \"classification_confidence\": 0.95\n    }\n  },\n  \"actors_identified\": [\n    {\n      \"actor_id\": \"Candidate X\",\n      \"name\": \"Candidate X\",\n      \"role\": \"Political Candidate\",\n      \"affiliation\": \"Unknown\",\n      \"influence_level\": \"Medium (Dependent on external factors)\",\n      \"verification_status\": \"Unknown\",\n      \"account_creation_date\": \"Unknown\",\n      \"follower_count\": 0,\n      \"previous_violations\": []\n    },\n    {\n      \"actor_id\": \"Unknown\",\n      \"name\": \"Unknown\",\n      \"role\": \"Source of Information\",\n      \"affiliation\": \"Unknown\",\n      \"influence_level\": \"Low\",\n      \"verification_status\": \"Unknown\",\n      \"account_creation_date\": \"Unknown\",\n      \"follower_count\": 0,\n      \"previous_violations\": []\n    }\n  ],\n  \"lexicon_analysis\": {\n    \"terms_detected\": [\n      {\n        \"term\": \"ghost voters\",\n        \"category\": \"Election Terminology\",\n        \"language\": \"English\",\n        \"context_usage\": \"Allegation of fraudulent voter registration.\",\n        \"frequency_in_content\": 3,\n        \"related_terms\": [\n          \"voter fraud\",\n          \"rigged election\"\n        ],\n        \"severity\": \"High\",\n        \"translation\": \"N/A\"\n      },\n      {\n        \"term\": \"Rigged Election\",\n        \"category\": \"Political Slogan/Hashtag\",\n        \"language\": \"English\",\n        \"context_usage\": \"Expression of distrust in the electoral process.\",\n        \"frequency_in_content\": 3,\n        \"related_terms\": [\n          \"voter fraud\",\n          \"election manipulation\"\n        ],\n        \"severity\": \"High\",\n        \"translation\": \"N/A\"\n      },\n       {\n        \"term\": \"Voter Fraud\",\n        \"category\": \"Election Terminology\",\n        \"language\": \"English\",\n        \"context_usage\": \"Claim of illegitimate voting practices.\",\n        \"frequency_in_content\": 3,\n        \"related_terms\": [\n          \"ghost voters\",\n          \"rigged election\"\n        ],\n        \"severity\": \"High\",\n        \"translation\": \"N/A\"\n      },\n      {\n          \"term\": \"Candidate X\",\n          \"category\": \"Political Reference\",\n          \"language\": \"English\",\n          \"context_usage\": \"Implies targeted election manipulation.\",\n          \"frequency_in_content\": 3,\n          \"related_terms\": [],\n          \"severity\": \"Medium\",\n          \"translation\": \"N/A\"\n        }\n    ],\n    \"coded_language_detected\": false,\n    \"sentiment_analysis\": {\n      \"overall_sentiment\": \"Negative\",\n      \"emotional_tone\": [\n        \"Outrage\",\n        \"Distrust\"\n      ],\n      \"polarization_indicators\": [\n        \"High\"\n      ]\n    },\n    \"linguistic_patterns\": [\n      \"Use of alarming language.\",\n      \"Repetitive phrasing for emphasis.\",\n      \"Direct accusations without evidence.\"\n    ]\n  },\n  \"risk_assessment\": {\n    \"overall_risk_score\": 8,\n    \"urgency_level\": \"High\",\n    \"electoral_impact\": \"Significant.  Could lead to erosion of public trust and potential for civil unrest.\",\n    \"social_cohesion_threat\": \"High.  May exacerbate existing political divisions.\",\n    \"violence_potential\": \"Medium.  Risk of inciting anger and potentially violent actions by those who believe the claims.\",\n    \"recommended_actions\": [\n      \"Issue a public statement addressing the claims, providing verifiable information.\",\n      \"Collaborate with election officials to verify the accuracy of the voter register.\",\n      \"Monitor social media for further amplification and spread of the claims.\",\n      \"Initiate fact-checking of the claims and publicize the findings.\"\n    ]\n  },\n  \"trend_analysis\": {\n    \"trending_status\": \"Trending\",\n    \"time_pattern\": \"Rapid dissemination of information.\",\n    \"historical_context\": \"This type of claim often appears during election periods to undermine the legitimacy of the electoral process.\",\n    \"similar_content_volume\": 0.85,\n    \"coordinated_behavior_indicators\": []\n  },\n  \"recommendations\": {\n    \"immediate_actions\": [\n      \"Verify the claims made in the post through official sources.\",\n      \"Issue a public statement disavowing the claims.\",\n      \"Notify election authorities and relevant government agencies.\"\n    ],\n    \"follow_up_required\": true,\n    \"monitoring_suggestions\": [\n      \"Monitor social media platforms for further dissemination of the information.\",\n      \"Track the hashtags used in the post to observe the reach and engagement.\",\n      \"Analyze the source of the original post to identify potential actors spreading the misinformation.\"\n    ],\n    \"escalation_needed\": true,\n    \"stakeholder_notifications\": [\n      \"Notify relevant election authorities and government agencies.\",\n      \"Inform media outlets to ensure accurate reporting.\",\n      \"Alert social media platforms about the potential spread of misinformation.\"\n    ]\n  },\n  \"evidence_chain\": {\n      \"supporting_evidence\": [],\n      \"multimedia_evidence\": [],\n      \"cross_references\": [],\n      \"verification_sources\": [],\n      \"witness_accounts\": []\n    },\n  \"geographic_analysis\": {\n      \"target_locations\": [],\n      \"mentioned_constituencies\": [],\n      \"ethnic_regions_referenced\": [],\n      \"geographic_spread\": \"\"\n    },\n  \"technical_metadata\": {\n    \"api_calls_made\": 4,\n    \"data_sources_accessed\": [],\n    \"models_used\": [],\n    \"processing_time_seconds\": 15,\n    \"tool_chain\": [\n      \"DataEngAgent\",\n      \"OsintAgent\",\n      \"LexiconAgent\",\n      \"TrendAnalysisAgent\"\n    ]\n  }\n}\n```"
+          }
+        ],
+        "role": "model"
+      },
+      "usageMetadata": {
+        "candidatesTokenCount": 1929,
+        "candidatesTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 1929
+          }
+        ],
+        "promptTokenCount": 1924,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 1924
+          }
+        ],
+        "totalTokenCount": 3853,
+        "trafficType": "ON_DEMAND"
+      },
+      "invocationId": "e-565c38f8-f65a-44a7-8551-22c522bb47bf",
+      "author": "CoordinatorAgent",
+      "actions": {
+        "stateDelta": {},
+        "artifactDelta": {},
+        "requestedAuthConfigs": {}
+      },
+      "id": "ASI0n9Gp",
+      "timestamp": 1752777379.282296
+    }
+  ],
+  "lastUpdateTime": 1752777379.282296
+}

@@ -1,0 +1,130 @@
+{
+  "african_election_narratives": [
+    {
+      "meta_narrative": "Foreign Interference / Neocolonialism",
+      "description": "Claims that Western nations manipulate elections.",
+      "tactics_used": [
+        "Fake reports",
+        "NGO conspiracies",
+        "doctored foreign news"
+      ],
+      "common_locations": [
+        "Mali",
+        "Burkina Faso",
+        "Senegal",
+        "Niger"
+      ],
+      "purpose_effect": "Delegitimise pro-West candidates; justify juntas."
+    },
+    {
+      "meta_narrative": "Rigged Elections / Stolen Mandate",
+      "description": "Accusations of widespread rigging by incumbents.",
+      "tactics_used": [
+        "Fake tally sheets",
+        "videos of 'ballot stuffing'",
+        "pre-election rigging claims"
+      ],
+      "common_locations": [
+        "Nigeria",
+        "Ghana",
+        "Sierra Leone"
+      ],
+      "purpose_effect": "Undermine confidence in the electoral process."
+    },
+    {
+      "meta_narrative": "Tech Manipulation Narratives",
+      "description": "Suggests that biometric systems or voting tech are compromised.",
+      "tactics_used": [
+        "Fake tech 'hacks'",
+        "rumours about foreign-manufactured voting machines"
+      ],
+      "common_locations": [
+        "Nigeria (BVAS)",
+        "Kenya"
+      ],
+      "purpose_effect": "Undermine trust in digitised election systems."
+    },
+    {
+      "meta_narrative": "Populist \"Clean Outsider\" Narratives",
+      "description": "Frame outsider candidates as incorruptible, saviour figures.",
+      "tactics_used": [
+        "Exaggerated life stories",
+        "viral infographics",
+        "inspirational montages"
+      ],
+      "common_locations": [
+        "Senegal (Pastef)",
+        "Nigeria (Obidients)"
+      ],
+      "purpose_effect": "Fuel cult-like devotion; position candidate as anti-establishment messiah."
+    },
+    {
+      "meta_narrative": "Divine / Prophetic Endorsements",
+      "description": "Candidates are presented as \"chosen by God\" or predicted to win by religious figures.",
+      "tactics_used": [
+        "Viral prophecy videos",
+        "fake endorsements from religious leaders"
+      ],
+      "common_locations": [
+        "Nigeria",
+        "Ghana"
+      ],
+      "purpose_effect": "Exploit religious beliefs for legitimacy or support."
+    },
+    {
+      "meta_narrative": "Ethnic / Religious Polarisation",
+      "description": "Amplifies ethnic or religious divisions for political gain.",
+      "tactics_used": [
+        "Hate speech",
+        "fake news targeting ethnic groups",
+        "fabricated security threats"
+      ],
+      "common_locations": [
+        "Nigeria",
+        "Kenya",
+        "Ethiopia"
+      ],
+      "purpose_effect": "Incite violence, suppress votes, polarise the electorate."
+    },
+    {
+      "meta_narrative": "Youth Disenfranchisement Claims",
+      "description": "Claims that the system is rigged against young voters.",
+      "tactics_used": [
+        "Viral posts about PVC collection issues",
+        "fake INEC announcements"
+      ],
+      "common_locations": [
+        "Nigeria",
+        "Sierra Leone"
+      ],
+      "purpose_effect": "Suppress youth voter turnout, create apathy."
+    },
+    {
+      "meta_narrative": "Coup or Military Narratives",
+      "description": "Spreads rumours of an impending military coup or intervention.",
+      "tactics_used": [
+        "Fake military statements",
+        "manipulated videos of troop movements"
+      ],
+      "common_locations": [
+        "Burkina Faso",
+        "Mali",
+        "Sudan"
+      ],
+      "purpose_effect": "Create instability, undermine civilian rule."
+    },
+    {
+      "meta_narrative": "Fake Polls and Media Clones",
+      "description": "Fabricates polling data or clones legitimate news sites to spread disinformation.",
+      "tactics_used": [
+        "Professional-looking graphics with fake poll results",
+        "imposter news sites"
+      ],
+      "common_locations": [
+        "Kenya",
+        "Nigeria"
+      ],
+      "purpose_effect": "Manipulate public opinion, create a bandwagon effect."
+    }
+  ]
+}

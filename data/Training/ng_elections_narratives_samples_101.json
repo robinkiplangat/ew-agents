@@ -1,0 +1,915 @@
+{
+  "context": "A comprehensive training dataset for an OSINT AI agent. It contains over 100 specific examples of  narratives prevalent in African elections, with a primary focus on the Nigerian context. Each entry links a real-world scenario to its strategic category, key identifiable indicators for an AI, the relevant DISARM Framework technique, and common platforms.",
+  "dataset_version": "1.7-2025-Q2",
+  "examples": [
+    {
+      "id": "NGA-ELEC-001",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "Compromised Election Technology",
+      "scenario": "A viral WhatsApp broadcast claims that the BVAS (Bimodal Voter Accreditation System) machines have been pre-loaded with votes by INEC in favour of the incumbent party. The message includes a grainy, out-of-context video of an INEC official handling a machine.",
+      "key_indicators_for_ai": ["BVAS", "INEC", "pre-loaded", "rigged", "incumbent", "WhatsApp broadcast", "out-of-context video"],
+      "primary_disarm_technique": "T0022.002: Develop Original Conspiracy Theory Narratives",
+      "common_platforms": ["WhatsApp", "Facebook"]
+    },
+    {
+      "id": "NGA-ELEC-002",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Ethnic Mobilization",
+      "scenario": "On Twitter, a coordinated network of accounts using a specific hashtag claim that a presidential candidate, if elected, will enforce a 'Fulanization agenda' to seize land from indigenous communities in the Middle Belt and South.",
+      "key_indicators_for_ai": ["Fulanization", "agenda", "land grab", "Middle Belt", "ethnic group names", "coordinated hashtags", "network of accounts"],
+      "primary_disarm_technique": "T0135.004: Polarise",
+      "common_platforms": ["Twitter/X", "Facebook"]
+    },
+    {
+      "id": "NGA-ELEC-003",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "Character Assassination (Health)",
+      "scenario": "A photoshopped image showing a major candidate looking frail and sick in a foreign hospital circulates on Facebook. Accompanying text claims he is unfit to govern due to a secret, life-threatening illness.",
+      "key_indicators_for_ai": ["candidate name", "health", "sick", "hospital", "unfit", "photoshopped image", "secret illness"],
+      "primary_disarm_technique": "T0086.003: Deceptively Edit Images (Cheap Fakes)",
+      "common_platforms": ["Facebook", "WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-004",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "The Rigged Election",
+      "scenario": "A PDF designed to look like an official INEC result sheet is shared widely on WhatsApp groups moments after polls close, showing a candidate winning by a landslide. This is done to pre-condition supporters to reject the official results.",
+      "key_indicators_for_ai": ["INEC", "result sheet", "PDF", "leaked results", "official", "landslide win", "breaking"],
+      "primary_disarm_technique": "T0085.004: Develop Document",
+      "common_platforms": ["WhatsApp", "Telegram"]
+    },
+    {
+      "id": "NGA-ELEC-005",
+      "category": "Voter Suppression",
+      "meta_narrative": "Fabricated Security Threats",
+      "scenario": "On election morning, a broadcast message designed to look like a security alert from the Police or DSS warns of an imminent terrorist attack on polling units in an opposition stronghold (e.g., a specific LGA in Lagos or Kano).",
+      "key_indicators_for_ai": ["Security Alert", "Police", "DSS", "polling unit", "imminent attack", "stay home", "LGA name", "opposition stronghold"],
+      "primary_disarm_technique": "T0139.001: Discourage (from voting)",
+      "common_platforms": ["WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-006",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "The Populist Savior",
+      "scenario": "A series of slickly-produced infographics and short videos are promoted on Instagram and TikTok, highlighting a 'third-force' candidate's supposed incorruptibility and contrasting it with the alleged corruption of the two main parties. The hashtag #TheOnlyAlternative goes viral.",
+      "key_indicators_for_ai": ["infographic", "third force", "incorruptible", "new generation", "savior", "youth-focused hashtags", "TikTok"],
+      "primary_disarm_technique": "T0086.004: Aggregate Information into Evidence Collages",
+      "common_platforms": ["Instagram", "TikTok", "Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-007",
+      "category": "Geopolitical Narratives",
+      "meta_narrative": "Neocolonial Interference",
+      "scenario": "A blog post on an inauthentic news site claims a candidate is a puppet of Western powers. The 'evidence' is a photo of the candidate meeting with the US ambassador, reframed as him 'receiving instructions'.",
+      "key_indicators_for_ai": ["Western puppet", "US Ambassador", "UK High Commissioner", "receiving instructions", "neocolonialism", "inauthentic news site"],
+      "primary_disarm_technique": "T0023.001: Reframe Context",
+      "common_platforms": ["Blogs", "Facebook", "Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-008",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Religious Mobilization",
+      "scenario": "A deepfake video of a prominent Pentecostal pastor appears to prophesy the victory of a specific candidate, calling it 'God's will for Nigeria.' The video is amplified by partisan religious influencers.",
+      "key_indicators_for_ai": ["prophecy", "pastor name", "God's will", "divine mandate", "deepfake video", "endorsed by God"],
+      "primary_disarm_technique": "T0087.001: Develop AI-Generated Videos (Deepfakes)",
+      "common_platforms": ["Facebook", "YouTube", "WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-009",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "The Biased Judiciary",
+      "scenario": "After an election is challenged in court, doctored screenshots of bank alerts are circulated, allegedly showing payments from the ruling party to the accounts of the Supreme Court judges presiding over the case.",
+      "key_indicators_for_ai": ["Supreme Court", "judges", "bribe", "PEPT", "doctored screenshot", "bank alert", "justice for sale"],
+      "primary_disarm_technique": "T0089.003: Alter Authentic Documents (or create fake ones)",
+      "common_platforms": ["Twitter/X", "WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-010",
+      "category": "Voter Suppression",
+      "meta_narrative": "Manipulating Logistics",
+      "scenario": "A fake announcement, styled to look like an official INEC communication, states that voting in certain wards has been postponed or the polling unit location has been changed at the last minute, causing confusion and disenfranchisement.",
+      "key_indicators_for_ai": ["INEC", "announcement", "postponed", "polling unit change", "official communication", "fake graphic"],
+      "primary_disarm_technique": "T0098: Establish Inauthentic News Sites (or cloned assets)",
+      "common_platforms": ["Facebook", "WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-011",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Settler/Outsider Threat",
+      "scenario": "In the Lagos gubernatorial election, a campaign emerges with the slogan 'Lagos is not a no-man's land,' targeting the Igbo community and suggesting that a vote for an opposition candidate would lead to an economic takeover by 'outsiders.'",
+      "key_indicators_for_ai": ["Lagos", "Igbo", "no-man's land", "outsider", "takeover", "indigene", "gubernatorial"],
+      "primary_disarm_technique": "T0079: Divide",
+      "common_platforms": ["TikTok", "Twitter/X", "Street Rallies"]
+    },
+    {
+      "id": "NGA-ELEC-012",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "Character Assassination (Morality)",
+      "scenario": "A story is planted on a popular but disreputable blog claiming a socially conservative, Muslim candidate was seen drinking alcohol and partying in Dubai, accompanied by blurry photos.",
+      "key_indicators_for_ai": ["candidate name", "hypocrite", "Dubai", "scandal", "gossip blog", "immoral", "blurry photo"],
+      "primary_disarm_technique": "T0085.003: Develop Inauthentic News Articles",
+      "common_platforms": ["Blogs", "Facebook"]
+    },
+    {
+      "id": "NGA-ELEC-013",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "Discrediting INEC Leadership",
+      "scenario": "A conspiracy theory spreads that the INEC Chairman has a hidden familial relationship with a major candidate, implying his impartiality is compromised. This is based on sharing the same (common) surname.",
+      "key_indicators_for_ai": ["INEC Chairman", "familial relationship", "relative", "compromised", "impartiality", "conspiracy theory"],
+      "primary_disarm_technique": "T0022: Leverage Conspiracy Theory Narratives",
+      "common_platforms": ["Twitter/X", "Online Forums"]
+    },
+    {
+      "id": "NGA-ELEC-014",
+      "category": "Geopolitical Narratives",
+      "meta_narrative": "The Impending Coup",
+      "scenario": "During a tense post-election period, an old video of military tanks moving in Abuja is recirculated with a new caption: 'Military takes over as election fails!' to create panic and undermine the transition.",
+      "key_indicators_for_ai": ["Military takeover", "coup", "tanks", "Abuja", "breaking news", "recirculated video"],
+      "primary_disarm_technique": "T0084: Reuse Existing Content",
+      "common_platforms": ["TikTok", "WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-015",
+      "category": "Voter Manipulation",
+      "meta_narrative": "Vote Buying Disguised as Empowerment",
+      "scenario": "A candidate's foundation runs a massive 'Trader Moni' or 'Empowerment Scheme' weeks before the election, providing small cash grants. While legal, it's framed online as direct evidence of the candidate's generosity and a reason to vote for them.",
+      "key_indicators_for_ai": ["Trader Moni", "empowerment", "cash grant", "generosity", "vote buying", "stomach infrastructure"],
+      "primary_disarm_technique": "T0136.004: Boost Reputation",
+      "common_platforms": ["Facebook", "Instagram"]
+    },
+    {
+      "id": "NGA-ELEC-016",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "Fake Foreign Endorsement",
+      "scenario": "A tweet from a fake, verified account impersonating a foreign politician (e.g., a US Senator) praises a Nigerian candidate, which is then screenshot and celebrated by supporters as a sign of international credibility.",
+      "key_indicators_for_ai": ["foreign endorsement", "US Senator", "impersonated account", "verified", "international recognition", "screenshot"],
+      "primary_disarm_technique": "T0143.003: Impersonated Persona",
+      "common_platforms": ["Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-017",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Weaponizing Blasphemy",
+      "scenario": "A doctored quote is attributed to a Southern, Christian candidate where he appears to insult the Prophet Muhammad. This is spread in conservative Northern WhatsApp groups to provoke religious outrage.",
+      "key_indicators_for_ai": ["insult Prophet", "blasphemy", "Christian candidate", "doctored quote", "religious outrage", "North"],
+      "primary_disarm_technique": "T0023: Distort Facts",
+      "common_platforms": ["WhatsApp", "Facebook"]
+    },
+    {
+      "id": "NGA-ELEC-018",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "Compromised Election Technology",
+      "scenario": "A Twitter user posing as a 'cybersecurity expert' posts a thread claiming the IReV (INEC Result Viewing) portal's source code has a backdoor, making all uploaded results untrustworthy. The thread uses complex but meaningless jargon to sound credible.",
+      "key_indicators_for_ai": ["IReV", "source code", "backdoor", "cybersecurity", "expert thread", "technical jargon"],
+      "primary_disarm_technique": "T0045: Use Fake Experts",
+      "common_platforms": ["Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-019",
+      "category": "Voter Manipulation",
+      "meta_narrative": "Hijacking Fact-Checks",
+      "scenario": "A disinformation actor creates a website that looks identical to a trusted fact-checking organization like 'Africa Check' or 'Dubawa'. They publish an article 'debunking' a true claim about their candidate or 'confirming' a false claim about an opponent.",
+      "key_indicators_for_ai": ["Africa Check", "Dubawa", "fact-check", "cloned website", "debunked", "imposter content"],
+      "primary_disarm_technique": "T0098.001: Create Inauthentic News Sites (clones)",
+      "common_platforms": ["Websites", "shared on all social platforms"]
+    },
+    {
+      "id": "NGA-ELEC-020",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "The Anti-Establishment Crusader",
+      "scenario": "A candidate consistently labels the media, civil society, and even other opposition parties as 'the establishment.' Any criticism from these sources is then framed as 'the establishment fighting back,' which reinforces loyalty among their base.",
+      "key_indicators_for_ai": ["the establishment", "corrupt media", "fighting back", "anti-establishment", "victim narrative"],
+      "primary_disarm_technique": "T0003: Leverage Existing Narratives (of distrust)",
+      "common_platforms": ["Twitter/X", "Rally Speeches"]
+    },
+    {
+      "id": "NGA-ELEC-021",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Exaggerating Inter-Ethnic Violence",
+      "scenario": "After a minor scuffle at a market between individuals of different ethnic groups, partisan actors amplify the story online as a full-blown 'ethnic clash,' sharing old videos of riots to create fear and link the violence to political opponents.",
+      "key_indicators_for_ai": ["ethnic clash", "riot", "old video", "amplification", "fear-mongering", "market scuffle"],
+      "primary_disarm_technique": "T0084: Reuse Existing Content",
+      "common_platforms": ["Facebook", "TikTok"]
+    },
+    {
+      "id": "NGA-ELEC-022",
+      "category": "Geopolitical Narratives",
+      "meta_narrative": "Pro-Russia / Anti-West Sentiment",
+      "scenario": "In the wake of coups in the Sahel, narratives emerge praising Russia as a 'true partner' while accusing a pro-Western candidate of wanting to allow French or US military bases in Nigeria. This taps into anti-imperialist sentiment.",
+      "key_indicators_for_ai": ["Russia", "France", "USA", "military base", "anti-imperialist", "Sahel coup", "true partner"],
+      "primary_disarm_technique": "T0074.001: Geopolitical Advantage",
+      "common_platforms": ["Twitter/X", "Telegram"]
+    },
+    {
+      "id": "NGA-ELEC-023",
+      "category": "Voter Suppression",
+      "meta_narrative": "Youth Disenfranchisement",
+      "scenario": "Viral posts claim that INEC has made it 'impossible' for young people to collect their PVCs (Permanent Voter Cards) in specific areas, aiming to create apathy and suppress the youth vote.",
+      "key_indicators_for_ai": ["PVC collection", "youth vote", "impossible", "disenfranchisement", "INEC"],
+      "primary_disarm_technique": "T0139.001: Discourage (from participation)",
+      "common_platforms": ["Instagram", "Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-024",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "Misrepresenting Voting Record",
+      "scenario": "An infographic circulates showing a candidate who was formerly a legislator 'voted against' a popular bill (e.g., electoral reform). The infographic omits that they were absent that day or that the vote was procedural.",
+      "key_indicators_for_ai": ["voting record", "voted against", "infographic", "deceptive statistics", "omitted context"],
+      "primary_disarm_technique": "T0023: Distort Facts",
+      "common_platforms": ["Facebook", "Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-025",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "Fake Polls",
+      "scenario": "A professionally designed graphic showing results from a non-existent polling organization (e.g., 'African Centre for Electoral Polling') is published, showing a candidate with an insurmountable lead to create a bandwagon effect.",
+      "key_indicators_for_ai": ["poll", "survey", "landslide lead", "fake organization", "bandwagon effect", "professional graphic"],
+      "primary_disarm_technique": "T0085.007: Create Fake Research",
+      "common_platforms": ["Twitter/X", "Blogs"]
+    },
+    {
+      "id": "NGA-ELEC-026",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Weaponizing Biafra Agitation",
+      "scenario": "During elections, any Igbo candidate is accused by opponents of being a secret IPOB sympathizer who will break up Nigeria. Conversely, IPOB-affiliated accounts may issue stay-at-home orders to suppress votes in the South-East.",
+      "key_indicators_for_ai": ["IPOB", "Biafra", "break up Nigeria", "Igbo candidate", "sit-at-home", "South-East"],
+      "primary_disarm_technique": "T0135.001: Smear",
+      "common_platforms": ["Facebook", "Online Forums", "WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-027",
+      "category": "Voter Manipulation",
+      "meta_narrative": "Astroturfing",
+      "scenario": "A network of newly created, seemingly unrelated Twitter accounts all begin posting similar messages of support for a policy or candidate at the same time, using the same hashtag to make it trend and appear like a grassroots movement.",
+      "key_indicators_for_ai": ["Astroturfing", "new accounts", "similar messaging", "coordinated posting", "trending hashtag"],
+      "primary_disarm_technique": "T0102.002: Create Echo Chambers/Filter Bubbles (Inauthentic)",
+      "common_platforms": ["Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-028",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "Fabricated Educational Credentials",
+      "scenario": "A fake university certificate for a candidate emerges online, or opponents launch a campaign questioning if the candidate ever attended the schools they claim, demanding they 'show their certificate'.",
+      "key_indicators_for_ai": ["certificate", "fake degree", "scandal", "show your certificate", "educational records"],
+      "primary_disarm_technique": "T0040: Demand Insurmountable Proof",
+      "common_platforms": ["Blogs", "Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-029",
+      "category": "Voter Manipulation",
+      "meta_narrative": "Using Satire to Spread Disinformation",
+      "scenario": "A popular satirical news account posts a 'joke' story that a candidate has promised something absurd (e.g., 'to give every Nigerian 1 million naira'). Many followers take it seriously, and screenshots of the headline spread without the satirical context.",
+      "key_indicators_for_ai": ["satire", "joke", "screenshot", "missing context", "absurd promise"],
+      "primary_disarm_technique": "T0023.001: Reframe Context (by removing satirical frame)",
+      "common_platforms": ["Twitter/X", "Facebook"]
+    },
+    {
+      "id": "NGA-ELEC-030",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Christian-Christian / Muslim-Muslim Ticket",
+      "scenario": "A party fields a presidential ticket with two candidates of the same religion. Opponents frame this as a direct attack on the other religion, claiming it is a plot to 'Islamise' or 'Christianise' the government and exclude half the population.",
+      "key_indicators_for_ai": ["Muslim-Muslim ticket", "Christian-Christian ticket", "religious balance", "Islamisation", "plot", "exclusion"],
+      "primary_disarm_technique": "T0135.004: Polarise",
+      "common_platforms": ["WhatsApp", "Facebook", "Sermons"]
+    },
+    {
+      "id": "NGA-ELEC-031",
+      "category": "Voter Intimidation",
+      "meta_narrative": "Threats at Polling Units",
+      "scenario": "Unmarked thugs or party loyalists are filmed at a polling unit openly threatening voters, saying 'If you are not voting for [Party Name], go home!' The video is shared to intimidate voters in other areas.",
+      "key_indicators_for_ai": ["thugs", "polling unit", "intimidation", "threats", "vote for X", "voter suppression"],
+      "primary_disarm_technique": "T0140.002: Intimidate",
+      "common_platforms": ["TikTok", "WhatsApp", "Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-032",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "Delegitimizing Observers",
+      "scenario": "When an international observer mission (e.g., from the EU or AU) releases a critical preliminary report, government-aligned accounts attack the mission's credibility, calling them biased, neocolonial, and ignorant of local realities.",
+      "key_indicators_for_ai": ["election observers", "EU mission", "AU", "biased report", "neocolonial", "foreign interference"],
+      "primary_disarm_technique": "T0075.001: Discredit Credible Sources",
+      "common_platforms": ["Twitter/X", "State-owned Media"]
+    },
+    {
+      "id": "NGA-ELEC-033",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "Exploiting 'Man of the People' Image",
+      "scenario": "A wealthy candidate is repeatedly filmed eating at roadside 'bukas' or buying corn from street vendors. These clips are promoted to create an image of humility and connection to the common person, distracting from their policy positions.",
+      "key_indicators_for_ai": ["man of the people", "eating corn", "buka", "humility", "staged photo-op"],
+      "primary_disarm_technique": "T0136.004: Boost Reputation",
+      "common_platforms": ["Instagram", "TikTok"]
+    },
+    {
+      "id": "NGA-ELEC-034",
+      "category": "Voter Manipulation",
+      "meta_narrative": "Flooding the Information Space",
+      "scenario": "On a crucial day (e.g., during a court hearing), a network of bots and trolls floods a specific hashtag with unrelated content, spam, or praise for their candidate, making it impossible for users to find authentic information about the event.",
+      "key_indicators_for_ai": ["flooding", "hashtag hijacking", "bots", "trolls", "information overload", "spam"],
+      "primary_disarm_technique": "T0049: Flood Information Space",
+      "common_platforms": ["Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-035",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Creating a Fake Enemy",
+      "scenario": "A campaign invents a shadowy cabal (e.g., 'The Abuja Elite' or 'The Lagos-Ibadan Cabal') that is supposedly trying to stop their candidate. This tactic unites their base against a common, ill-defined enemy.",
+      "key_indicators_for_ai": ["cabal", "shadowy elite", "deep state", "conspiracy", "common enemy", "victimhood"],
+      "primary_disarm_technique": "T0081.007: Identify Target Audience Adversaries (and invent them)",
+      "common_platforms": ["Online Forums", "Speeches"]
+    },
+    {
+      "id": "NGA-ELEC-036",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "The Rigged Election",
+      "scenario": "A widely circulated voice note on WhatsApp features an anonymous man claiming to be an INEC ad-hoc staff member. He 'confesses' in detail how he was instructed to manipulate results, providing a compelling but completely fabricated testimony.",
+      "key_indicators_for_ai": ["voice note", "INEC staff", "confession", "anonymous testimony", "manipulate results", "WhatsApp"],
+      "primary_disarm_technique": "T0088: Develop Audio-Based Content",
+      "common_platforms": ["WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-037",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "Character Assassination (Corruption)",
+      "scenario": "Leaked, but forged, property deeds or bank statements are published on a blog, 'exposing' an opposition candidate's alleged ownership of lavish properties in London or Dubai, purchased with stolen public funds.",
+      "key_indicators_for_ai": ["leaked documents", "forged", "London property", "Dubai", "stolen funds", "corruption"],
+      "primary_disarm_technique": "T0089.003: Alter Authentic Documents",
+      "common_platforms": ["Blogs", "Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-038",
+      "category": "Voter Suppression",
+      "meta_narrative": "Inciting Apathy",
+      "scenario": "Accounts pretending to be neutral or disillusioned youth push the narrative that 'all politicians are the same' and 'voting changes nothing,' specifically targeting young and first-time voters to discourage them from participating.",
+      "key_indicators_for_ai": ["all the same", "voting changes nothing", "apathy", "disillusioned youth", "neutral persona"],
+      "primary_disarm_technique": "T0143.002: Fabricated Persona",
+      "common_platforms": ["Twitter/X", "Instagram comments"]
+    },
+    {
+      "id": "NGA-ELEC-039",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Historical Grievance",
+      "scenario": "Old wounds from the Nigerian Civil War are reopened, with memes and posts accusing a major candidate of having a anti-Igbo historical family background, or accusing an Igbo candidate of wanting revenge for the war.",
+      "key_indicators_for_ai": ["Civil War", "historical grievance", "revenge", "Igbo", "old wounds", "never forget"],
+      "primary_disarm_technique": "T0003: Leverage Existing Narratives (historical trauma)",
+      "common_platforms": ["Facebook", "Online Forums"]
+    },
+    {
+      "id": "NGA-ELEC-040",
+      "category": "Geopolitical Narratives",
+      "meta_narrative": "China as a Political Tool",
+      "scenario": "A candidate who has overseen projects funded by Chinese loans is labelled as 'selling Nigeria to China.' Images of Chinese laborers in Nigeria are used to stoke fears of a colonial-style debt trap.",
+      "key_indicators_for_ai": ["China", "debt trap", "selling Nigeria", "Chinese loans", "colonialism"],
+      "primary_disarm_technique": "T0135.001: Smear",
+      "common_platforms": ["Facebook", "Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-041",
+      "category": "Voter Manipulation",
+      "meta_narrative": "Baiting Influencers",
+      "scenario": "Partisan accounts relentlessly tag a popular, neutral musician or actor in posts praising their candidate, goading them until they 'like' or make a vague positive comment, which is then amplified as a full-throated endorsement.",
+      "key_indicators_for_ai": ["influencer baiting", "tagging celebrity", "endorsement", "like", "amplification", "neutral actor"],
+      "primary_disarm_technique": "T0039: Bait Influencer",
+      "common_platforms": ["Twitter/X", "Instagram"]
+    },
+    {
+      "id": "NGA-ELEC-042",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "The Family Man",
+      "scenario": "A campaign releases a flood of professionally shot photos and videos of the candidate with their spouse, children, and grandchildren, aimed at portraying them as a stable, reliable patriarch, especially appealing to older, more conservative voters.",
+      "key_indicators_for_ai": ["family man", "patriarch", "grandchildren", "stable", "professional photos", "conservative values"],
+      "primary_disarm_technique": "T0136.004: Boost Reputation",
+      "common_platforms": ["Facebook", "Instagram"]
+    },
+    {
+      "id": "NGA-ELEC-043",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "The Rigged Election",
+      "scenario": "An 'investigative' YouTube video uses Google Earth imagery to 'prove' that INEC collation centers are located in the private homes of ruling party chieftains, implying a plot to alter results.",
+      "key_indicators_for_ai": ["YouTube investigation", "Google Earth", "collation center", "private home", "conspiracy video"],
+      "primary_disarm_technique": "T0087: Develop Video-Based Content",
+      "common_platforms": ["YouTube"]
+    },
+    {
+      "id": "NGA-ELEC-044",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Targeting Political Opponents' Spouses",
+      "scenario": "The ethnic or religious identity of a candidate's spouse is used as a weapon. For example, a Christian candidate with a Muslim spouse is accused of being a secret convert or untrustworthy by religious hardliners on both sides.",
+      "key_indicators_for_ai": ["candidate's spouse", "inter-religious marriage", "secret convert", "untrustworthy", "ethnic identity"],
+      "primary_disarm_technique": "T0079: Divide (within a candidate's potential support base)",
+      "common_platforms": ["WhatsApp", "Blogs"]
+    },
+    {
+      "id": "NGA-ELEC-045",
+      "category": "Voter Suppression",
+      "meta_narrative": "Misleading Information on Voting Procedure",
+      "scenario": "A message is spread telling people they can 'vote with any finger' or that 'the ink is poisonous,' designed to increase the number of invalid ballots or discourage voting altogether.",
+      "key_indicators_for_ai": ["voting procedure", "invalid ballot", "poisonous ink", "false instructions"],
+      "primary_disarm_technique": "T0023: Distort Facts",
+      "common_platforms": ["WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-046",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "Digital Blackface",
+      "scenario": "Accounts run by a political campaign pretend to be members of an opposing candidate's ethnic group. They then post inflammatory or foolish content to make that candidate's supporters appear toxic or un-intelligent.",
+      "key_indicators_for_ai": ["digital blackface", "false persona", "impersonating supporters", "toxic", "provocation"],
+      "primary_disarm_technique": "T0094.002: Utilise Butterfly Attacks",
+      "common_platforms": ["Twitter/X", "Facebook"]
+    },
+    {
+      "id": "NGA-ELEC-047",
+      "category": "Voter Manipulation",
+      "meta_narrative": "Search Engine Poisoning",
+      "scenario": "A campaign creates dozens of low-quality blogs and articles filled with negative keywords about an opponent. Over time, this manipulates search engine results, so when a user Googles the candidate's name, the first page is filled with negative stories.",
+      "key_indicators_for_ai": ["SEO", "search engine poisoning", "negative keywords", "Google results", "blog spam"],
+      "primary_disarm_technique": "T0046: Use Search Engine Optimisation",
+      "common_platforms": ["Google Search", "Blogs"]
+    },
+    {
+      "id": "NGA-ELEC-048",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Framing Opponent as Anti-Region",
+      "scenario": "A candidate's past statement opposing a policy that benefits a specific region (e.g., resource control in the Niger Delta) is endlessly recycled to paint them as an enemy of that entire region.",
+      "key_indicators_for_ai": ["anti-region", "Niger Delta", "resource control", "enemy of the people", "old statement"],
+      "primary_disarm_technique": "T0084: Reuse Existing Content",
+      "common_platforms": ["Facebook", "Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-049",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "The Rigged Election",
+      "scenario": "A coordinated campaign reports tens of thousands of legitimate social media posts containing official INEC results as 'spam' or 'fake news,' successfully getting them taken down and creating an information vacuum.",
+      "key_indicators_for_ai": ["mass reporting", "takedown", "content moderation abuse", "spam", "information vacuum"],
+      "primary_disarm_technique": "T0124.001: Report Non-Violative Opposing Content",
+      "common_platforms": ["Twitter/X", "Facebook"]
+    },
+    {
+      "id": "NGA-ELEC-050",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "The Reluctant Candidate",
+      "scenario": "A narrative is built that a candidate 'did not want to run' but was 'begged by the people' to save the country. This frames them as selfless and above personal ambition.",
+      "key_indicators_for_ai": ["reluctant candidate", "begged to run", "selfless", "duty", "above ambition"],
+      "primary_disarm_technique": "T0082: Develop New Narratives",
+      "common_platforms": ["Speeches", "Interviews", "Social Media"]
+    },
+    {
+      "id": "NGA-ELEC-051",
+      "category": "Voter Manipulation",
+      "meta_narrative": "Fake Celebrity Endorsement via Hacking",
+      "scenario": "The verified Twitter account of a popular Afrobeats star is hacked, and a tweet is posted endorsing a candidate. The tweet is deleted within an hour, but screenshots are captured and spread for days as if it were a real endorsement.",
+      "key_indicators_for_ai": ["hacked account", "celebrity endorsement", "Afrobeats star", "deleted tweet", "screenshot", "fake endorsement"],
+      "primary_disarm_technique": "T0150.005: Compromised Asset",
+      "common_platforms": ["Twitter/X", "Instagram"]
+    },
+    {
+      "id": "NGA-ELEC-052",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Generational Warfare",
+      "scenario": "A youth-backed candidate's supporters frame the election as a battle between the 'old, corrupt generation' and the 'new, digital generation'. Any older candidate is labelled a 'dinosaur' unfit for the 21st century.",
+      "key_indicators_for_ai": ["generational war", "youth vs old guard", "dinosaur", "digital age", "unfit", "not-too-young-to-run"],
+      "primary_disarm_technique": "T0079: Divide",
+      "common_platforms": ["TikTok", "Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-053",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "Compromised Election Materials",
+      "scenario": "Photos of ballot papers found discarded by a roadside (a real but isolated incident) are shared with the false claim that this is happening nationwide, proving that millions of votes are being thrown away.",
+      "key_indicators_for_ai": ["ballot papers", "discarded", "nationwide", "votes thrown away", "isolated incident", "amplification"],
+      "primary_disarm_technique": "T0023: Distort Facts (by misrepresenting scale)",
+      "common_platforms": ["Facebook", "WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-054",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "The Prodigal Son Returns",
+      "scenario": "A candidate who previously served in what is now considered a 'corrupt' government is reframed as someone who 'saw the light' and is now returning to 'clean up the system he once knew.' This turns a negative into a perceived positive.",
+      "key_indicators_for_ai": ["prodigal son", "reformed", "clean up the system", "saw the light", "insider knowledge"],
+      "primary_disarm_technique": "T0083: Integrate Target Audience Vulnerabilities into Narrative (the desire for a repentant hero)",
+      "common_platforms": ["Interviews", "Documentaries", "Social Media"]
+    },
+    {
+      "id": "NGA-ELEC-055",
+      "category": "Voter Suppression",
+      "meta_narrative": "Creating Fake Partisan Clashes",
+      "scenario": "On election eve, a video is circulated of what appears to be a violent clash between supporters of APC and PDP. The video is actually from a Nollywood movie or a skirmish years ago, intended to scare people from going to polling areas.",
+      "key_indicators_for_ai": ["APC vs PDP", "violent clash", "Nollywood movie", "old video", "scare tactics", "election eve"],
+      "primary_disarm_technique": "T0084: Reuse Existing Content",
+      "common_platforms": ["WhatsApp", "TikTok"]
+    },
+    {
+      "id": "NGA-ELEC-056",
+      "category": "Geopolitical Narratives",
+      "meta_narrative": "LGBTQ+ Rights as a Wedge Issue",
+      "scenario": "A candidate is accused of having a secret pro-LGBTQ+ agenda, backed by Western governments who want to 'force homosexuality on Nigeria.' A picture of the candidate with a known gay rights activist is used as 'proof'.",
+      "key_indicators_for_ai": ["LGBTQ+", "homosexuality", "Western agenda", "wedge issue", "pro-gay", "family values"],
+      "primary_disarm_technique": "T0081.006: Identify Wedge Issues",
+      "common_platforms": ["Blogs", "Facebook", "WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-057",
+      "category": "Voter Manipulation",
+      "meta_narrative": "Using AI for Hyper-Personalized Attacks",
+      "scenario": "An audio deepfake is created where a candidate appears to be speaking in a local dialect, making derogatory remarks about the local chief or tradition. This highly targeted message is sent to WhatsApp groups in that specific community.",
+      "key_indicators_for_ai": ["audio deepfake", "local dialect", "derogatory remarks", "hyper-targeted", "WhatsApp group"],
+      "primary_disarm_technique": "T0088.001: Develop AI-Generated Audio (Deepfakes)",
+      "common_platforms": ["WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-058",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "The Biased Media",
+      "scenario": "Any unfavorable story published by a major newspaper (e.g., The Guardian, Punch) is immediately labelled as an 'attack piece' because the newspaper's owner 'is friends with' an opposing candidate.",
+      "key_indicators_for_ai": ["biased media", "attack piece", "media owner", "hatchet job", "discredit journalism"],
+      "primary_disarm_technique": "T0075.001: Discredit Credible Sources",
+      "common_platforms": ["Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-059",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "The Kingmaker anointing a Successor",
+      "scenario": "A powerful outgoing politician or former president (a 'godfather') is shown raising the hand of their chosen successor. This is framed as a transfer of power and wisdom, while opponents frame it as proof the candidate is a 'pawn.'",
+      "key_indicators_for_ai": ["kingmaker", "godfather", "anointing", "successor", "pawn", "continuity"],
+      "primary_disarm_technique": "T0136.006: Cultivate Support for Ally",
+      "common_platforms": ["Rallies", "News Photos", "Social Media"]
+    },
+    {
+      "id": "NGA-ELEC-060",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Economic Sabotage Narrative",
+      "scenario": "During a fuel or currency scarcity crisis, the crisis is blamed on 'saboteurs' from a rival ethnic or political group who are 'trying to make the government fail' before an election.",
+      "key_indicators_for_ai": ["sabotage", "fuel scarcity", "naira scarcity", "economic warfare", "blame game"],
+      "primary_disarm_technique": "T0077: Distract",
+      "common_platforms": ["Press Conferences", "Facebook"]
+    },
+    {
+      "id": "NGA-ELEC-061",
+      "category": "Voter Manipulation",
+      "meta_narrative": "Exploiting Data Voids",
+      "scenario": "A new, unknown political term (e.g., 'Operation Golden Thumb') is created by a campaign. They pre-emptively flood blogs and fringe sites with content defining the term in a way that benefits them. When they start using the term on social media, anyone who searches for it finds only their propaganda.",
+      "key_indicators_for_ai": ["data void", "new term", "strategic framing", "search results", "pre-emptive content"],
+      "primary_disarm_technique": "T0081.002: Identify Data Voids (and exploit them)",
+      "common_platforms": ["Google Search", "Blogs", "Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-062",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Intra-Religious Conflict",
+      "scenario": "To undermine a Pentecostal candidate, opponents circulate messages in traditional Catholic and Anglican WhatsApp groups claiming the candidate's church promotes 'prosperity gospel' which is 'heretical' and financially exploitative, aiming to divide the Christian vote.",
+      "key_indicators_for_ai": ["Pentecostal", "Catholic", "heretical", "prosperity gospel", "divide Christians", "doctrinal dispute"],
+      "primary_disarm_technique": "T0079: Divide",
+      "common_platforms": ["WhatsApp", "Facebook"]
+    },
+    {
+      "id": "NGA-ELEC-063",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "Character Assassination (Family)",
+      "scenario": "A candidate's estranged sibling is given a platform on a popular YouTube channel to share unsubstantiated stories of childhood cruelty or financial dishonesty, aiming to create a narrative that 'if they can't be trusted by their own family, they can't be trusted by Nigeria'.",
+      "key_indicators_for_ai": ["estranged sibling", "family drama", "childhood stories", "YouTube interview", "can't be trusted"],
+      "primary_disarm_technique": "T0135.001: Smear",
+      "common_platforms": ["YouTube", "Blogs"]
+    },
+    {
+      "id": "NGA-ELEC-064",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "Compromised Data Transmission",
+      "scenario": "A narrative claims that mobile network operators (e.g., MTN, Glo) have been paid by the government to throttle internet speeds in opposition strongholds on election day, to prevent citizens from uploading evidence of rigging to social media or the IReV portal.",
+      "key_indicators_for_ai": ["IReV", "data throttling", "network operators", "upload speed", "evidence suppression", "MTN", "Glo"],
+      "primary_disarm_technique": "T0022: Leverage Conspiracy Theory Narratives",
+      "common_platforms": ["Twitter/X", "WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-065",
+      "category": "Voter Suppression",
+      "meta_narrative": "False Information on Required Documents",
+      "scenario": "A fake 'INEC update' is circulated, claiming that voters now need to present their National Identity Number (NIN) slip alongside their PVC at the polling unit. This is intended to disenfranchise those who don't have the slip readily available.",
+      "key_indicators_for_ai": ["NIN slip", "PVC", "required documents", "fake update", "voting requirements"],
+      "primary_disarm_technique": "T0023: Distort Facts",
+      "common_platforms": ["WhatsApp", "Facebook"]
+    },
+    {
+      "id": "NGA-ELEC-066",
+      "category": "Voter Intimidation",
+      "meta_narrative": "Doxing of Opposition Supporters",
+      "scenario": "The personal phone numbers and home addresses of vocal, mid-level opposition supporters are compiled and shared in a Telegram channel, leading to a flood of threatening calls and messages designed to silence them and intimidate others.",
+      "key_indicators_for_ai": ["doxing", "phone number", "address leak", "Telegram", "threatening calls", "silencing dissent"],
+      "primary_disarm_technique": "T0048.004: Dox",
+      "common_platforms": ["Telegram", "Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-067",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "Allegations of Cult Membership",
+      "scenario": "A candidate is accused of belonging to a secret society or university confraternity (cult), with old, grainy photos of them at a student gathering used as 'proof.' This narrative plays on widespread fears about the influence of these groups.",
+      "key_indicators_for_ai": ["secret society", "cult", "confraternity", "initiation", "grainy photo", "hidden agenda"],
+      "primary_disarm_technique": "T0135.001: Smear",
+      "common_platforms": ["Blogs", "Online Forums"]
+    },
+    {
+      "id": "NGA-ELEC-068",
+      "category": "Voter Manipulation",
+      "meta_narrative": "Promise of State/LGA Creation",
+      "scenario": "A candidate, during a campaign rally in a region with a strong ethnic identity, promises to champion the creation of a new state or local government area for them if elected, tapping into long-held political aspirations to win a block vote.",
+      "key_indicators_for_ai": ["state creation", "new LGA", "political promise", "ethnic identity", "zoning", "aspiration"],
+      "primary_disarm_technique": "T0138.001: Encourage (to vote based on promise)",
+      "common_platforms": ["Rallies", "News Reports"]
+    },
+    {
+      "id": "NGA-ELEC-069",
+      "category": "Geopolitical Narratives",
+      "meta_narrative": "Diaspora as a Political Force",
+      "scenario": "A candidate with strong support in the diaspora is framed as a 'candidate for Twitter and London,' implying they are disconnected from the reality of ordinary Nigerians and that their support is not 'on the ground'.",
+      "key_indicators_for_ai": ["diaspora", "Twitter candidate", "not on ground", "out of touch", "London", "USA"],
+      "primary_disarm_technique": "T0076: Distort (the nature of their support)",
+      "common_platforms": ["Twitter/X", "Facebook"]
+    },
+    {
+      "id": "NGA-ELEC-070",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "Discrediting Ad-Hoc Staff",
+      "scenario": "Narratives claim that INEC's ad-hoc staff, often youth corpers (NYSC), are easily bribed and are the 'weakest link' in the electoral process, aiming to discredit the integrity of polling unit operations wholesale.",
+      "key_indicators_for_ai": ["ad-hoc staff", "NYSC", "youth corper", "bribed", "weakest link", "polling unit"],
+      "primary_disarm_technique": "T0075: Dismiss (the integrity of a group)",
+      "common_platforms": ["Online Forums", "WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-071",
+      "category": "Voter Manipulation",
+      "meta_narrative": "Hashtag Spamming with Irrelevant Content",
+      "scenario": "During a televised presidential debate, as a rival candidate is speaking, a bot network floods the official debate hashtag with K-pop fancams or Nollywood memes to disrupt the online conversation and prevent the candidate's message from gaining traction.",
+      "key_indicators_for_ai": ["hashtag hijacking", "K-pop fancam", "Nollywood meme", "bot network", "debate", "spam"],
+      "primary_disarm_technique": "T0049.008: Generate Information Pollution",
+      "common_platforms": ["Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-072",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "The 'Stingy' Candidate",
+      "scenario": "A candidate known for being fiscally conservative or not engaging in lavish public spending is labelled as 'stingy'. In a political culture where patronage is often expected, this is used to frame them as someone who will not 'take care of the people'.",
+      "key_indicators_for_ai": ["stingy", "patronage", "stomach infrastructure", "no generosity", "fiscally conservative"],
+      "primary_disarm_technique": "T0135.001: Smear",
+      "common_platforms": ["TikTok", "Facebook Comments"]
+    },
+    {
+      "id": "NGA-ELEC-073",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Minority vs. Majority Dynamics",
+      "scenario": "In a state with a dominant ethnic group and several smaller ones, a narrative is pushed that a candidate from a minority group will use their power to marginalize the majority, playing on the majority's fear of losing its dominant position.",
+      "key_indicators_for_ai": ["minority candidate", "majority rule", "fear of marginalization", "ethnic dynamics", "reverse discrimination"],
+      "primary_disarm_technique": "T0135.004: Polarise",
+      "common_platforms": ["WhatsApp", "Community Meetings"]
+    },
+    {
+      "id": "NGA-ELEC-074",
+      "category": "Voter Intimidation",
+      "meta_narrative": "Targeting of Female Politicians",
+      "scenario": "A female candidate is subjected to a coordinated campaign of gendered disinformation, including slut-shaming, questioning her fitness to lead as a woman, and creating deepfake pornographic images of her.",
+      "key_indicators_for_ai": ["female candidate", "gendered attack", "slut-shaming", "unfit woman", "deepfake porn"],
+      "primary_disarm_technique": "T0048.002: Harass People Based on Identities",
+      "common_platforms": ["Twitter/X", "Telegram", "Blogs"]
+    },
+    {
+      "id": "NGA-ELEC-075",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "Misrepresenting Court Judgements",
+      "scenario": "After a complex election tribunal ruling, partisan lawyers and influencers immediately go online to deliberately misinterpret the judgement, claiming a total victory on all points when the reality was a mixed or procedural ruling, causing confusion.",
+      "key_indicators_for_ai": ["election tribunal", "court judgement", "misinterpretation", "legal analysis", "influencer lawyer"],
+      "primary_disarm_technique": "T0023: Distort Facts",
+      "common_platforms": ["Twitter/X", "YouTube"]
+    },
+    {
+      "id": "NGA-ELEC-076",
+      "category": "Voter Manipulation",
+      "meta_narrative": "AI-Generated Persona Network",
+      "scenario": "A network of dozens of Facebook accounts is created using AI-generated profile pictures (GANs). These accounts pose as ordinary Nigerians from different regions and are used to leave comments of support on a candidate's page, creating a false sense of widespread, organic backing.",
+      "key_indicators_for_ai": ["AI-generated profile picture", "GAN", "false persona network", "inauthentic comments", "fake organic support"],
+      "primary_disarm_technique": "T0145.002: AI-Generated Account Imagery",
+      "common_platforms": ["Facebook", "Instagram"]
+    },
+    {
+      "id": "NGA-ELEC-077",
+      "category": "Voter Suppression",
+      "meta_narrative": "Rumors of Military Blockades",
+      "scenario": "On election day, rumors spread on WhatsApp that the military has set up blockades on major highways connecting cities (e.g., Lagos-Ibadan expressway), preventing people who traveled to their home states from returning, thus discouraging travel-to-vote.",
+      "key_indicators_for_ai": ["military blockade", "highway", "travel-to-vote", "roadblock", "stuck in village"],
+      "primary_disarm_technique": "T0139.001: Discourage (travel)",
+      "common_platforms": ["WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-078",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "The Intellectual lightweight",
+      "scenario": "A short, out-of-context clip of a candidate stumbling over a word or making a gaffe during a long speech is edited into a loop, set to comical music, and spread on TikTok to portray them as unintelligent or incoherent.",
+      "key_indicators_for_ai": ["gaffe", "stumble", "incoherent", "unintelligent", "TikTok meme", "out-of-context clip"],
+      "primary_disarm_technique": "T0087.002: Deceptively Edit Video (Cheap Fakes)",
+      "common_platforms": ["TikTok", "Instagram Reels"]
+    },
+    {
+      "id": "NGA-ELEC-079",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Hijacking Social Justice Movements",
+      "scenario": "Political actors co-opt the language and hashtags of a legitimate social movement like #EndSARS, framing their political opponent as being part of the 'oppressive forces' the movement fought against, even if there is no direct link.",
+      "key_indicators_for_ai": ["EndSARS", "social justice", "co-opted hashtag", "oppressive forces", "weaponizing movements"],
+      "primary_disarm_technique": "T0003: Leverage Existing Narratives (social grievances)",
+      "common_platforms": ["Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-080",
+      "category": "Voter Manipulation",
+      "meta_narrative": "Fake Withdrawals",
+      "scenario": "Hours before polling begins, a high-quality graphic circulates, designed to look like a press release from a smaller party, announcing their candidate has withdrawn from the race and endorsed a major candidate. This is meant to confuse and redirect the smaller party's voters.",
+      "key_indicators_for_ai": ["candidate withdrawal", "endorsed", "press release", "fake graphic", "last minute", "confuse voters"],
+      "primary_disarm_technique": "T0085.003: Develop Inauthentic News Articles (in graphic form)",
+      "common_platforms": ["WhatsApp", "Facebook"]
+    },
+    {
+      "id": "NGA-ELEC-081",
+      "category": "Geopolitical Narratives",
+      "meta_narrative": "Weaponizing Israel/Palestine Conflict",
+      "scenario": "A candidate is accused of taking funding from 'pro-Palestine Arab nations' to 'promote an Islamic agenda in Nigeria.' This is used to stoke suspicion among Christian voters and link local politics to a complex international conflict.",
+      "key_indicators_for_ai": ["Palestine", "Arab funding", "Islamic agenda", "foreign money", "geopolitical wedge"],
+      "primary_disarm_technique": "T0074.001: Geopolitical Advantage (by smearing opponent)",
+      "common_platforms": ["Blogs", "WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-082",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "The Inaccessible Leader",
+      "scenario": "A candidate who prefers controlled interviews and limited public debates is framed as arrogant, elitist, and afraid to face the Nigerian people. Opponents' slogans become 'He is hiding!' or 'He thinks he is too big for us'.",
+      "key_indicators_for_ai": ["inaccessible", "arrogant", "hiding", "elitist", "afraid of debate"],
+      "primary_disarm_technique": "T0135.001: Smear",
+      "common_platforms": ["Twitter/X", "Memes"]
+    },
+    {
+      "id": "NGA-ELEC-083",
+      "category": "Voter Suppression",
+      "meta_narrative": "Fake Curfew Announcements",
+      "scenario": "A fake 'Government Security Notice' is spread on the eve of the election, announcing a 24-hour curfew in a specific state, aiming to suppress turnout by making people believe movement is illegal.",
+      "key_indicators_for_ai": ["curfew", "security notice", "24-hour", "movement restriction", "fake government announcement"],
+      "primary_disarm_technique": "T0123: Control Information Environment through Offensive Cyberspace Operations (by creating false restrictions)",
+      "common_platforms": ["WhatsApp", "Facebook"]
+    },
+    {
+      "id": "NGA-ELEC-084",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Denominational Attacks",
+      "scenario": "Supporters of a candidate from a specific church (e.g., Deeper Life) attack the character of another candidate based on the perceived social liberalism of their church (e.g., House on the Rock), accusing them of not being a 'true Christian'.",
+      "key_indicators_for_ai": ["church denomination", "Deeper Life", "House on the Rock", "true Christian", "denominational rivalry", "social liberalism"],
+      "primary_disarm_technique": "T0079: Divide",
+      "common_platforms": ["Facebook Groups", "Online Forums"]
+    },
+    {
+      "id": "NGA-ELEC-085",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "Deliberate Confusion of Acronyms",
+      "scenario": "A story is fabricated about a new INEC policy called 'BVAD' (Biometric Voter Authentication & De-registration), claiming it will be used to secretly de-register opposition voters. The aim is to create confusion with the real 'BVAS'.",
+      "key_indicators_for_ai": ["acronym confusion", "BVAD", "BVAS", "de-register", "fake policy"],
+      "primary_disarm_technique": "T0082: Develop New Narratives",
+      "common_platforms": ["WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-086",
+      "category": "Voter Manipulation",
+      "meta_narrative": "QR Code Phishing",
+      "scenario": "Flyers are distributed with a QR code promising 'free campaign airtime'. When scanned, the QR code leads to a phishing website designed to collect personal data or a fake news page promoting the candidate.",
+      "key_indicators_for_ai": ["QR code", "phishing", "free airtime", "data collection", "malicious link"],
+      "primary_disarm_technique": "T0153.004: QR Code Asset (used maliciously)",
+      "common_platforms": ["Physical Flyers", "Digital Flyers on WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-087",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "The Puppet Master Narrative",
+      "scenario": "A powerful but unpopular political figure is claimed to be the 'real power' behind a popular candidate. The narrative suggests that a vote for the candidate is actually a vote for the unpopular 'puppet master' to rule from the shadows.",
+      "key_indicators_for_ai": ["puppet master", "godfather", "ruling from shadows", "pawn", "secret control"],
+      "primary_disarm_technique": "T0022: Leverage Conspiracy Theory Narratives",
+      "common_platforms": ["Twitter/X", "Blogs"]
+    },
+    {
+      "id": "NGA-ELEC-088",
+      "category": "Voter Intimidation",
+      "meta_narrative": "Threat of Post-Election Violence",
+      "scenario": "Supporters of a candidate openly threaten on social media that if their candidate doesn't win, 'the country will burn' or 'there will be no peace.' This is designed to intimidate undecided voters into choosing the 'safe' option to avoid chaos.",
+      "key_indicators_for_ai": ["threat of violence", "country will burn", "no peace", "intimidation", "post-election violence"],
+      "primary_disarm_technique": "T0140.002: Intimidate",
+      "common_platforms": ["Facebook", "Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-089",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "Decontextualized Logistical Failures",
+      "scenario": "A video of INEC ad-hoc staff arriving late to one polling unit out of thousands is amplified by a network of accounts to create the impression that the entire election is disorganized and failing nationwide, eroding confidence from the start.",
+      "key_indicators_for_ai": ["late arrival", "logistical failure", "disorganized", "decontextualized", "amplification"],
+      "primary_disarm_technique": "T0023.001: Reframe Context",
+      "common_platforms": ["Twitter/X", "TikTok"]
+    },
+    {
+      "id": "NGA-ELEC-090",
+      "category": "Identity and Polarization",
+      "meta_narrative": "The 'Original' Inhabitants",
+      "scenario": "In a cosmopolitan city like Abuja or Port Harcourt, a narrative is pushed that only the 'original inhabitants' or 'indigenes' have the moral right to govern, framing candidates from other parts of the country as 'settlers'.",
+      "key_indicators_for_ai": ["indigenes", "settlers", "original inhabitants", "moral right", "cosmopolitan city"],
+      "primary_disarm_technique": "T0079: Divide",
+      "common_platforms": ["Community Radio", "Facebook"]
+    },
+    {
+      "id": "NGA-ELEC-091",
+      "category": "Voter Suppression",
+      "meta_narrative": "Fake News about COVID-19 Outbreak",
+      "scenario": "A false report of a new, dangerous COVID-19 variant outbreak at specific polling units is spread on election day to scare away elderly voters or those with health concerns.",
+      "key_indicators_for_ai": ["COVID-19", "outbreak", "new variant", "polling unit", "health scare", "elderly voters"],
+      "primary_disarm_technique": "T0139.001: Discourage (from voting)",
+      "common_platforms": ["WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-092",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "The Uncharismatic Technocrat",
+      "scenario": "A candidate with a strong policy background but who is not a charismatic public speaker is labelled as 'boring,' 'weak,' and 'lacking passion.' Video clips of their calm, measured speeches are contrasted with fiery speeches from opponents.",
+      "key_indicators_for_ai": ["technocrat", "boring", "weak", "no passion", "uncharismatic", "policy wonk"],
+      "primary_disarm_technique": "T0135.001: Smear",
+      "common_platforms": ["Memes", "TikTok"]
+    },
+    {
+      "id": "NGA-ELEC-093",
+      "category": "Voter Manipulation",
+      "meta_narrative": "Cloned Voice Notes for Deception",
+      "scenario": "Using AI voice cloning, an audio message is created where an opposition leader's voice appears to instruct their supporters to stand down or accept a bribe, and this is circulated within their party's internal WhatsApp groups.",
+      "key_indicators_for_ai": ["AI voice cloning", "cloned voice", "WhatsApp voice note", "stand down", "internal sabotage"],
+      "primary_disarm_technique": "T0088.001: Develop AI-Generated Audio (Deepfakes)",
+      "common_platforms": ["WhatsApp"]
+    },
+    {
+      "id": "NGA-ELEC-094",
+      "category": "Geopolitical Narratives",
+      "meta_narrative": "Framing Environmental Policy as Economic Attack",
+      "scenario": "A candidate's international commitment to clean energy policies is framed locally as a plot to 'shut down the oil industry' and 'destroy the Niger Delta's economy,' turning an environmental stance into a regional economic threat.",
+      "key_indicators_for_ai": ["clean energy", "net-zero", "oil industry", "economic attack", "Niger Delta", "environmental policy"],
+      "primary_disarm_technique": "T0076: Distort",
+      "common_platforms": ["Facebook", "Community Newspapers"]
+    },
+    {
+      "id": "NGA-ELEC-095",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Diaspora Funding as Foreign Interference",
+      "scenario": "A candidate who receives significant crowdfunding from the Nigerian diaspora is accused of being funded by 'foreigners' with unknown agendas, deliberately conflating expatriate Nigerians with non-Nigerian foreign entities.",
+      "key_indicators_for_ai": ["diaspora funding", "crowdfunding", "foreign interference", "unknown agenda", "conflation"],
+      "primary_disarm_technique": "T0023: Distort Facts",
+      "common_platforms": ["Press Conferences", "Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-096",
+      "category": "Undermining Electoral Institutions",
+      "meta_narrative": "Legalizing Rigging through Legislation",
+      "scenario": "A false narrative spreads that a new clause in the Electoral Act 'secretly allows' INEC to transmit results manually if the technology fails, which is then interpreted as a 'built-in feature for rigging' by the incumbent.",
+      "key_indicators_for_ai": ["Electoral Act", "secret clause", "manual transmission", "legal rigging", "conspiracy"],
+      "primary_disarm_technique": "T0022: Leverage Conspiracy Theory Narratives",
+      "common_platforms": ["Blogs", "Facebook"]
+    },
+    {
+      "id": "NGA-ELEC-097",
+      "category": "Voter Intimidation",
+      "meta_narrative": "Social Ostracism Threats",
+      "scenario": "In a close-knit community, a powerful community leader or group implicitly threatens that anyone known to vote for an opposition party will be ostracized from community events, denied local business patronage, or shamed publicly.",
+      "key_indicators_for_ai": ["social ostracism", "shaming", "community pressure", "denied patronage", "vote with us"],
+      "primary_disarm_technique": "T0140.002: Intimidate (Socially)",
+      "common_platforms": ["Community Meetings", "WhatsApp Groups"]
+    },
+    {
+      "id": "NGA-ELEC-098",
+      "category": "Candidate-Focused Narratives",
+      "meta_narrative": "The 'Turncoat' Narrative",
+      "scenario": "A politician who has switched parties multiple times is labelled a 'political prostitute' with no loyalty or ideology. Their entire political history is presented as evidence of untrustworthiness.",
+      "key_indicators_for_ai": ["turncoat", "political prostitute", "no loyalty", "party switcher", "untrustworthy"],
+      "primary_disarm_technique": "T0135.001: Smear",
+      "common_platforms": ["Memes", "Twitter/X"]
+    },
+    {
+      "id": "NGA-ELEC-099",
+      "category": "Voter Manipulation",
+      "meta_narrative": "Exploiting Platform Glitches",
+      "scenario": "When a social media platform experiences a temporary glitch (e.g., follower counts dropping), partisan actors immediately claim it is a deliberate act of censorship by the platform, in collusion with their opponents, to 'suppress their voice'.",
+      "key_indicators_for_ai": ["platform glitch", "follower count drop", "censorship", "suppression", "collusion", "shadowban"],
+      "primary_disarm_technique": "T0022.002: Develop Original Conspiracy Theory Narratives",
+      "common_platforms": ["Twitter/X", "Instagram"]
+    },
+    {
+      "id": "NGA-ELEC-100",
+      "category": "Identity and Polarization",
+      "meta_narrative": "Cultural Superiority",
+      "scenario": "A narrative emerges claiming one ethnic group's culture is inherently more 'sophisticated' or 'business-savvy,' and therefore they are 'natural leaders,' while others are framed as lazy or less competent, justifying a perceived birthright to rule.",
+      "key_indicators_for_ai": ["cultural superiority", "ethnic chauvinism", "natural leaders", "birthright", "incompetent"],
+      "primary_disarm_technique": "T0140.003: Spread Hate (disguised as cultural analysis)",
+      "common_platforms": ["WhatsApp", "Online Forums"]
+    },
+    {
+      "id": "NGA-ELEC-101",
+      "category": "Voter Manipulation",
+      "meta_narrative": "Gamification of Disinformation",
+      "scenario": "A simple mobile game or web-based quiz is created where players score points by sharing pro-candidate memes or completing tasks that involve following a candidate's social media pages. This masks political astroturfing as entertainment.",
+      "key_indicators_for_ai": ["mobile game", "quiz", "points", "share memes", "gamification", "astroturfing"],
+      "primary_disarm_technique": "T0120: Incentivize Sharing",
+      "common_platforms": ["Web", "Mobile Apps shared via WhatsApp"]
+    }
+  ]
+}
