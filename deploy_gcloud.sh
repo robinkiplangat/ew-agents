@@ -15,15 +15,15 @@ NC='\033[0m' # No Color
 # Configuration
 PROJECT_ID="ew-agents-v02"
 REGION="europe-west1"
-SERVICE_NAME="ew-agents-final"
+SERVICE_NAME="electionwatch-misinformation-api"
 IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}"
 MEMORY="2Gi"        # 2GiB to fix memory issues
 CPU="1"
 MAX_INSTANCES="10"
 MIN_INSTANCES="1"
 
-echo -e "${BLUE}🚀 ElectionWatch Agents - gCloud Deployment${NC}"
-echo -e "${BLUE}=============================================${NC}"
+echo -e "${BLUE}🛡️  ElectionWatch Misinformation Detection API - Cloud Deployment${NC}"
+echo -e "${BLUE}=========================================================${NC}"
 echo ""
 
 # Step 1: Verify prerequisites
@@ -35,11 +35,8 @@ if ! command -v gcloud &> /dev/null; then
     exit 1
 fi
 
-# Check if Docker is running
-if ! docker info &> /dev/null; then
-    echo -e "${RED}❌ Docker is not running. Please start Docker first.${NC}"
-    exit 1
-fi
+# Note: Using Google Cloud Build - no local Docker required
+echo -e "${GREEN}ℹ️  Using Google Cloud Build (no local Docker needed)${NC}"
 
 # Verify required files exist
 required_files=("Dockerfile" "requirements.txt" "ew_agents/agent.py" "ew-agent-service-key.json" ".env.production")
@@ -139,4 +136,4 @@ echo -e "${BLUE}🧪 Quick Test Commands:${NC}"
 echo -e "   curl \"${SERVICE_URL}/list-apps\""
 echo -e "   curl \"${SERVICE_URL}/health\""
 echo ""
-echo -e "${GREEN}✨ ElectionWatch Agents are now live and ready!${NC}" 
+echo -e "${GREEN}✨ ElectionWatch Misinformation Detection API is now live and ready!${NC}" 

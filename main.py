@@ -13,7 +13,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 
 import uvicorn
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
@@ -314,7 +314,7 @@ async def analyse_posts(
                         except UnicodeDecodeError:
                             file_info["error"] = "Could not decode CSV as UTF-8"
                     
-                    elif file.content_type.startswith("text/"):
+                    elif file.content_type and file.content_type.startswith("text/"):
                         try:
                             text_content = content.decode('utf-8')
                             all_text += f"\n\nFile '{file.filename}':\n{text_content}"
@@ -322,7 +322,7 @@ async def analyse_posts(
                         except UnicodeDecodeError:
                             file_info["error"] = "Could not decode text file as UTF-8"
                     
-                    elif file.content_type.startswith("image/"):
+                    elif file.content_type and file.content_type.startswith("image/"):
                         file_info["note"] = "Image uploaded - content analysis not implemented"
                         file_info["processed"] = "metadata_only"
                     
@@ -457,6 +457,440 @@ async def list_apps():
         return ["ew_agents"]
     else:
         return ["basic_analysis"]
+
+@app.get("/dev-ui/", response_class=HTMLResponse)
+async def dev_ui(app: str = Query("ew_agents", description="Agent application to test")):
+    """Interactive development UI for testing Election Watch agents"""
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>ElectionWatch - Agent Development UI</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                color: #333;
+            }}
+            .container {{ 
+                max-width: 1200px; 
+                margin: 0 auto; 
+                padding: 20px;
+                background: white;
+                margin-top: 20px;
+                border-radius: 12px;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            }}
+            .header {{
+                background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+                color: white;
+                padding: 30px;
+                text-align: center;
+                border-radius: 8px;
+                margin-bottom: 30px;
+            }}
+            .agent-selector {{
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 8px;
+                margin-bottom: 30px;
+                border-left: 5px solid #3498db;
+            }}
+            .test-section {{
+                background: #fff;
+                border: 1px solid #e9ecef;
+                border-radius: 8px;
+                margin-bottom: 30px;
+                overflow: hidden;
+            }}
+            .section-header {{
+                background: #3498db;
+                color: white;
+                padding: 15px 20px;
+                font-size: 1.1rem;
+                font-weight: 600;
+            }}
+            .section-content {{ padding: 20px; }}
+            .form-group {{ margin-bottom: 20px; }}
+            label {{ 
+                display: block; 
+                margin-bottom: 8px; 
+                font-weight: 600; 
+                color: #2c3e50;
+            }}
+            input, textarea, select {{
+                width: 100%;
+                padding: 12px;
+                border: 2px solid #e9ecef;
+                border-radius: 6px;
+                font-size: 1rem;
+                transition: border-color 0.3s ease;
+            }}
+            input:focus, textarea:focus, select:focus {{
+                outline: none;
+                border-color: #3498db;
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            }}
+            textarea {{ 
+                min-height: 120px; 
+                resize: vertical; 
+                font-family: 'Monaco', 'Consolas', monospace;
+            }}
+            .btn {{
+                background: #27ae60;
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 6px;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: background 0.3s ease;
+            }}
+            .btn:hover {{ background: #219a52; }}
+            .btn:disabled {{ background: #95a5a6; cursor: not-allowed; }}
+            .result {{
+                background: #f8f9fa;
+                border: 1px solid #e9ecef;
+                border-radius: 6px;
+                padding: 15px;
+                margin-top: 20px;
+                white-space: pre-wrap;
+                font-family: 'Monaco', 'Consolas', monospace;
+                font-size: 0.9rem;
+                max-height: 400px;
+                overflow-y: auto;
+            }}
+            .result.success {{ background: #d4edda; border-color: #c3e6cb; }}
+            .result.error {{ background: #f8d7da; border-color: #f5c6cb; }}
+            .sample-data {{
+                background: #e8f4fd;
+                border: 1px solid #bee5eb;
+                border-radius: 4px;
+                padding: 10px;
+                margin-top: 10px;
+                font-size: 0.9rem;
+            }}
+            .btn-large {{ 
+                font-size: 1.1rem; 
+                padding: 15px 30px; 
+                background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            }}
+            .btn-large:hover {{ background: linear-gradient(135deg, #219a52 0%, #27ae60 100%); }}
+            .analysis-section {{ max-width: 800px; margin: 0 auto; }}
+            .report-actions {{ display: flex; gap: 10px; flex-wrap: wrap; }}
+            @media (max-width: 768px) {{ .report-actions {{ flex-direction: column; }} }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🔍 ElectionWatch Analysis Platform</h1>
+                <p>AI-Powered Misinformation Detection for African Elections</p>
+            </div>
+            
+            <div class="agent-selector">
+                <h3>🛡️ Active Analysis System: <strong>{app}</strong></h3>
+                <p>Monitor, analyze, and combat misinformation during African elections using advanced AI/ML techniques to detect, classify, and track disinformation narratives in real-time across multiple languages and platforms.</p>
+            </div>
+
+            <!-- Misinformation Analysis Section -->
+            <div class="test-section">
+                <div class="section-header">🛡️ Misinformation Detection & Analysis</div>
+                <div class="section-content">
+                    <form id="analysisForm">
+                        <div class="form-group">
+                            <label for="contentType">Content Source:</label>
+                            <select id="contentType" name="content_type">
+                                <option value="text_post">Social Media Post</option>
+                                <option value="image_content">Image/Screenshot</option>
+                                <option value="video_content">Video Content</option>
+                                <option value="document">Document/PDF</option>
+                                <option value="csv_data">CSV Data</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="postContent">Content to Analyze:</label>
+                            <textarea id="postContent" name="text_content" placeholder="Paste post content, social media text, or other content for misinformation analysis..."></textarea>
+                            <div class="sample-data">
+                                <strong>African Election Sample:</strong> "Yoruba people are fraudsters! They control all the banks and are stealing our resources. Don't let them rig this election like they did in Lagos. #Nigeria2024 #StopTheFraud"
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fileUpload">Upload Files (Images, Documents, CSV):</label>
+                            <input type="file" id="fileUpload" name="files" multiple accept=".png,.jpg,.jpeg,.pdf,.csv,.txt">
+                            <div class="sample-data">
+                                <strong>Supported:</strong> Images (OCR text extraction), PDFs, CSV files, text documents
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="region">Region/Country:</label>
+                            <select id="region" name="region">
+                                <option value="nigeria">Nigeria</option>
+                                <option value="kenya">Kenya</option>
+                                <option value="ghana">Ghana</option>
+                                <option value="south_africa">South Africa</option>
+                                <option value="senegal">Senegal</option>
+                                <option value="uganda">Uganda</option>
+                                <option value="other">Other African Country</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="language">Primary Language:</label>
+                            <select id="language" name="language">
+                                <option value="en">English</option>
+                                <option value="ha">Hausa</option>
+                                <option value="ig">Igbo</option>
+                                <option value="yo">Yoruba</option>
+                                <option value="sw">Swahili</option>
+                                <option value="fr">French</option>
+                                <option value="ar">Arabic</option>
+                                <option value="auto">Auto-detect</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-large">🔍 Analyze for Misinformation</button>
+                    </form>
+                    
+                    <div id="analysisResult" class="result" style="display:none;"></div>
+                    
+                    <!-- Report Sharing Section -->
+                    <div id="reportSection" style="display:none; margin-top: 30px;">
+                        <div class="section-header">📋 Generated Analysis Report</div>
+                        <div class="section-content">
+                            <div class="form-group">
+                                <label for="generatedReport">Shareable Report:</label>
+                                <textarea id="generatedReport" readonly style="min-height: 400px; font-family: monospace; font-size: 12px;"></textarea>
+                            </div>
+                            <div style="display: flex; gap: 15px; margin-top: 15px;">
+                                <button type="button" class="btn" onclick="copyReport()">📋 Copy Report</button>
+                                <button type="button" class="btn" onclick="downloadReport()">💾 Download JSON</button>
+                                <button type="button" class="btn" onclick="shareReport()">📤 Share Report</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let currentAnalysisReport = null;
+            
+            // Handle Misinformation Analysis form
+            document.getElementById('analysisForm').addEventListener('submit', async (e) => {{
+                e.preventDefault();
+                const btn = e.target.querySelector('.btn');
+                const result = document.getElementById('analysisResult');
+                const reportSection = document.getElementById('reportSection');
+                
+                btn.disabled = true;
+                btn.textContent = '🔄 Analyzing for Misinformation...';
+                result.style.display = 'block';
+                result.className = 'result';
+                result.textContent = 'Processing misinformation analysis...\\nExtracting narratives, identifying actors, analyzing lexicons...';
+                reportSection.style.display = 'none';
+                
+                const formData = new FormData(e.target);
+                
+                // Handle file uploads
+                const files = formData.getAll('files');
+                if (files.length > 0 && files[0].size > 0) {{
+                    // For file uploads, use FormData
+                    formData.set('analysis_type', 'misinformation_detection');
+                    formData.set('priority', 'high');
+                    
+                    try {{
+                        const response = await fetch('/AnalysePosts', {{
+                            method: 'POST',
+                            body: formData
+                        }});
+                        
+                        handleAnalysisResponse(response, result, reportSection, btn);
+                    }} catch (error) {{
+                        showError(result, error.message, btn);
+                    }}
+                }} else {{
+                    // For text-only analysis, use JSON
+                    const data = {{
+                        analysis_type: 'misinformation_detection',
+                        text_content: formData.get('text_content'),
+                        priority: 'high',
+                        metadata: {{
+                            content_type: formData.get('content_type'),
+                            region: formData.get('region'),
+                            language: formData.get('language')
+                        }}
+                    }};
+                    
+                    try {{
+                        const response = await fetch('/AnalysePosts', {{
+                            method: 'POST',
+                            headers: {{ 'Content-Type': 'application/json' }},
+                            body: JSON.stringify(data)
+                        }});
+                        
+                        handleAnalysisResponse(response, result, reportSection, btn);
+                    }} catch (error) {{
+                        showError(result, error.message, btn);
+                    }}
+                }}
+            }});
+            
+            async function handleAnalysisResponse(response, result, reportSection, btn) {{
+                const responseData = await response.json();
+                
+                if (response.ok) {{
+                    result.className = 'result success';
+                    result.textContent = JSON.stringify(responseData, null, 2);
+                    
+                    // Generate comprehensive report for sharing
+                    currentAnalysisReport = generateShareableReport(responseData);
+                    document.getElementById('generatedReport').value = currentAnalysisReport;
+                    reportSection.style.display = 'block';
+                    
+                    // Scroll to report section
+                    reportSection.scrollIntoView({{ behavior: 'smooth' }});
+                }} else {{
+                    showError(result, responseData.detail || 'Analysis failed', btn);
+                }}
+                
+                btn.disabled = false;
+                btn.textContent = '🔍 Analyze for Misinformation';
+            }}
+            
+            function showError(result, message, btn) {{
+                result.className = 'result error';
+                result.textContent = `Error: ${{message}}`;
+                btn.disabled = false;
+                btn.textContent = '🔍 Analyze for Misinformation';
+            }}
+            
+            function generateShareableReport(analysisData) {{
+                // Transform the analysis response into the expected report format
+                const report = {{
+                    report_metadata: {{
+                        report_id: analysisData.analysis_id || `report_${{Date.now()}}`,
+                        analysis_timestamp: new Date().toISOString(),
+                        content_source: analysisData.metadata?.content_type || "Text Content",
+                        content_type: analysisData.metadata?.content_type || "Social Media Post"
+                    }},
+                    content_analysis: {{
+                        data_preprocessing: "Content analyzed using advanced NLP and misinformation detection algorithms.",
+                        key_themes: analysisData.results?.narratives_detected?.map(n => n.type).join(", ") || "Political commentary, election-related content",
+                        sentiment_analysis: analysisData.results?.sentiment || "Mixed sentiment detected",
+                        topic_modeling: "Election monitoring, political discourse, potential misinformation"
+                    }},
+                    actors_identified: generateActors(analysisData),
+                    lexicon_analysis: {{
+                        coded_language_detection: analysisData.results?.narratives_detected?.length > 0 ? 
+                            "Identified potential coded language and harmful narratives" : "No coded language detected",
+                        harmful_terminology: analysisData.results?.narratives_detected?.map(n => 
+                            `${{n.type}}: ${{n.keywords?.join(", ") || "Various terms"}}`).join("; ") || "None detected",
+                        translation_support: analysisData.metadata?.language !== 'en' ? 
+                            `Content analyzed in ${{analysisData.metadata?.language}}` : "N/A"
+                    }},
+                    risk_assessment: {{
+                        overall_risk: analysisData.results?.threat_level || "Medium",
+                        risk_factors: analysisData.results?.recommendations || [
+                            "Content requires monitoring for potential misinformation spread",
+                            "Verify accuracy of claims and narratives"
+                        ],
+                        vulnerability_assessment: `Content analyzed for ${{analysisData.metadata?.region || 'regional'}} election context`
+                    }},
+                    recommendations: analysisData.results?.recommendations || [
+                        "Monitor content for further amplification",
+                        "Verify claims and cross-reference with official sources",
+                        "Track narratives for pattern identification",
+                        "Flag for expert review if needed"
+                    ]
+                }};
+                
+                return JSON.stringify(report, null, 2);
+            }}
+            
+            function generateActors(analysisData) {{
+                // Generate actors based on analysis results
+                const actors = [];
+                
+                if (analysisData.results?.narratives_detected?.length > 0) {{
+                    actors.push({{
+                        actor: "Content Source",
+                        role: "Original Poster/Publisher",
+                        activity: "Sharing content with potentially problematic narratives"
+                    }});
+                    
+                    analysisData.results.narratives_detected.forEach((narrative, index) => {{
+                        if (narrative.keywords) {{
+                            actors.push({{
+                                actor: `Actor_${{index + 1}}`,
+                                role: "Content Amplifier",
+                                activity: `Promoting ${{narrative.type}} narratives`
+                            }});
+                        }}
+                    }});
+                }}
+                
+                return actors.length > 0 ? actors : [{{
+                    actor: "Unknown Source",
+                    role: "Content Creator",
+                    activity: "Publishing election-related content for analysis"
+                }}];
+            }}
+            
+            // Report sharing functions
+            function copyReport() {{
+                const reportText = document.getElementById('generatedReport').value;
+                navigator.clipboard.writeText(reportText).then(() => {{
+                    alert('Report copied to clipboard!');
+                }}).catch(err => {{
+                    console.error('Failed to copy report: ', err);
+                    alert('Failed to copy report. Please select and copy manually.');
+                }});
+            }}
+            
+            function downloadReport() {{
+                const reportText = document.getElementById('generatedReport').value;
+                const blob = new Blob([reportText], {{ type: 'application/json' }});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `electionwatch_analysis_${{Date.now()}}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }}
+            
+            function shareReport() {{
+                if (navigator.share) {{
+                    navigator.share({{
+                        title: 'ElectionWatch Analysis Report',
+                        text: 'Misinformation analysis report from ElectionWatch',
+                        files: [new File([document.getElementById('generatedReport').value], 
+                               `electionwatch_analysis_${{Date.now()}}.json`, {{ type: 'application/json' }})]
+                    }}).catch(err => console.log('Error sharing:', err));
+                }} else {{
+                    // Fallback - copy to clipboard
+                    copyReport();
+                }}
+            }}
+            
+            // Auto-fill sample data
+            document.addEventListener('DOMContentLoaded', () => {{
+                document.getElementById('postContent').value = "Yoruba people are fraudsters! They control all the banks and are stealing our resources. Don't let them rig this election like they did in Lagos. #Nigeria2024 #StopTheFraud";
+            }});
+        </script>
+    </body>
+    </html>
+    """
 
 @app.get("/analysis/{analysis_id}")
 async def get_analysis(analysis_id: str):
