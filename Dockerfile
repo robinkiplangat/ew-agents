@@ -58,5 +58,5 @@ ENV GOOGLE_CLOUD_LOCATION=europe-west1
 # Expose port that the application listens on
 EXPOSE 8080
 
-# Start the custom ElectionWatch API server with integrated ADK functionality
-CMD ["python", "main_server.py"] 
+# Start the ElectionWatch API server
+CMD ["python", "main.py"] 
