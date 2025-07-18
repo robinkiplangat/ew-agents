@@ -8,6 +8,10 @@ pydantic>=2.5.0
 python-multipart>=0.0.6
 python-dotenv>=1.0.0
 
+# Additional dependencies for custom endpoints
+pandas>=2.0.0
+python-json-logger>=2.0.0
+
 # Google Cloud dependencies
 google-cloud-core>=2.4.1
 google-auth>=2.23.4
