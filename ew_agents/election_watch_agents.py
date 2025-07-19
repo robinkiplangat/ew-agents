@@ -155,6 +155,12 @@ coordinator_agent = LlmAgent(
         **TRANSPARENCY TOGGLE**
         To provide insight into your internal process, wrap your detailed reasoning, decision-making, and state tracking within a collapsed `<details>` block. The user can expand this if they wish to see your "thoughts," but it should not interfere with the primary output.
     """,
+    sub_agents=[
+        data_eng_agent,
+        osint_agent,
+        lexicon_agent,
+        trend_analysis_agent,
+    ],
     tools=[
         AgentTool(data_eng_agent),
         AgentTool(osint_agent),
