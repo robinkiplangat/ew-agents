@@ -21,11 +21,16 @@ from pydantic import BaseModel
 # Try to import ADK components (graceful fallback if not available)
 try:
     from ew_agents.election_watch_agents import coordinator_agent
+    from ew_agents.coordinator_integration import coordinator_bridge, process_user_request
+    from ew_agents.report_templates import ElectionWatchReportTemplate
     ADK_AVAILABLE = True
     print("✅ ADK agent system loaded successfully")
 except ImportError as e:
     print(f"⚠️ ADK not available: {e}")
     coordinator_agent = None
+    coordinator_bridge = None
+    process_user_request = None
+    ElectionWatchReportTemplate = None
     ADK_AVAILABLE = False
 
 # Configure logging
@@ -75,8 +80,96 @@ app.add_middleware(
 analysis_storage = {}
 report_storage = {}
 
+async def process_content_with_coordinator(text: str, files_info: List[Dict] = None, metadata: Dict = None) -> Dict[str, Any]:
+    """
+    Process content using the coordinator agent to get comprehensive analysis report
+    This returns the ultimate report that the coordinator delivers
+    """
+    if ADK_AVAILABLE and coordinator_agent and process_user_request:
+        try:
+            # Format request for coordinator
+            analysis_request = f"""
+            Analyze the following content for misinformation, narratives, and election-related risks:
+            
+            Content: {text}
+            
+            Additional context:
+            - Source: {metadata.get('source', 'api_upload') if metadata else 'api_upload'}
+            - Region: {metadata.get('region', 'general') if metadata else 'general'}
+            - Language: {metadata.get('language', 'auto') if metadata else 'auto'}
+            - Files uploaded: {len(files_info) if files_info else 0}
+            
+            Please provide a comprehensive analysis following your standard workflow.
+            """
+            
+            # Use coordinator bridge to process request
+            coordinator_result = await process_user_request(analysis_request)
+            
+            # The coordinator should return a comprehensive report structure
+            # Transform it to match our API response format if needed
+            if isinstance(coordinator_result, dict) and "report_metadata" in coordinator_result:
+                # This is the structured report from coordinator - return as-is
+                return {
+                    "analysis_method": "coordinator_agent_comprehensive",
+                    "coordinator_report": coordinator_result,
+                    "files_processed": files_info or [],
+                    "metadata": metadata or {}
+                }
+            else:
+                # Coordinator returned different format - wrap it appropriately
+                return {
+                    "analysis_method": "coordinator_agent_basic",
+                    "coordinator_response": coordinator_result,
+                    "files_processed": files_info or [],
+                    "metadata": metadata or {}
+                }
+            
+        except Exception as e:
+            logger.error(f"Coordinator agent processing failed: {e}")
+            # Fall back to simple analysis
+            return await fallback_simple_analysis(text, files_info, metadata, error=str(e))
+    else:
+        return await fallback_simple_analysis(text, files_info, metadata)
+
+async def fallback_simple_analysis(text: str, files_info: List[Dict] = None, metadata: Dict = None, error: str = None) -> Dict[str, Any]:
+    """Fallback analysis when coordinator is not available"""
+    
+    # Create a mock report structure that matches what coordinator would deliver
+    if ElectionWatchReportTemplate:
+        template = ElectionWatchReportTemplate.get_quick_analysis_template()
+        
+        # Populate with basic analysis
+        words = len(text.split()) if text else 0
+        election_keywords = ["vote", "election", "candidate", "poll", "ballot", "democracy"]
+        threat_keywords = ["violence", "intimidation", "fraud", "manipulation"]
+        
+        election_score = sum(1 for word in election_keywords if word.lower() in text.lower()) / len(election_keywords)
+        threat_score = sum(1 for word in threat_keywords if word.lower() in text.lower()) / len(threat_keywords)
+        
+        # Update template with analysis
+        template["report_metadata"]["report_id"] = f"fallback_{int(datetime.now().timestamp())}"
+        template["narrative_classification"]["theme"] = "election_related" if election_score > 0.1 else "general"
+        template["narrative_classification"]["threat_level"] = "HIGH" if threat_score > 0.2 else "MEDIUM" if threat_score > 0.1 else "LOW"
+        template["narrative_classification"]["details"] = f"Basic keyword analysis - Election relevance: {election_score:.2f}, Threat level: {threat_score:.2f}"
+        template["risk_level"] = template["narrative_classification"]["threat_level"]
+        template["recommendations"] = ["Verify with comprehensive analysis", "Monitor for escalation"]
+        
+        if error:
+            template["processing_notes"] = f"Fallback mode used due to error: {error}"
+        
+        return {
+            "analysis_method": "fallback_template_based",
+            "coordinator_report": template,
+            "files_processed": files_info or [],
+            "metadata": metadata or {},
+            "fallback_reason": error or "Coordinator not available"
+        }
+    else:
+        # Basic fallback without templates
+        return simple_analysis(text)
+
 def simple_analysis(text: str) -> Dict[str, Any]:
-    """Simple text analysis when ADK is not available"""
+    """Simple text analysis when neither coordinator nor templates are available"""
     words = len(text.split()) if text else 0
     
     # Basic keyword detection
@@ -87,6 +180,7 @@ def simple_analysis(text: str) -> Dict[str, Any]:
     threat_score = sum(1 for word in threat_keywords if word.lower() in text.lower()) / len(threat_keywords)
     
     return {
+        "analysis_method": "basic_fallback",
         "text_analysis": {
             "word_count": words,
             "character_count": len(text),
@@ -97,30 +191,8 @@ def simple_analysis(text: str) -> Dict[str, Any]:
             "category": "election_related" if election_score > 0.1 else "general",
             "risk_level": "high" if threat_score > 0.2 else "medium" if threat_score > 0.1 else "low"
         },
-        "processing_note": "Basic analysis - ADK agent not available"
+        "processing_note": "Basic analysis - Advanced agents not available"
     }
-
-async def process_text_content(text: str) -> Dict[str, Any]:
-    """Process text using available analysis methods"""
-    if ADK_AVAILABLE and coordinator_agent:
-        try:
-            # Use ADK agent for advanced analysis
-            # For now, return structured mock data that follows agent patterns
-            return {
-                "agent_analysis": {
-                    "sentiment": "neutral",
-                    "confidence": 0.85,
-                    "narrative_themes": ["civic_engagement", "electoral_process"],
-                    "risk_assessment": "low",
-                    "recommendations": ["continue_monitoring"]
-                },
-                "processing_method": "adk_agent"
-            }
-        except Exception as e:
-            logger.warning(f"ADK agent error, falling back to simple analysis: {e}")
-            return simple_analysis(text)
-    else:
-        return simple_analysis(text)
 
 # Root endpoint with attractive landing page
 @app.get("/", response_class=HTMLResponse)
@@ -340,7 +412,7 @@ async def analyse_posts(
         
         # Perform analysis on collected text
         if all_text.strip():
-            analysis_results = await process_text_content(all_text.strip())
+            analysis_results = await process_content_with_coordinator(all_text.strip(), files_info=processed_files, metadata=metadata_dict)
         else:
             analysis_results = {
                 "status": "no_content",
