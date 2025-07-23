@@ -61,7 +61,10 @@ echo -e "${YELLOW}📡 Enabling required Google Cloud APIs...${NC}"
 gcloud services enable \
     cloudbuild.googleapis.com \
     run.googleapis.com \
-    containerregistry.googleapis.com
+    containerregistry.googleapis.com \
+    aiplatform.googleapis.com \
+    vertex-ai.googleapis.com \
+    ml.googleapis.com
 
 echo -e "${GREEN}✅ gcloud configuration complete${NC}"
 echo ""
@@ -101,7 +104,7 @@ gcloud run deploy $SERVICE_NAME \
     --timeout 3600 \
     --concurrency 80 \
     --port 8080 \
-    --set-env-vars="GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${REGION}" \
+    --set-env-vars="GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${REGION},VERTEX_AI_ENABLED=true,ADK_VERTEX_INTEGRATION=enabled,MONGODB_URI=mongodb+srv://ew_ml:moHsc5i6gYFrLsvL@ewcluster1.fpkzpxg.mongodb.net/knowledge?retryWrites=true&w=majority,ADK_AGENTS_ENABLED=true,ENHANCED_COORDINATOR_ENABLED=true" \
     --service-account="ew-agent-service@${PROJECT_ID}.iam.gserviceaccount.com"
 
 if [ $? -eq 0 ]; then

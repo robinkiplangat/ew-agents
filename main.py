@@ -23,15 +23,26 @@ try:
     from ew_agents.election_watch_agents import coordinator_agent
     from ew_agents.coordinator_integration import coordinator_bridge, process_user_request
     from ew_agents.report_templates import ElectionWatchReportTemplate
+    from ew_agents.vertex_ai_integration import (
+        vertex_ai_engine, process_with_vertex_ai, 
+        get_vertex_deployment_config, vertex_health_check
+    )
     ADK_AVAILABLE = True
+    VERTEX_AI_AVAILABLE = True
     print("✅ ADK agent system loaded successfully")
+    print("✅ Vertex AI integration loaded successfully")
 except ImportError as e:
     print(f"⚠️ ADK not available: {e}")
     coordinator_agent = None
     coordinator_bridge = None
     process_user_request = None
     ElectionWatchReportTemplate = None
+    vertex_ai_engine = None
+    process_with_vertex_ai = None
+    get_vertex_deployment_config = None
+    vertex_health_check = None
     ADK_AVAILABLE = False
+    VERTEX_AI_AVAILABLE = False
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -978,7 +989,214 @@ async def get_report(submission_id: str):
         raise HTTPException(status_code=404, detail="Report submission not found")
     return report_storage[submission_id]
 
+# =============================================================================
+# Vertex AI Enhanced Endpoints
+# =============================================================================
+
+@app.post("/analyze/vertex-ai")
+async def analyze_with_vertex_ai(
+    content: str = Form(...),
+    analysis_type: str = Form("comprehensive"),
+    use_enhanced_ai: bool = Form(True)
+):
+    """
+    Enhanced analysis using Vertex AI integration with ADK agents
+    
+    Args:
+        content: Content to analyze
+        analysis_type: Type of analysis (comprehensive, quick, specialized)
+        use_enhanced_ai: Whether to use Vertex AI enhancements
+    """
+    
+    if not VERTEX_AI_AVAILABLE:
+        raise HTTPException(
+            status_code=503, 
+            detail="Vertex AI integration not available"
+        )
+    
+    start_time = datetime.now()
+    analysis_id = f"vertex_{int(start_time.timestamp())}"
+    
+    try:
+        logger.info(f"Starting Vertex AI analysis {analysis_id} for content: {content[:100]}...")
+        
+        # Process with Vertex AI enhanced agents
+        results = await process_with_vertex_ai(
+            user_request=content,
+            agent_type=analysis_type
+        )
+        
+        processing_time = (datetime.now() - start_time).total_seconds()
+        
+        # Store results
+        response = AnalysisResponse(
+            analysis_id=analysis_id,
+            status="completed",
+            results=results,
+            timestamp=datetime.now(),
+            processing_time_seconds=processing_time
+        )
+        
+        analysis_storage[analysis_id] = response.dict()
+        
+        logger.info(f"Vertex AI analysis {analysis_id} completed in {processing_time:.2f}s")
+        return response
+        
+    except Exception as e:
+        logger.error(f"Vertex AI analysis {analysis_id} failed: {e}")
+        error_response = AnalysisResponse(
+            analysis_id=analysis_id,
+            status="failed",
+            results={"error": str(e)},
+            timestamp=datetime.now(),
+            processing_time_seconds=(datetime.now() - start_time).total_seconds()
+        )
+        analysis_storage[analysis_id] = error_response.dict()
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/vertex-ai/health")
+async def vertex_ai_health():
+    """Health check for Vertex AI integration"""
+    
+    if not VERTEX_AI_AVAILABLE:
+        return {
+            "status": "unavailable",
+            "message": "Vertex AI integration not loaded",
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    try:
+        health_info = vertex_health_check()
+        return health_info
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.get("/vertex-ai/config")
+async def get_vertex_ai_config():
+    """Get Vertex AI deployment configuration"""
+    
+    if not VERTEX_AI_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="Vertex AI integration not available"
+        )
+    
+    try:
+        config = get_vertex_deployment_config()
+        return config
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get Vertex AI config: {str(e)}"
+        )
+
+@app.get("/deployment/info")
+async def get_deployment_info():
+    """Get comprehensive deployment information"""
+    
+    deployment_info = {
+        "timestamp": datetime.now().isoformat(),
+        "service_name": "ElectionWatch Misinformation Detection API",
+        "version": "2.0.0",
+        "environment": {
+            "project_id": os.getenv("GOOGLE_CLOUD_PROJECT", "ew-agents-v02"),
+            "region": os.getenv("GOOGLE_CLOUD_LOCATION", "europe-west1"),
+            "port": os.getenv("PORT", "8080"),
+            "host": os.getenv("HOST", "0.0.0.0")
+        },
+        "capabilities": {
+            "adk_agents": ADK_AVAILABLE,
+            "vertex_ai": VERTEX_AI_AVAILABLE,
+            "mongodb_knowledge": True,
+            "enhanced_coordinator": True
+        },
+        "endpoints": {
+            "health_check": "/health",
+            "standard_analysis": "/analyze",
+            "vertex_ai_analysis": "/analyze/vertex-ai",
+            "file_upload": "/analyze/file",
+            "dev_ui": "/dev-ui/",
+            "api_docs": "/docs",
+            "vertex_ai_health": "/vertex-ai/health",
+            "deployment_info": "/deployment/info"
+        }
+    }
+    
+    # Add Vertex AI config if available
+    if VERTEX_AI_AVAILABLE:
+        try:
+            vertex_config = get_vertex_deployment_config()
+            deployment_info["vertex_ai_config"] = vertex_config
+        except Exception as e:
+            deployment_info["vertex_ai_config"] = {"error": str(e)}
+    
+    return deployment_info
+
+@app.get("/health/comprehensive")
+async def comprehensive_health_check():
+    """Comprehensive health check for all components"""
+    
+    health = {
+        "timestamp": datetime.now().isoformat(),
+        "overall_status": "healthy",
+        "components": {}
+    }
+    
+    # Check basic service health
+    health["components"]["api_service"] = {
+        "status": "healthy",
+        "uptime_seconds": (datetime.now() - start_time).total_seconds() if 'start_time' in globals() else 0
+    }
+    
+    # Check ADK agents
+    if ADK_AVAILABLE:
+        try:
+            # Test coordinator bridge
+            bridge_health = coordinator_bridge.health_check()
+            health["components"]["adk_agents"] = {
+                "status": "healthy",
+                "details": bridge_health
+            }
+        except Exception as e:
+            health["components"]["adk_agents"] = {
+                "status": "degraded", 
+                "error": str(e)
+            }
+            health["overall_status"] = "degraded"
+    else:
+        health["components"]["adk_agents"] = {
+            "status": "unavailable",
+            "reason": "ADK not imported"
+        }
+        health["overall_status"] = "degraded"
+    
+    # Check Vertex AI
+    if VERTEX_AI_AVAILABLE:
+        try:
+            vertex_health = vertex_health_check()
+            health["components"]["vertex_ai"] = vertex_health
+            if vertex_health.get("status") != "healthy":
+                health["overall_status"] = "degraded"
+        except Exception as e:
+            health["components"]["vertex_ai"] = {
+                "status": "error",
+                "error": str(e)
+            }
+            health["overall_status"] = "degraded"
+    else:
+        health["components"]["vertex_ai"] = {
+            "status": "unavailable",
+            "reason": "Vertex AI not imported"
+        }
+    
+    return health
+
 if __name__ == "__main__":
+    start_time = datetime.now()
     port = int(os.environ.get("PORT", 8080))
     host = os.environ.get("HOST", "0.0.0.0")
     
