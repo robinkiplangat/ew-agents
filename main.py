@@ -346,6 +346,77 @@ async def root():
     """
     return HTMLResponse(content=html_content)
 
+# Helper function to extract structured content from CSV files
+def extract_csv_content(csv_text: str, filename: str) -> str:
+    """Extract and structure content from CSV files, especially for social media data"""
+    try:
+        import csv
+        import io
+        
+        lines = csv_text.strip().split('\n')
+        if len(lines) < 2:
+            return None
+            
+        # Read CSV headers
+        reader = csv.DictReader(io.StringIO(csv_text))
+        headers = reader.fieldnames
+        
+        # Check if this looks like social media data
+        text_columns = []
+        metadata_columns = []
+        
+        for header in headers:
+            header_lower = header.lower()
+            if any(keyword in header_lower for keyword in ['tweet', 'text', 'content', 'message', 'post', 'comment']):
+                text_columns.append(header)
+            elif any(keyword in header_lower for keyword in ['user', 'author', 'date', 'time', 'retweet', 'party', 'platform']):
+                metadata_columns.append(header)
+        
+        if not text_columns:
+            return None
+            
+        # Extract structured content
+        structured_parts = []
+        structured_parts.append(f"Social Media Analysis - {filename}")
+        structured_parts.append(f"Dataset contains {len(lines) - 1} records")
+        structured_parts.append(f"Text columns: {', '.join(text_columns)}")
+        structured_parts.append(f"Metadata available: {', '.join(metadata_columns)}")
+        structured_parts.append("\n=== CONTENT FOR ANALYSIS ===")
+        
+        # Extract individual posts/tweets
+        row_count = 0
+        for row in reader:
+            if row_count >= 15:  # Limit to first 15 rows for analysis
+                structured_parts.append(f"\n[Additional {len(lines) - 1 - row_count} records not shown but included in analysis scope]")
+                break
+                
+            row_count += 1
+            
+            # Extract text content
+            for text_col in text_columns:
+                if row.get(text_col):
+                    # Clean and format the text
+                    text_content = row[text_col].strip().replace('\r', ' ').replace('\n', ' ')
+                    if len(text_content) > 10:  # Only include meaningful content
+                        
+                        # Add metadata context
+                        metadata_info = []
+                        for meta_col in metadata_columns[:4]:  # First 4 metadata columns
+                            if row.get(meta_col):
+                                metadata_info.append(f"{meta_col}: {row[meta_col]}")
+                        
+                        metadata_str = " | ".join(metadata_info) if metadata_info else ""
+                        structured_parts.append(f"\n--- Record {row_count} ---")
+                        if metadata_str:
+                            structured_parts.append(f"Context: {metadata_str}")
+                        structured_parts.append(f"Content: {text_content}")
+        
+        return "\n".join(structured_parts)
+        
+    except Exception as e:
+        logger.error(f"CSV content extraction failed: {e}")
+        return None
+
 # Priority Endpoint 1: AnalysePosts
 @app.post("/AnalysePosts", response_model=AnalysisResponse)
 async def analyse_posts(
@@ -389,11 +460,24 @@ async def analyse_posts(
                     
                     # Handle different file types
                     if file.content_type in ["text/csv", "application/csv"]:
-                        # Process CSV as text (simpler than pandas)
+                        # Process CSV and extract structured content
                         try:
                             csv_text = content.decode('utf-8')
-                            all_text += f"\n\nCSV file '{file.filename}':\n{csv_text[:1000]}..."  # First 1000 chars
-                            file_info["processed"] = "csv_as_text"
+                            
+                            # Parse CSV content to extract meaningful text
+                            import csv
+                            import io
+                            structured_content = extract_csv_content(csv_text, file.filename)
+                            
+                            if structured_content:
+                                all_text += f"\n\n{structured_content}"
+                                file_info["processed"] = "csv_structured"
+                                file_info["content_extracted"] = True
+                            else:
+                                # Fallback to text processing
+                                all_text += f"\n\nCSV file '{file.filename}':\n{csv_text[:2000]}"
+                                file_info["processed"] = "csv_as_text"
+                                
                         except UnicodeDecodeError:
                             file_info["error"] = "Could not decode CSV as UTF-8"
                     

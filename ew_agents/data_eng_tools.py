@@ -15,9 +15,16 @@ import asyncio
 # Import knowledge retrieval system
 try:
     from .knowledge_retrieval import get_knowledge_retriever, analyze_content, search_knowledge, KnowledgeQuery
+    KNOWLEDGE_AVAILABLE = True
 except ImportError:
     # Fallback for direct execution
-    from knowledge_retrieval import get_knowledge_retriever, analyze_content, search_knowledge, KnowledgeQuery
+    try:
+        from knowledge_retrieval import get_knowledge_retriever, analyze_content, search_knowledge, KnowledgeQuery
+        KNOWLEDGE_AVAILABLE = True
+    except ImportError:
+        # Graceful fallback when knowledge system is unavailable
+        KNOWLEDGE_AVAILABLE = False
+        logger.warning("Knowledge retrieval system not available - using fallback mode")
 
 logger = logging.getLogger(__name__)
 
@@ -102,21 +109,34 @@ async def detect_narrative_patterns(content: str, platform: str = "unknown") -> 
     try:
         logger.info(f"Detecting narrative patterns for {platform} content")
         
-        # Get knowledge retriever
-        retriever = await get_knowledge_retriever()
+        # Get knowledge retriever if available
+        if KNOWLEDGE_AVAILABLE:
+            try:
+                retriever = await get_knowledge_retriever()
+                # Get narrative recommendations
+                narrative_recs = await retriever.get_narrative_recommendations(content)
+            except Exception as e:
+                logger.warning(f"Knowledge retriever failed: {e}, using fallback")
+                narrative_recs = {"narratives": [], "confidence": 0.1}
+        else:
+            narrative_recs = {"narratives": [], "confidence": 0.1}
         
-        # Get narrative recommendations
-        narrative_recs = await retriever.get_narrative_recommendations(content)
-        
-        # Search for platform-specific patterns
-        platform_query = KnowledgeQuery(
-            query_text=f"{content} {platform}",
-            collections=["narratives", "meta_narratives"],
-            max_results=5,
-            context_type="detection"
-        )
-        
-        platform_results = await retriever.semantic_search(platform_query)
+        # Search for platform-specific patterns if knowledge available  
+        if KNOWLEDGE_AVAILABLE and 'retriever' in locals():
+            try:
+                platform_query = KnowledgeQuery(
+                    query_text=f"{content} {platform}",
+                    collections=["narratives", "meta_narratives"],
+                    max_results=5,
+                    context_type="detection"
+                )
+                
+                platform_results = await retriever.semantic_search(platform_query)
+            except Exception as e:
+                logger.warning(f"Platform search failed: {e}")
+                platform_results = {"narratives": [], "meta_narratives": []}
+        else:
+            platform_results = {"narratives": [], "meta_narratives": []}
         
         # Analyze patterns
         detected_patterns = []
@@ -174,15 +194,22 @@ async def extract_key_entities(content: str) -> Dict[str, Any]:
     try:
         logger.info("Extracting key entities from content")
         
-        # Search for entity-related knowledge
-        entity_query = KnowledgeQuery(
-            query_text=content,
-            collections=["threat_actors", "known_incidents", "narratives"],
-            max_results=10,
-            context_type="analysis"
-        )
-        
-        knowledge_results = await search_knowledge(content, ["threat_actors", "known_incidents"])
+        # Search for entity-related knowledge if available
+        if KNOWLEDGE_AVAILABLE:
+            try:
+                entity_query = KnowledgeQuery(
+                    query_text=content,
+                    collections=["threat_actors", "known_incidents", "narratives"],
+                    max_results=10,
+                    context_type="analysis"
+                )
+                
+                knowledge_results = await search_knowledge(content, ["threat_actors", "known_incidents"])
+            except Exception as e:
+                logger.warning(f"Knowledge search failed: {e}, using fallback")
+                knowledge_results = {}
+        else:
+            knowledge_results = {}
         
         # Extract entities from knowledge matches
         entities = {
@@ -544,6 +571,65 @@ def calculate_complexity_score(content: str) -> float:
     complexity = min((avg_word_length - 3) / 7 + (avg_sentence_length - 10) / 20, 1.0)
     return max(complexity, 0.0)
 
+def extract_entities_fallback(text: str) -> List[Dict[str, Any]]:
+    """Fallback entity extraction using simple patterns"""
+    import re
+    entities = []
+    
+    # Extract @mentions
+    mentions = re.findall(r'@(\w+)', text)
+    for mention in mentions:
+        entities.append({"text": mention, "type": "PERSON", "confidence": 0.8})
+    
+    # Extract hashtags
+    hashtags = re.findall(r'#(\w+)', text)
+    for hashtag in hashtags:
+        entities.append({"text": hashtag, "type": "EVENT", "confidence": 0.7})
+    
+    # Extract political parties (Nigeria-specific)
+    parties = re.findall(r'\b(APC|PDP|Labour|NNPP|SDP)\b', text, re.IGNORECASE)
+    for party in parties:
+        entities.append({"text": party, "type": "ORG", "confidence": 0.9})
+    
+    # Extract locations (Nigeria-specific)
+    locations = re.findall(r'\b(Nigeria|Lagos|Abuja|Kano|Rivers|Kaduna|Ogun|Imo|Anambra)\b', text, re.IGNORECASE)
+    for location in locations:
+        entities.append({"text": location, "type": "GPE", "confidence": 0.8})
+    
+    return entities
+
+def analyze_sentiment_fallback(text: str) -> str:
+    """Fallback sentiment analysis using keyword matching"""
+    positive_words = ['good', 'great', 'excellent', 'support', 'vote', 'trust', 'hope', 'progress']
+    negative_words = ['bad', 'corrupt', 'rigged', 'fraud', 'fake', 'ghost', 'manipulation', 'theft']
+    
+    text_lower = text.lower()
+    positive_count = sum(1 for word in positive_words if word in text_lower)
+    negative_count = sum(1 for word in negative_words if word in text_lower)
+    
+    if positive_count > negative_count:
+        return "positive"
+    elif negative_count > positive_count:
+        return "negative"
+    else:
+        return "neutral"
+
+def detect_risk_patterns_fallback(text: str) -> List[str]:
+    """Fallback risk pattern detection"""
+    risk_indicators = []
+    text_lower = text.lower()
+    
+    if any(word in text_lower for word in ['rigged', 'fraud', 'manipulation', 'fake']):
+        risk_indicators.append("election_fraud_claims")
+    
+    if any(word in text_lower for word in ['violence', 'fight', 'war', 'attack']):
+        risk_indicators.append("violence_incitement")
+    
+    if any(word in text_lower for word in ['ghost', 'dead', 'multiple', 'duplicate']):
+        risk_indicators.append("voter_fraud_claims")
+    
+    return risk_indicators
+
 # =============================================================================
 # Legacy Tool Wrappers for Backwards Compatibility
 # =============================================================================
@@ -569,23 +655,29 @@ def run_nlp_pipeline(text: str, language: str = "en") -> Dict[str, Any]:
     logger.info(f"[Legacy] Running NLP pipeline on text (lang: {language})")
     
     try:
-        # Check if we're already in an async context
+        # Handle uvloop compatibility issue
         try:
             loop = asyncio.get_running_loop()
-            # We're in an async context, use asyncio.create_task or nest_asyncio
-            try:
-                import nest_asyncio
-                nest_asyncio.apply()
-                result = asyncio.get_event_loop().run_until_complete(analyze_content_nlp(text, "comprehensive"))
-            except ImportError:
-                # Fallback: run in thread
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(asyncio.run, analyze_content_nlp(text, "comprehensive"))
-                    result = future.result(timeout=30)
+            # We're in an async context - use thread executor to avoid uvloop issues
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(asyncio.run, analyze_content_nlp(text, "comprehensive"))
+                result = future.result(timeout=30)
         except RuntimeError:
             # No running loop, safe to create new one
             result = asyncio.run(analyze_content_nlp(text, "comprehensive"))
+        except Exception as loop_error:
+            # Fallback to synchronous analysis if async fails
+            logger.warning(f"Async analysis failed ({loop_error}), using fallback")
+            result = {
+                "success": True,
+                "entities": extract_entities_fallback(text),
+                "sentiment": analyze_sentiment_fallback(text),
+                "language": language,
+                "complexity_score": calculate_complexity_score(text),
+                "risk_indicators": detect_risk_patterns_fallback(text),
+                "fallback_mode": True
+            }
         
         return result
     except Exception as e:
