@@ -156,7 +156,7 @@ class ElectionWatchReportTemplate:
                 }
             ],
             "risk_level": "",
-            "date_analyzed": "",
+            "date_analyzed": datetime.now().isoformat(),
             "recommendations": []
         }
     
