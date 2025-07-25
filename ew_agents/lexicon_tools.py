@@ -2,7 +2,12 @@ from google.adk.tools import FunctionTool
 from typing import Dict, List, Any, Optional, Union
 import datetime
 import os
+import logging
 from pymongo import MongoClient
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Direct MongoDB Atlas connection
 def get_mongo_connection():

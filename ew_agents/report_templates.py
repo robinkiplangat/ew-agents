@@ -15,258 +15,93 @@ class ElectionWatchReportTemplate:
     """
     
     @staticmethod
-    def get_comprehensive_analysis_template() -> Dict[str, Any]:
+    def get_analysis_template() -> Dict[str, Any]:
         """
-        Returns a comprehensive analysis report template for election monitoring
-        """
-        return {
-            "report_metadata": {
-                "report_id": "",
-                "analysis_timestamp": datetime.now().isoformat(),
-                "analyzing_agent": "",
-                "report_version": "1.0",
-                "confidence_level": ""  # HIGH, MEDIUM, LOW
-            },
-            "content_analysis": {
-                "source_content": {
-                    "original_text": "",
-                    "content_type": "",  # text, image, video, audio
-                    "source_platform": "",  # Twitter, Facebook, WhatsApp, etc.
-                    "source_url": "",
-                    "author_handle": "",
-                    "publication_date": "",
-                    "language_detected": ""
-                },
-                "narrative_classification": {
-                    "primary_theme": "",
-                    "secondary_themes": [],
-                    "threat_level": "",  # CRITICAL, HIGH, MEDIUM, LOW, MINIMAL
-                    "classification_confidence": 0.0,  # 0.0 to 1.0
-                    "misinformation_type": "",  # vote_buying, voter_intimidation, false_results, etc.
-                    "narrative_details": "",
-                    "targeting_demographics": []
-                }
-            },
-            "actors_identified": [
-                {
-                    "actor_id": "",
-                    "name": "",
-                    "role": "",  # politician, influencer, organization, bot, etc.
-                    "affiliation": "",  # political party, ethnic group, etc.
-                    "influence_level": "",  # HIGH, MEDIUM, LOW
-                    "verification_status": "",  # verified, unverified, suspicious
-                    "follower_count": 0,
-                    "account_creation_date": "",
-                    "previous_violations": []
-                }
-            ],
-            "lexicon_analysis": {
-                "terms_detected": [
-                    {
-                        "term": "",
-                        "language": "",
-                        "category": "",  # ethnic_slur, vote_buying, intimidation, etc.
-                        "severity": "",  # CRITICAL, HIGH, MEDIUM, LOW
-                        "context_usage": "",
-                        "frequency_in_content": 0,
-                        "translation": "",
-                        "related_terms": []
-                    }
-                ],
-                "coded_language_detected": False,
-                "linguistic_patterns": [],
-                "sentiment_analysis": {
-                    "overall_sentiment": "",  # positive, negative, neutral
-                    "emotional_tone": [],  # anger, fear, hope, etc.
-                    "polarization_indicators": []
-                }
-            },
-            "geographic_analysis": {
-                "target_locations": [],
-                "mentioned_constituencies": [],
-                "ethnic_regions_referenced": [],
-                "geographic_spread": ""  # local, regional, national
-            },
-            "trend_analysis": {
-                "similar_content_volume": 0,
-                "trending_status": "",  # viral, growing, stable, declining
-                "time_pattern": "",  # election_period, pre_election, post_election
-                "coordinated_behavior_indicators": [],
-                "historical_context": ""
-            },
-            "risk_assessment": {
-                "overall_risk_score": 0.0,  # 0.0 to 10.0
-                "violence_potential": "",  # HIGH, MEDIUM, LOW
-                "electoral_impact": "",  # HIGH, MEDIUM, LOW
-                "social_cohesion_threat": "",  # HIGH, MEDIUM, LOW
-                "urgency_level": "",  # IMMEDIATE, WITHIN_24H, WITHIN_WEEK, MONITORING
-                "recommended_actions": []
-            },
-            "evidence_chain": {
-                "supporting_evidence": [],
-                "cross_references": [],
-                "verification_sources": [],
-                "multimedia_evidence": [],
-                "witness_accounts": []
-            },
-            "recommendations": {
-                "immediate_actions": [],
-                "monitoring_suggestions": [],
-                "stakeholder_notifications": [],
-                "follow_up_required": False,
-                "escalation_needed": False
-            },
-            "technical_metadata": {
-                "processing_time_seconds": 0.0,
-                "models_used": [],
-                "tool_chain": [],
-                "data_sources_accessed": [],
-                "api_calls_made": 0
-            }
-        }
-    
-    @staticmethod
-    def get_quick_analysis_template() -> Dict[str, Any]:
-        """
-        Returns a simplified template for quick content analysis
+        Returns the unified analysis template for all types of election monitoring reports.
+        This single template handles comprehensive, quick, multimedia, and trend analysis.
         """
         return {
             "report_metadata": {
-                "report_id": "",
+                "report_id": "AutoGeneratedReport",
                 "analysis_timestamp": datetime.now().isoformat(),
-                "report_type": "quick_analysis"
+                "report_type": "analysis",
+                "content_type": "",  # text, image, video, csv, multimedia
+                "analysis_depth": "standard"  # quick, standard, comprehensive
             },
             "narrative_classification": {
                 "theme": "",
                 "threat_level": "",
-                "details": ""
+                "details": "",
+                "confidence_score": 0.0,
+                "alternative_themes": [],
+                "threat_indicators": []
             },
             "actors": [
                 {
                     "name": "",
                     "affiliation": "",
-                    "role": ""
+                    "role": "",
+                    "influence_level": "",
+                    "verification_status": "",
+                    "social_metrics": {}
                 }
             ],
             "lexicon_terms": [
                 {
                     "term": "",
                     "category": "",
-                    "context": ""
+                    "context": "",
+                    "confidence_score": 0.0,
+                    "language": "en",
+                    "severity": "",
+                    "definition": ""
                 }
             ],
             "risk_level": "",
             "date_analyzed": datetime.now().isoformat(),
-            "recommendations": []
-        }
-    
-    @staticmethod
-    def get_multimedia_analysis_template() -> Dict[str, Any]:
-        """
-        Returns a template specifically for multimedia content analysis
-        """
-        return {
-            "report_metadata": {
-                "report_id": "",
-                "analysis_timestamp": datetime.now().isoformat(),
-                "content_type": "multimedia"
-            },
-            "media_analysis": {
-                "media_url": "",
-                "media_type": "",  # image, video, audio
-                "extracted_text": "",
-                "visual_elements": [],
-                "audio_transcript": "",
-                "metadata_analysis": {}
-            },
-            "content_classification": {
-                "narrative_theme": "",
-                "manipulation_indicators": [],
-                "authenticity_score": 0.0,
-                "deepfake_probability": 0.0
-            },
-            "actors_in_media": [],
-            "lexicon_terms_found": [],
-            "contextual_analysis": {
-                "associated_text": "",
-                "social_context": "",
-                "temporal_context": ""
-            },
-            "risk_assessment": {
-                "viral_potential": "",
-                "harm_likelihood": "",
-                "recommended_actions": []
+            "recommendations": [],
+            "analysis_insights": {
+                "content_statistics": {
+                    "word_count": 0,
+                    "character_count": 0,
+                    "language_detected": "en"
+                },
+                "threat_assessment": {
+                    "overall_risk_score": 0.0,
+                    "violence_potential": "",
+                    "electoral_impact": "",
+                    "social_cohesion_threat": "",
+                    "urgency_level": ""
+                },
+                "processing_metadata": {
+                    "agents_utilized": [],
+                    "analysis_duration": 0.0,
+                    "confidence_level": "medium",
+                    "data_sources": []
+                }
             }
         }
     
     @staticmethod
-    def get_trend_monitoring_template() -> Dict[str, Any]:
+    def create_analysis_report(content_type: str = "text", 
+                             analysis_depth: str = "standard", 
+                             **kwargs) -> Dict[str, Any]:
         """
-        Returns a template for trend analysis and monitoring reports
-        """
-        return {
-            "report_metadata": {
-                "report_id": "",
-                "analysis_timestamp": datetime.now().isoformat(),
-                "report_type": "trend_monitoring",
-                "time_period_analyzed": ""
-            },
-            "trend_metrics": {
-                "narrative_volume": 0,
-                "growth_rate": 0.0,
-                "peak_activity_times": [],
-                "geographic_distribution": {},
-                "platform_distribution": {}
-            },
-            "narrative_evolution": {
-                "original_narrative": "",
-                "variants_detected": [],
-                "mutation_patterns": [],
-                "adaptation_strategies": []
-            },
-            "actor_network": {
-                "key_amplifiers": [],
-                "influence_network": {},
-                "coordination_indicators": [],
-                "bot_activity_detected": False
-            },
-            "early_warning_indicators": {
-                "escalation_signals": [],
-                "threshold_breaches": [],
-                "anomaly_detection": [],
-                "intervention_points": []
-            },
-            "forecast": {
-                "predicted_trajectory": "",
-                "confidence_interval": "",
-                "scenario_projections": [],
-                "timeline_estimates": {}
-            }
-        }
-    
-    @staticmethod
-    def create_report_with_template(template_type: str = "comprehensive", **kwargs) -> Dict[str, Any]:
-        """
-        Creates a report using the specified template with provided data
+        Creates an analysis report using the unified template with provided data
         
         Args:
-            template_type: Type of template to use (comprehensive, quick, multimedia, trend)
+            content_type: Type of content analyzed (text, image, video, csv, multimedia)
+            analysis_depth: Depth of analysis (quick, standard, comprehensive)
             **kwargs: Data to populate in the template
         
         Returns:
             Dict containing the populated report structure
         """
-        templates = {
-            "comprehensive": ElectionWatchReportTemplate.get_comprehensive_analysis_template(),
-            "quick": ElectionWatchReportTemplate.get_quick_analysis_template(),
-            "multimedia": ElectionWatchReportTemplate.get_multimedia_analysis_template(),
-            "trend": ElectionWatchReportTemplate.get_trend_monitoring_template()
-        }
+        template = ElectionWatchReportTemplate.get_analysis_template()
         
-        if template_type not in templates:
-            raise ValueError(f"Unknown template type: {template_type}")
-        
-        template = templates[template_type]
+        # Set content type and analysis depth
+        template["report_metadata"]["content_type"] = content_type
+        template["report_metadata"]["analysis_depth"] = analysis_depth
         
         # Update template with provided data
         def update_nested_dict(d: Dict, updates: Dict):
@@ -281,33 +116,45 @@ class ElectionWatchReportTemplate:
         return template
     
     @staticmethod
-    def validate_report_structure(report: Dict[str, Any], template_type: str = "comprehensive") -> bool:
+    def validate_analysis_report(report: Dict[str, Any]) -> Dict[str, Any]:
         """
         Validates if a report follows the expected structure
         
         Args:
             report: The report to validate
-            template_type: The template type to validate against
         
         Returns:
-            bool: True if valid, False otherwise
+            Dict with validation results
         """
         try:
-            template = ElectionWatchReportTemplate.create_report_with_template(template_type)
+            template = ElectionWatchReportTemplate.get_analysis_template()
             required_keys = set(template.keys())
             report_keys = set(report.keys())
-            return required_keys.issubset(report_keys)
-        except Exception:
-            return False
+            
+            missing_keys = required_keys - report_keys
+            extra_keys = report_keys - required_keys
+            
+            return {
+                "valid": len(missing_keys) == 0,
+                "missing_keys": list(missing_keys),
+                "extra_keys": list(extra_keys),
+                "compliance_score": len(report_keys & required_keys) / len(required_keys)
+            }
+        except Exception as e:
+            return {
+                "valid": False,
+                "error": str(e),
+                "compliance_score": 0.0
+            }
     
     @staticmethod
-    def export_report_as_json(report_data: Dict[str, Any], filename: Optional[str] = None) -> Dict[str, Any]:
+    def export_analysis_report(report_data: Dict[str, Any], filename: Optional[str] = None) -> Dict[str, Any]:
         """
-        Exports a report as a JSON file
+        Exports an analysis report as a JSON file
         """
         if filename is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"electionwatch_report_{timestamp}.json"
+            filename = f"electionwatch_analysis_{timestamp}.json"
         
         try:
             import os
@@ -322,7 +169,7 @@ class ElectionWatchReportTemplate:
                 "status": "success",
                 "filename": filename,
                 "filepath": filepath,
-                "message": f"Report exported successfully to {filename}"
+                "message": f"Analysis report exported successfully to {filename}"
             }
         except Exception as e:
             return {
@@ -330,91 +177,55 @@ class ElectionWatchReportTemplate:
                 "message": f"Failed to export report: {str(e)}"
             }
 
-# Example usage and utility functions
-def generate_sample_report():
-    """Generate a sample report for testing purposes"""
-    sample_data = {
-        "report_metadata": {
-            "report_id": "EW-2025-001",
-            "analyzing_agent": "CoordinatorAgent"
-        },
-        "content_analysis": {
-            "source_content": {
-                "original_text": "Sample election-related content for analysis",
-                "source_platform": "Twitter",
-                "language_detected": "English"
-            },
-            "narrative_classification": {
-                "primary_theme": "voter_intimidation",
-                "threat_level": "MEDIUM",
-                "classification_confidence": 0.75
-            }
-        }
-    }
-    
-    return ElectionWatchReportTemplate.create_report_with_template("comprehensive", **sample_data)
+# Utility functions for backwards compatibility and easy access
+def get_analysis_template() -> Dict[str, Any]:
+    """Get the unified analysis template"""
+    return ElectionWatchReportTemplate.get_analysis_template()
+
+def create_analysis_report(content_type: str = "text", analysis_depth: str = "standard", **kwargs) -> Dict[str, Any]:
+    """Create analysis report with provided data"""
+    return ElectionWatchReportTemplate.create_analysis_report(content_type, analysis_depth, **kwargs)
+
+def export_analysis_report(report_data: Dict[str, Any], filename: Optional[str] = None) -> Dict[str, Any]:
+    """Export analysis report as JSON file"""
+    return ElectionWatchReportTemplate.export_analysis_report(report_data, filename)
 
 # Template instruction for agents
 AGENT_TEMPLATE_INSTRUCTION = """
-When generating analysis reports, use the ElectionWatchReportTemplate class to ensure consistent structure.
+When generating analysis reports, use the unified ElectionWatchReportTemplate.get_analysis_template() 
+to ensure consistent structure across all analysis types.
 
-Examples:
-1. For comprehensive analysis: ElectionWatchReportTemplate.get_comprehensive_analysis_template()
-2. For quick analysis: ElectionWatchReportTemplate.get_quick_analysis_template()
-3. For multimedia: ElectionWatchReportTemplate.get_multimedia_analysis_template()
-4. For trend monitoring: ElectionWatchReportTemplate.get_trend_monitoring_template()
+The template automatically adapts to different content types:
+- Text analysis (social media posts, articles)
+- Image analysis (screenshots, memes, infographics) 
+- Video analysis (deepfakes, propaganda videos)
+- CSV analysis (datasets, social media exports)
+- Multimedia analysis (combined content types)
 
 Always populate the following key fields:
-- report_metadata (with unique report_id and timestamp)
-- narrative_classification (with theme, threat_level, confidence)
-- actors_identified (with name, role, affiliation)
-- lexicon_analysis (with detected terms and categories)
-- risk_assessment (with overall risk score and recommendations)
+- report_metadata (with content_type and analysis_depth)
+- narrative_classification (with theme, threat_level, details)
+- actors (with name, role, affiliation)
+- lexicon_terms (with detected terms and categories)
+- risk_level (overall assessment)
+- recommendations (actionable items)
+- analysis_insights (detailed technical information)
 
-Use the create_report_with_template() method to populate templates with your analysis data.
-Export final reports using export_report_as_json() for persistent storage.
-""" 
-
-# Tool functions for coordinator access
-from google.adk.tools import FunctionTool
-
-def get_comprehensive_analysis_template() -> Dict[str, Any]:
-    """Get comprehensive analysis template for detailed election monitoring reports"""
-    return ElectionWatchReportTemplate.get_comprehensive_analysis_template()
-
-def get_quick_analysis_template() -> Dict[str, Any]:
-    """Get quick analysis template for rapid assessments"""
-    return ElectionWatchReportTemplate.get_quick_analysis_template()
-
-def get_multimedia_analysis_template() -> Dict[str, Any]:
-    """Get multimedia analysis template for image/video content analysis"""
-    return ElectionWatchReportTemplate.get_multimedia_analysis_template()
-
-def get_trend_monitoring_template() -> Dict[str, Any]:
-    """Get trend monitoring template for tracking narrative patterns"""
-    return ElectionWatchReportTemplate.get_trend_monitoring_template()
-
-def export_report_json(report_data: Dict[str, Any], filename: Optional[str] = None) -> Dict[str, Any]:
-    """Export analysis report as JSON file"""
-    return ElectionWatchReportTemplate.export_report_as_json(report_data, filename)
+Use create_analysis_report() method to populate templates with your analysis data.
+Export final reports using export_analysis_report() for persistent storage.
+"""
 
 # Create FunctionTool instances for coordinator use
-get_comprehensive_analysis_template_tool = FunctionTool(
-    func=get_comprehensive_analysis_template
+from google.adk.tools import FunctionTool
+
+get_analysis_template_tool = FunctionTool(
+    func=get_analysis_template
 )
 
-get_quick_analysis_template_tool = FunctionTool(
-    func=get_quick_analysis_template
+export_analysis_report_tool = FunctionTool(
+    func=export_analysis_report
 )
 
-get_multimedia_analysis_template_tool = FunctionTool(
-    func=get_multimedia_analysis_template
-)
-
-get_trend_monitoring_template_tool = FunctionTool(
-    func=get_trend_monitoring_template
-)
-
-export_report_json_tool = FunctionTool(
-    func=export_report_json
-) 
+# Aliases for agent.py compatibility
+generate_analysis_template_tool = get_analysis_template_tool
+generate_report_template_tool = export_analysis_report_tool 

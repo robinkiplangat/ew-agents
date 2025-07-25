@@ -13,6 +13,10 @@ from typing import Dict, List, Any, Optional, Union, Callable
 from datetime import datetime
 import uuid
 
+# Set up logging for this module
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 try:
     from google.adk.agents import LlmAgent
     from google.adk.tools.agent_tool import AgentTool
@@ -22,7 +26,7 @@ except ImportError:
     ADK_AVAILABLE = False
     logging.warning("Google ADK not available, using enhanced coordinator only")
 
-from .election_watch_agents import coordinator_agent
+from .agent import coordinator_agent
 from . import data_eng_tools, osint_tools, lexicon_tools, trend_analysis_tools
 from .report_templates import ElectionWatchReportTemplate
 
@@ -498,16 +502,16 @@ class EnhancedCoordinator:
     async def _delegate_summary_to_coordinator(self, user_request: str, 
                                               agent_results: Dict[str, Any], 
                                               workflow_id: str) -> Dict[str, Any]:
-        """Delegate summary generation to the coordinator agent using ElectionWatchReportTemplate"""
+        """Delegate summary generation to the coordinator agent using unified ElectionWatchReportTemplate"""
         
         try:
             logger.info(f"Delegating summary generation to coordinator for workflow {workflow_id}")
             
-            # Use the quick analysis template to match target format exactly
-            report_template = ElectionWatchReportTemplate.get_quick_analysis_template()
+            # Use the unified analysis template for all content types
+            report_template = ElectionWatchReportTemplate.get_analysis_template()
             
-            # Populate the template with agent results in target format
-            populated_report = self._populate_quick_analysis_template(
+            # Populate the template with agent results in standardized format
+            populated_report = self._populate_analysis_template(
                 report_template, user_request, agent_results, workflow_id
             )
             
@@ -516,14 +520,14 @@ class EnhancedCoordinator:
             
         except Exception as e:
             logger.error(f"Failed to delegate summary to coordinator: {e}")
-            # Return fallback in exact target format
-            return self._get_fallback_quick_analysis(workflow_id, str(e))
+            # Return fallback in standardized format
+            return self._get_fallback_analysis_report(workflow_id, str(e))
     
-    def _populate_quick_analysis_template(self, template: Dict[str, Any], 
-                                         user_request: str, 
-                                         agent_results: Dict[str, Any], 
-                                         workflow_id: str) -> Dict[str, Any]:
-        """Populate the quick analysis template to match exact target format"""
+    def _populate_analysis_template(self, template: Dict[str, Any], 
+                                   user_request: str, 
+                                   agent_results: Dict[str, Any], 
+                                   workflow_id: str) -> Dict[str, Any]:
+        """Populate the unified analysis template with agent results"""
         
         # Create a copy of the template to populate
         report = template.copy()
@@ -534,147 +538,631 @@ class EnhancedCoordinator:
         # Extract the actual content from the user request
         actual_content = self._extract_actual_content(user_request)
         
-        # Populate report metadata (matches target exactly)
+        # Determine content type based on analysis
+        content_type = self._determine_content_type(user_request, agent_results)
+        analysis_depth = self._determine_analysis_depth(agent_results)
+        
+        # Populate report metadata
         report["report_metadata"]["report_id"] = report_id
         report["report_metadata"]["analysis_timestamp"] = datetime.now().isoformat()
-        report["report_metadata"]["report_type"] = "quick_analysis"
+        report["report_metadata"]["content_type"] = content_type
+        report["report_metadata"]["analysis_depth"] = analysis_depth
         
-        # Populate narrative classification
-        narrative_classification = self._extract_narrative_classification(agent_results, actual_content)
+        # Populate narrative classification with enhanced details
+        narrative_classification = self._extract_enhanced_narrative_classification(agent_results, actual_content)
         report["narrative_classification"] = narrative_classification
         
-        # Populate actors
-        actors = self._extract_actors(agent_results, actual_content)
+        # Populate actors with comprehensive information
+        actors = self._extract_enhanced_actors(agent_results, actual_content)
         report["actors"] = actors
         
-        # Populate lexicon terms
-        lexicon_terms = self._extract_lexicon_terms(agent_results, actual_content)
+        # Populate lexicon terms with detailed analysis
+        lexicon_terms = self._extract_enhanced_lexicon_terms(agent_results, actual_content)
         report["lexicon_terms"] = lexicon_terms
         
-        # Set risk level (matches narrative classification threat level)
+        # Set overall risk level
         report["risk_level"] = narrative_classification.get("threat_level", "Medium")
         
-        # Set date_analyzed
+        # Set analysis date
         report["date_analyzed"] = datetime.now().isoformat()
         
-        # Generate recommendations
-        recommendations = self._generate_quick_recommendations(agent_results, narrative_classification)
+        # Generate comprehensive recommendations
+        recommendations = self._generate_comprehensive_recommendations(agent_results, narrative_classification)
         report["recommendations"] = recommendations
+        
+        # Populate analysis insights with technical details
+        analysis_insights = self._generate_analysis_insights(agent_results, actual_content, workflow_id)
+        report["analysis_insights"] = analysis_insights
         
         return report
     
-    def _extract_narrative_classification(self, agent_results: Dict[str, Any], actual_content: str) -> Dict[str, str]:
-        """Extract narrative classification in target format"""
+    def _determine_content_type(self, user_request: str, agent_results: Dict[str, Any]) -> str:
+        """Determine the content type being analyzed"""
         
-        classification = {
-            "theme": "Election Manipulation",
-            "threat_level": "Medium",
-            "details": "Content analysis indicates potential election-related concerns requiring further investigation."
+        # Check for file uploads or multimedia indicators
+        if "image" in user_request.lower() or "photo" in user_request.lower():
+            return "image"
+        elif "video" in user_request.lower():
+            return "video"
+        elif "csv" in user_request.lower() or "dataset" in user_request.lower():
+            return "csv"
+        elif "Files uploaded:" in user_request and "1" in user_request:
+            return "multimedia"
+        else:
+            return "text"
+    
+    def _determine_analysis_depth(self, agent_results: Dict[str, Any]) -> str:
+        """Determine the depth of analysis performed"""
+        
+        if len(agent_results) >= 4:
+            return "comprehensive"
+        elif len(agent_results) >= 2:
+            return "standard"
+        else:
+            return "quick"
+    
+    def _generate_analysis_insights(self, agent_results: Dict[str, Any], 
+                                   actual_content: str, 
+                                   workflow_id: str) -> Dict[str, Any]:
+        """Generate detailed analysis insights"""
+        
+        insights = {
+            "content_statistics": {
+                "word_count": len(actual_content.split()) if actual_content else 0,
+                "character_count": len(actual_content) if actual_content else 0,
+                "language_detected": "en"  # Could be enhanced with language detection
+            },
+            "threat_assessment": {
+                "overall_risk_score": self._calculate_comprehensive_risk_score(agent_results),
+                "violence_potential": self._assess_violence_potential_detailed(agent_results),
+                "electoral_impact": self._assess_electoral_impact_detailed(agent_results),
+                "social_cohesion_threat": self._assess_social_cohesion_detailed(agent_results),
+                "urgency_level": self._determine_urgency_level_detailed(agent_results)
+            },
+            "processing_metadata": {
+                "agents_utilized": list(agent_results.keys()),
+                "analysis_duration": 0.0,  # Will be calculated by caller
+                "confidence_level": self._calculate_overall_confidence_level(agent_results),
+                "data_sources": ["agent_analysis", "lexicon_matching", "pattern_detection"]
+            }
         }
         
-        # Extract from OSINT results if available
-        if "osint_classification" in agent_results:
-            osint = agent_results["osint_classification"]
-            if osint.get("status") == "success" and "classifications" in osint and osint["classifications"]:
-                primary_class = osint["classifications"][0]
-                classification["theme"] = primary_class.get("theme", "Election Manipulation")
-                classification["threat_level"] = primary_class.get("threat_level", "Medium")
-                classification["details"] = primary_class.get("details", classification["details"])
-        
-        # Check for specific keywords to enhance classification
-        high_risk_keywords = ["ghost voters", "rigged", "fraud", "manipulated", "fake voters"]
-        if any(keyword.lower() in actual_content.lower() for keyword in high_risk_keywords):
-            classification["threat_level"] = "High"
-            classification["details"] = f"The content promotes narratives of election manipulation with concerning terminology. {classification['details']}"
-        
-        return classification
+        return insights
     
-    def _extract_actors(self, agent_results: Dict[str, Any], actual_content: str) -> List[Dict[str, str]]:
-        """Extract actors in target format"""
+    def _generate_comprehensive_recommendations(self, agent_results: Dict[str, Any], 
+                                              narrative_classification: Dict[str, str]) -> List[str]:
+        """Generate comprehensive recommendations based on all agent analysis"""
         
-        actors = []
+        recommendations = []
+        threat_level = narrative_classification.get("threat_level", "Medium")
         
-        # Default actors based on content analysis
-        if "candidate" in actual_content.lower():
-            actors.append({
-                "name": "Candidate X",
-                "affiliation": "",
-                "role": "Target of alleged manipulation"
-            })
+        # Base recommendations based on threat level
+        if threat_level == "High":
+            recommendations.extend([
+                "Immediate escalation and verification required",
+                "Monitor for rapid spread across platforms",
+                "Deploy counter-narrative strategies",
+                "Alert relevant authorities and stakeholders",
+                "Increase monitoring frequency for related content"
+            ])
+        elif threat_level == "Medium":
+            recommendations.extend([
+                "Further investigation needed to verify claims and sources",
+                "Monitor for narrative spread across platforms",
+                "Track actors and their influence networks",
+                "Document patterns for trend analysis"
+            ])
+        else:
+            recommendations.extend([
+                "Continue standard monitoring protocols",
+                "Document findings for baseline analysis",
+                "Periodic review recommended"
+            ])
         
-        # Look for official sources
-        if "official" in actual_content.lower() or "report" in actual_content.lower():
-            actors.append({
-                "name": "Unknown - Official reports",
-                "affiliation": "",
-                "role": "Source of the claim (needs verification)"
-            })
-        
-        # Extract from OSINT results if available
-        if "osint_classification" in agent_results:
-            osint = agent_results["osint_classification"]
-            if "actors" in osint:
-                for actor in osint["actors"]:
-                    actors.append({
-                        "name": actor.get("name", "Unknown Actor"),
-                        "affiliation": actor.get("affiliation", ""),
-                        "role": actor.get("role", "Content participant")
-                    })
-        
-        # If no actors found, provide default
-        if not actors:
-            actors.append({
-                "name": "Content Source",
-                "affiliation": "",
-                "role": "Original poster/publisher"
-            })
-        
-        return actors
-    
-    def _extract_lexicon_terms(self, agent_results: Dict[str, Any], actual_content: str) -> List[Dict[str, str]]:
-        """Extract lexicon terms in target format"""
-        
-        lexicon_terms = []
-        
-        # Extract from lexicon analysis results
+        # Agent-specific recommendations
         if "lexicon_analysis" in agent_results:
             lexicon = agent_results["lexicon_analysis"]
             if lexicon.get("status") == "success":
                 potential_terms = lexicon.get("potential_coded_terms", [])
+                if len(potential_terms) > 3:
+                    recommendations.append("High concentration of coded language detected - prioritize linguistic analysis")
+                elif len(potential_terms) > 0:
+                    recommendations.append("Monitor for evolution of detected coded language patterns")
+        
+        if "osint_classification" in agent_results:
+            osint = agent_results["osint_classification"]
+            if "narrative_classification" in osint:
+                classification = osint["narrative_classification"]
+                if classification.get("fraud_indicators", 0) > 0:
+                    recommendations.append("Electoral fraud narratives detected - coordinate with election monitoring bodies")
+                if classification.get("violence_indicators", 0) > 0:
+                    recommendations.append("Violence-related content identified - consider security alert protocols")
+                if classification.get("division_indicators", 0) > 0:
+                    recommendations.append("Social division content detected - deploy unity messaging strategies")
+        
+        if "data_eng_nlp" in agent_results:
+            nlp = agent_results["data_eng_nlp"]
+            if "narrative_detection" in nlp:
+                narrative_count = nlp["narrative_detection"].get("narrative_count", 0)
+                if narrative_count > 5:
+                    recommendations.append("Multiple narrative patterns detected - conduct comprehensive narrative mapping")
+        
+        # Remove duplicates while preserving order
+        unique_recommendations = []
+        for rec in recommendations:
+            if rec not in unique_recommendations:
+                unique_recommendations.append(rec)
+        
+        return unique_recommendations
+    
+    def _extract_enhanced_narrative_classification(self, agent_results: Dict[str, Any], actual_content: str) -> Dict[str, Any]:
+        """Extract and format narrative classification from OSINT agent results"""
+        
+        # Default structure
+        classification = {
+            "theme": "General Content",
+            "threat_level": "Low",
+            "details": "Standard content analysis completed",
+            "confidence_score": 0.0,
+            "alternative_themes": [],
+            "threat_indicators": []
+        }
+        
+        # PRIMARY: Extract from OSINT agent results
+        if "osint_classification" in agent_results:
+            osint = agent_results["osint_classification"]
+            
+            if osint.get("status") == "success" and "narrative_classification" in osint:
+                osint_narrative = osint["narrative_classification"]
+                
+                # Map OSINT agent's themes to unified format
+                primary_theme = osint_narrative.get("primary_theme", "general_political")
+                confidence = osint_narrative.get("confidence", 0.0)
+                
+                # Theme mapping
+                theme_mapping = {
+                    "election_fraud": ("Election Fraud", "High", "Content contains allegations of electoral fraud or manipulation"),
+                    "violence_incitement": ("Violence Incitement", "High", "Content contains elements promoting violence or intimidation"),
+                    "ethnic_religious_division": ("Ethnic Tensions", "High", "Content promotes ethnic or religious divisions"),
+                    "general_political": ("Political Content", "Medium", "General political content with moderate concerns")
+                }
+                
+                if primary_theme in theme_mapping:
+                    theme, threat_level, details = theme_mapping[primary_theme]
+                    classification.update({
+                        "theme": theme,
+                        "threat_level": threat_level,
+                        "details": details,
+                        "confidence_score": confidence
+                    })
+                
+                # Extract threat indicators from OSINT scoring
+                fraud_indicators = osint_narrative.get("fraud_indicators", 0)
+                violence_indicators = osint_narrative.get("violence_indicators", 0)
+                division_indicators = osint_narrative.get("division_indicators", 0)
+                
+                if fraud_indicators > 0:
+                    classification["threat_indicators"].append(f"Electoral fraud patterns ({fraud_indicators} indicators)")
+                if violence_indicators > 0:
+                    classification["threat_indicators"].append(f"Violence-related content ({violence_indicators} indicators)")
+                if division_indicators > 0:
+                    classification["threat_indicators"].append(f"Social division themes ({division_indicators} indicators)")
+                
+                # Add alternative themes based on secondary scores
+                scores = [
+                    (fraud_indicators, "Election Fraud"),
+                    (violence_indicators, "Violence Incitement"), 
+                    (division_indicators, "Ethnic Tensions")
+                ]
+                scores.sort(reverse=True, key=lambda x: x[0])
+                
+                for score, theme_name in scores[1:]:  # Skip the primary theme
+                    if score > 0 and theme_name != classification["theme"]:
+                        classification["alternative_themes"].append(theme_name)
+        
+        # SECONDARY: Enhance with lexicon agent results
+        if "lexicon_analysis" in agent_results:
+            lexicon = agent_results["lexicon_analysis"]
+            if lexicon.get("status") == "success":
+                potential_terms = lexicon.get("potential_coded_terms", [])
+                if len(potential_terms) > 0:
+                    classification["threat_indicators"].append(f"Coded language detected ({len(potential_terms)} terms)")
+                    # Only boost confidence if OSINT didn't already provide high confidence
+                    if classification["confidence_score"] < 0.6:
+                        classification["confidence_score"] = 0.6
+            elif lexicon.get("status") == "no_coded_language_detected":
+                classification["threat_indicators"].append("No significant coded language patterns detected")
+        
+        # TERTIARY: Basic fallback if no agent results available
+        if classification["confidence_score"] == 0.0 and actual_content:
+            # Minimal keyword-based fallback only if agents failed
+            text_lower = actual_content.lower()
+            
+            if any(keyword in text_lower for keyword in ["rigged", "fraud", "ghost voter"]):
+                classification.update({
+                    "theme": "Election Manipulation",
+                    "threat_level": "Medium",
+                    "details": "Content contains concerning election-related terminology",
+                    "confidence_score": 0.3
+                })
+            elif any(keyword in text_lower for keyword in ["violence", "attack", "fight"]):
+                classification.update({
+                    "theme": "Violence Concerns",
+                    "threat_level": "Medium", 
+                    "details": "Content contains concerning violence-related terminology",
+                    "confidence_score": 0.3
+                })
+        
+        # Ensure minimum confidence
+        if classification["confidence_score"] == 0.0:
+            classification["confidence_score"] = 0.2
+        
+        return classification
+    
+    def _extract_enhanced_actors(self, agent_results: Dict[str, Any], actual_content: str) -> List[Dict[str, Any]]:
+        """Extract and format actors from OSINT agent results"""
+        
+        actors = []
+        
+        # PRIMARY: Extract from OSINT agent results
+        if "osint_classification" in agent_results:
+            osint = agent_results["osint_classification"]
+            
+            if osint.get("status") == "success" and "actors_identified" in osint:
+                for agent_actor in osint["actors_identified"]:
+                    # Format OSINT agent results into unified structure
+                    actor = {
+                        "name": agent_actor.get("name", "Unknown Actor"),
+                        "affiliation": self._map_actor_type_to_affiliation(agent_actor.get("type", "")),
+                        "role": agent_actor.get("context", "Mentioned in content"),
+                        "influence_level": self._map_confidence_to_influence(agent_actor.get("confidence", 0.0)),
+                        "verification_status": "Agent-identified",
+                        "social_metrics": {
+                            "agent_confidence": agent_actor.get("confidence", 0.0),
+                            "actor_type": agent_actor.get("type", "")
+                        }
+                    }
+                    actors.append(actor)
+        
+        # SECONDARY: Basic fallback only if no agents provided actors
+        if not actors and actual_content:
+            # Minimal content-based extraction
+            text_lower = actual_content.lower()
+            
+            if any(keyword in text_lower for keyword in ["candidate", "governor", "president"]):
+                actors.append({
+                    "name": "Political Figure",
+                    "affiliation": "Government/Political",
+                    "role": "Mentioned political actor",
+                    "influence_level": "Unknown",
+                    "verification_status": "Content-based detection",
+                    "social_metrics": {}
+                })
+            
+            if "official" in text_lower:
+                actors.append({
+                    "name": "Official Source",
+                    "affiliation": "Government/Official", 
+                    "role": "Cited authority/source",
+                    "influence_level": "Unknown",
+                    "verification_status": "Content-based detection",
+                    "social_metrics": {}
+                })
+        
+        # Default if no actors found
+        if not actors:
+            actors.append({
+                "name": "Content Source",
+                "affiliation": "",
+                "role": "Original poster/publisher",
+                "influence_level": "Unknown",
+                "verification_status": "Default",
+                "social_metrics": {}
+            })
+        
+        return actors[:5]  # Limit to 5 actors
+    
+    def _map_actor_type_to_affiliation(self, actor_type: str) -> str:
+        """Map OSINT agent actor types to affiliation categories"""
+        mapping = {
+            "politician": "Government/Political",
+            "political_party": "Political Party",
+            "institution": "Government Institution",
+            "media": "Media Organization",
+            "social_media": "Social Media"
+        }
+        return mapping.get(actor_type.lower(), "Unknown")
+    
+    def _map_confidence_to_influence(self, confidence: float) -> str:
+        """Map OSINT agent confidence scores to influence levels"""
+        if confidence >= 0.8:
+            return "High"
+        elif confidence >= 0.5:
+            return "Medium"
+        else:
+            return "Low"
+    
+    def _extract_enhanced_lexicon_terms(self, agent_results: Dict[str, Any], actual_content: str) -> List[Dict[str, Any]]:
+        """Extract and format lexicon terms from lexicon agent results"""
+        
+        lexicon_terms = []
+        
+        # PRIMARY: Extract from lexicon agent results
+        if "lexicon_analysis" in agent_results:
+            lexicon = agent_results["lexicon_analysis"]
+            
+            if lexicon.get("status") == "success":
+                potential_terms = lexicon.get("potential_coded_terms", [])
                 for term_data in potential_terms:
                     lexicon_terms.append({
-                        "term": term_data.get("term_candidate", ""),
-                        "category": "Coded Language",
-                        "context": term_data.get("context_phrase", "")[:100] + "..." if len(term_data.get("context_phrase", "")) > 100 else term_data.get("context_phrase", "")
+                        "term": term_data.get("term_candidate", "Unknown term"),
+                        "category": term_data.get("category", "Coded Language"),
+                        "context": term_data.get("context_phrase", "Detected through lexicon analysis"),
+                        "confidence_score": term_data.get("confidence", 0.5),
+                        "language": term_data.get("language_code", "en"),
+                        "severity": term_data.get("severity", "Medium"),
+                        "definition": term_data.get("definition", "Term identified through lexicon matching")
                     })
+            
+            elif lexicon.get("status") == "no_coded_language_detected":
+                lexicon_terms.append({
+                    "term": "Standard language",
+                    "category": "Normal",
+                    "context": "No coded language patterns detected by lexicon agent",
+                    "confidence_score": 0.8,
+                    "language": "en",
+                    "severity": "Low",
+                    "definition": "Content uses standard language without coded terminology"
+                })
         
-        # Add known problematic terms if found in content
-        known_terms = [
-            {"term": "Ghost voters", "category": "Potentially Misleading", "pattern": "ghost voter"},
-            {"term": "Rigged election", "category": "Coded Language", "pattern": "rigged"},
-            {"term": "Voter fraud", "category": "Coded Language", "pattern": "fraud"},
-            {"term": "Regions known to support Candidate X", "category": "Potentially Misleading", "pattern": "regions known"}
-        ]
-        
-        for term_info in known_terms:
-            if term_info["pattern"].lower() in actual_content.lower():
-                # Check if not already added
-                if not any(t["term"] == term_info["term"] for t in lexicon_terms):
+        # SECONDARY: Extract from OSINT misinformation indicators
+        if "osint_classification" in agent_results:
+            osint = agent_results["osint_classification"]
+            if osint.get("status") == "success" and "misinformation_indicators" in osint:
+                for indicator in osint["misinformation_indicators"][:3]:  # Limit to first 3
                     lexicon_terms.append({
-                        "term": term_info["term"],
-                        "category": term_info["category"],
-                        "context": "Suggests fraudulent registration." if "ghost" in term_info["pattern"] else "Implies bias." if "regions" in term_info["pattern"] else "Designed to spread narrative of manipulated election."
+                        "term": indicator.get("term", "OSINT-detected term"),
+                        "category": "OSINT Detection",
+                        "context": indicator.get("context", "Identified through OSINT analysis"),
+                        "confidence_score": indicator.get("confidence", 0.6),
+                        "language": "en",
+                        "severity": "Medium",
+                        "definition": "Term flagged by OSINT analysis as potential concern"
                     })
         
-        # If no specific terms found, provide default analysis
+        # TERTIARY: Minimal fallback if no agent results
         if not lexicon_terms:
             lexicon_terms.append({
                 "term": "Election-related terminology",
                 "category": "Standard",
-                "context": "General election-related language detected requiring standard monitoring."
+                "context": "General election-related language detected",
+                "confidence_score": 0.3,
+                "language": "en",
+                "severity": "Low",
+                "definition": "Basic election-related content without specific agent analysis"
             })
         
-        return lexicon_terms
+        # Remove duplicates and sort by confidence
+        unique_terms = []
+        seen_terms = set()
+        
+        sorted_terms = sorted(lexicon_terms, key=lambda x: -x["confidence_score"])
+        
+        for term in sorted_terms:
+            term_key = term["term"].lower()
+            if term_key not in seen_terms:
+                seen_terms.add(term_key)
+                unique_terms.append(term)
+        
+        return unique_terms[:6]  # Limit to 6 most relevant terms
+    
+    def _calculate_comprehensive_risk_score(self, agent_results: Dict[str, Any]) -> float:
+        """Calculate detailed risk score from all agent results"""
+        risk_score = 0.0
+        
+        # Risk from lexicon analysis
+        if "lexicon_analysis" in agent_results:
+            lexicon = agent_results["lexicon_analysis"]
+            potential_terms = lexicon.get("potential_coded_terms", [])
+            if len(potential_terms) > 0:
+                risk_score += min(3.0 + len(potential_terms) * 0.5, 5.0)
+                
+                # High confidence terms increase risk
+                high_conf_terms = [t for t in potential_terms if t.get("confidence", 0) > 0.8]
+                if high_conf_terms:
+                    risk_score += 1.0
+        
+        # Risk from OSINT classification
+        if "osint_classification" in agent_results:
+            osint = agent_results["osint_classification"]
+            if "narrative_classification" in osint:
+                classification = osint["narrative_classification"]
+                fraud_indicators = classification.get("fraud_indicators", 0)
+                violence_indicators = classification.get("violence_indicators", 0)
+                division_indicators = classification.get("division_indicators", 0)
+                
+                risk_score += fraud_indicators * 1.5
+                risk_score += violence_indicators * 2.0
+                risk_score += division_indicators * 1.0
+        
+        # Risk from NLP analysis
+        if "data_eng_nlp" in agent_results:
+            nlp = agent_results["data_eng_nlp"]
+            if "risk_assessment" in nlp:
+                nlp_risk = nlp["risk_assessment"].get("overall_risk_score", 0.0)
+                risk_score += nlp_risk * 2.0
+        
+        return min(risk_score, 10.0)  # Cap at 10.0
+    
+    def _assess_violence_potential_detailed(self, agent_results: Dict[str, Any]) -> str:
+        """Detailed violence potential assessment"""
+        risk_score = self._calculate_comprehensive_risk_score(agent_results)
+        
+        # Check for specific violence indicators
+        violence_keywords = ["violence", "attack", "kill", "destroy", "eliminate"]
+        has_violence_indicators = False
+        
+        if "osint_classification" in agent_results:
+            osint = agent_results["osint_classification"]
+            if "narrative_classification" in osint:
+                violence_indicators = osint["narrative_classification"].get("violence_indicators", 0)
+                has_violence_indicators = violence_indicators > 0
+        
+        if has_violence_indicators or risk_score >= 8.0:
+            return "High"
+        elif risk_score >= 5.0:
+            return "Medium"
+        else:
+            return "Low"
+    
+    def _assess_electoral_impact_detailed(self, agent_results: Dict[str, Any]) -> str:
+        """Detailed electoral impact assessment"""
+        risk_score = self._calculate_comprehensive_risk_score(agent_results)
+        
+        # Check for electoral process indicators
+        electoral_keywords = ["vote", "election", "ballot", "candidate", "fraud", "rigged"]
+        
+        if risk_score >= 7.0:
+            return "High"
+        elif risk_score >= 4.0:
+            return "Medium"
+        else:
+            return "Low"
+    
+    def _assess_social_cohesion_detailed(self, agent_results: Dict[str, Any]) -> str:
+        """Detailed social cohesion threat assessment"""
+        risk_score = self._calculate_comprehensive_risk_score(agent_results)
+        
+        # Check for ethnic/religious division indicators
+        if "osint_classification" in agent_results:
+            osint = agent_results["osint_classification"]
+            if "narrative_classification" in osint:
+                division_indicators = osint["narrative_classification"].get("division_indicators", 0)
+                if division_indicators > 2 or risk_score >= 6.0:
+                    return "High"
+                elif division_indicators > 0 or risk_score >= 3.0:
+                    return "Medium"
+        
+        return "Low"
+    
+    def _determine_urgency_level_detailed(self, agent_results: Dict[str, Any]) -> str:
+        """Detailed urgency level determination"""
+        risk_score = self._calculate_comprehensive_risk_score(agent_results)
+        
+        if risk_score >= 8.0:
+            return "Immediate"
+        elif risk_score >= 6.0:
+            return "Within 24h"
+        elif risk_score >= 4.0:
+            return "Within Week"
+        else:
+            return "Monitoring"
+    
+    def _calculate_overall_confidence_level(self, agent_results: Dict[str, Any]) -> str:
+        """Calculate overall confidence in the analysis"""
+        confidence_scores = []
+        
+        # Confidence from OSINT
+        if "osint_classification" in agent_results:
+            osint = agent_results["osint_classification"]
+            confidence_scores.append(osint.get("confidence", 0.0))
+        
+        # Confidence from lexicon analysis
+        if "lexicon_analysis" in agent_results:
+            lexicon = agent_results["lexicon_analysis"]
+            if lexicon.get("status") == "success":
+                confidence_scores.append(0.8)
+            else:
+                confidence_scores.append(0.3)
+        
+        # Confidence from NLP
+        if "data_eng_nlp" in agent_results:
+            nlp = agent_results["data_eng_nlp"]
+            if nlp.get("success"):
+                confidence_scores.append(0.7)
+            else:
+                confidence_scores.append(0.2)
+        
+        if not confidence_scores:
+            return "low"
+        
+        avg_confidence = sum(confidence_scores) / len(confidence_scores)
+        
+        if avg_confidence >= 0.8:
+            return "high"
+        elif avg_confidence >= 0.6:
+            return "medium"
+        else:
+            return "low"
+    
+    def _get_fallback_analysis_report(self, workflow_id: str, error_message: str) -> Dict[str, Any]:
+        """Get fallback report in unified analysis format when processing fails"""
+        
+        return {
+            "report_metadata": {
+                "report_id": f"AutoGeneratedReport_{workflow_id[:8]}",
+                "analysis_timestamp": datetime.now().isoformat(),
+                "report_type": "analysis",
+                "content_type": "text",
+                "analysis_depth": "quick"
+            },
+            "narrative_classification": {
+                "theme": "Processing Error",
+                "threat_level": "Unknown",
+                "details": f"Analysis could not be completed due to processing error: {error_message}",
+                "confidence_score": 0.0,
+                "alternative_themes": [],
+                "threat_indicators": []
+            },
+            "actors": [
+                {
+                    "name": "System",
+                    "affiliation": "ElectionWatch",
+                    "role": "Error reporter",
+                    "influence_level": "",
+                    "verification_status": "",
+                    "social_metrics": {}
+                }
+            ],
+            "lexicon_terms": [
+                {
+                    "term": "Processing failure",
+                    "category": "System",
+                    "context": "Unable to complete analysis due to system error",
+                    "confidence_score": 1.0,
+                    "language": "en",
+                    "severity": "System",
+                    "definition": "System processing error"
+                }
+            ],
+            "risk_level": "Unknown",
+            "date_analyzed": datetime.now().isoformat(),
+            "recommendations": [
+                "Retry analysis with updated configuration.",
+                "Review system logs for error details.",
+                "Contact technical support if issue persists."
+            ],
+            "analysis_insights": {
+                "content_statistics": {
+                    "word_count": 0,
+                    "character_count": 0,
+                    "language_detected": "en"
+                },
+                "threat_assessment": {
+                    "overall_risk_score": 0.0,
+                    "violence_potential": "Unknown",
+                    "electoral_impact": "Unknown",
+                    "social_cohesion_threat": "Unknown",
+                    "urgency_level": "Unknown"
+                },
+                "processing_metadata": {
+                    "agents_utilized": [],
+                    "analysis_duration": 0.0,
+                    "confidence_level": "low",
+                    "data_sources": ["error_fallback"]
+                }
+            }
+        }
     
     def _generate_quick_recommendations(self, agent_results: Dict[str, Any], narrative_classification: Dict[str, str]) -> List[str]:
         """Generate recommendations in target format"""
@@ -1334,7 +1822,7 @@ def sync_process_user_request(user_request: str) -> Dict[str, Any]:
 if ADK_AVAILABLE:
     try:
         # Reference existing agents from election_watch_agents.py instead of recreating them
-        from .election_watch_agents import (
+        from .agent import (
             data_eng_agent,
             osint_agent, 
             lexicon_agent,

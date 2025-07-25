@@ -2,6 +2,11 @@ from google.adk.tools import FunctionTool
 from typing import List, Dict, Any, Optional, Union
 import datetime
 import os
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def classify_narrative(text: str, source_platform: str = "unknown") -> Dict[str, Any]:
     """
