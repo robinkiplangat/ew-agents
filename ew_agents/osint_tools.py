@@ -1,5 +1,4 @@
 from google.adk.tools import FunctionTool
-from typing import List, Dict, Any, Optional, Union
 import datetime
 import os
 import logging
@@ -8,7 +7,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def classify_narrative(text: str, source_platform: str = "unknown") -> Dict[str, Any]:
+def classify_narrative(text: str, source_platform: str = "unknown") -> dict:
     """
     Uses an ML model to classify text into misinformation themes.
     Returns a list of identified themes and their confidence scores.
@@ -56,7 +55,7 @@ def classify_narrative(text: str, source_platform: str = "unknown") -> Dict[str,
             "source_platform": source_platform
         }
 
-def track_keywords(keywords: List[str], platforms: Optional[List[str]] = None) -> Dict[str, Any]:
+def track_keywords(keywords: list, platforms: list = None) -> dict:
     """
     Monitors for specific keywords and hashtags across specified platforms.
     
@@ -87,7 +86,7 @@ def track_keywords(keywords: List[str], platforms: Optional[List[str]] = None) -
         "platforms": platforms
     }
 
-def calculate_influence_metrics(actor_id: str, platform: str) -> Dict[str, Any]:
+def calculate_influence_metrics(actor_id: str, platform: str) -> dict:
     """
     Analyzes graph data and other metrics to calculate influence scores for actors.
     
@@ -114,7 +113,7 @@ def calculate_influence_metrics(actor_id: str, platform: str) -> Dict[str, Any]:
         "platform": platform
     }
 
-def detect_coordinated_behavior(account_ids: List[str], platform: str, time_window_hours: int = 24) -> Dict[str, Any]:
+def detect_coordinated_behavior(account_ids: list, platform: str, time_window_hours: int = 24) -> dict:
     """
     Implements algorithms to identify inauthentic network activity among a list of accounts.
     
@@ -144,7 +143,7 @@ def detect_coordinated_behavior(account_ids: List[str], platform: str, time_wind
         "time_window_hours": time_window_hours
     }
 
-def generate_actor_profile(actor_id: str, platform: str) -> Dict[str, Any]:
+def generate_actor_profile(actor_id: str, platform: str) -> dict:
     """
     Creates detailed profiles of actors including their activity history, known associations, and narrative involvement.
     
@@ -171,7 +170,7 @@ def generate_actor_profile(actor_id: str, platform: str) -> Dict[str, Any]:
         "platform": platform
     }
 
-def classify_image_content_theme(image_url: str, associated_text: Optional[str] = None) -> Dict[str, Any]:
+def classify_image_content_theme(image_url: str, associated_text = None) -> dict:
     """
     Classifies an image's content theme, potentially aided by associated text.
     
@@ -201,7 +200,7 @@ def classify_image_content_theme(image_url: str, associated_text: Optional[str] 
 # Fallback Analysis Functions
 # =============================================================================
 
-def analyze_narrative_patterns_fallback(text: str) -> Dict[str, Any]:
+def analyze_narrative_patterns_fallback(text: str) -> dict:
     """Fallback narrative pattern analysis using keyword matching"""
     import re
     
@@ -241,7 +240,7 @@ def analyze_narrative_patterns_fallback(text: str) -> Dict[str, Any]:
         "division_indicators": division_score
     }
 
-def extract_political_actors_fallback(text: str) -> List[Dict[str, Any]]:
+def extract_political_actors_fallback(text: str) -> list:
     """Extract political actors using pattern matching"""
     import re
     
@@ -282,7 +281,7 @@ def extract_political_actors_fallback(text: str) -> List[Dict[str, Any]]:
     
     return actors
 
-def detect_misinformation_patterns_fallback(text: str) -> List[Dict[str, Any]]:
+def detect_misinformation_patterns_fallback(text: str) -> list:
     """Detect misinformation patterns using heuristics"""
     patterns = []
     text_lower = text.lower()

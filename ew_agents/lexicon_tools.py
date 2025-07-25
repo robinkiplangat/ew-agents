@@ -1,5 +1,4 @@
 from google.adk.tools import FunctionTool
-from typing import Dict, List, Any, Optional, Union
 import datetime
 import os
 import logging
@@ -23,12 +22,14 @@ def get_mongo_connection():
 
 def update_lexicon_term(
     term: str,
-    language_code: str,
     definition: str,
-    tags: List[str],
-    related_terms: Optional[List[str]] = None,
-    source: Optional[str] = "manual input"
-) -> Dict[str, Any]:
+    category: str,
+    language_code: str,
+    severity_level: str,
+    tags: list,
+    related_terms: list = None,
+    source: str = "manual input"
+) -> dict:
     """
     Adds or updates a term in the multilingual lexicon using MongoDB Atlas.
     If the term exists, it updates its details. Otherwise, it adds a new term.
@@ -104,7 +105,7 @@ def update_lexicon_term(
             "language_code": language_code
         }
 
-def get_lexicon_term(term: str, language_code: str) -> Dict[str, Any]:
+def get_lexicon_term(term: str, language_code: str) -> dict:
     """
     Retrieves a term from the lexicon for a specific language using MongoDB Atlas.
     """
@@ -166,31 +167,31 @@ def get_lexicon_term(term: str, language_code: str) -> Dict[str, Any]:
         }
 
 def detect_coded_language(
-    text_sample: str,
-    language_code: str,
-    context_keywords: Optional[List[str]] = None
-) -> Dict[str, Any]:
+    text: str,
+    language_code: str = "en",
+    context_keywords: list = None
+) -> dict:
     """
     Detects new or coded language within a text sample using NLP analysis and existing lexicon.
     """
     if context_keywords is None:
         context_keywords = []
     
-    print(f"[LexiconTool] Detecting coded language in sample (lang: {language_code}): '{text_sample[:50]}...' with context: {context_keywords}")
+    print(f"[LexiconTool] Detecting coded language in sample (lang: {language_code}): '{text[:50]}...' with context: {context_keywords}")
 
     client, db = get_mongo_connection()
     if db is None:
         return {
             "status": "error",
             "message": "Unable to connect to MongoDB Atlas for coded language detection",
-            "text_sample": text_sample,
+            "text_sample": text,
             "language_code": language_code
         }
 
     try:
         # Search existing lexicon for potential matches
         potential_terms = []
-        words = text_sample.lower().split()
+        words = text.lower().split()
         
         for word in words:
             if len(word) > 3:  # Only check words longer than 3 characters
@@ -211,7 +212,7 @@ def detect_coded_language(
                         "definition": match.get("definition", ""),
                         "confidence": 0.7,  # Basic string matching confidence
                         "language_code": language_code,
-                        "context_phrase": text_sample,
+                        "context_phrase": text,
                         "match_type": "lexicon_match"
                     })
         
@@ -225,7 +226,7 @@ def detect_coded_language(
         if potential_terms:
             return {
                 "status": "success",
-                "text_sample": text_sample,
+                "text_sample": text,
                 "language_code": language_code,
                 "potential_coded_terms": potential_terms,
                 "message": f"Found {len(potential_terms)} potential coded language matches in lexicon."
@@ -233,7 +234,7 @@ def detect_coded_language(
         else:
             return {
                 "status": "no_coded_language_detected",
-                "text_sample": text_sample,
+                "text_sample": text,
                 "language_code": language_code,
                 "message": "No coded language patterns detected with current lexicon."
             }
@@ -244,11 +245,11 @@ def detect_coded_language(
         return {
             "status": "error",
             "message": f"Error in coded language detection: {str(e)}",
-            "text_sample": text_sample,
+            "text_sample": text,
             "language_code": language_code
         }
 
-def translate_term(term: str, source_lang: str, target_lang: str) -> Dict[str, Any]:
+def translate_term(term: str, source_lang: str, target_lang: str) -> dict:
     """
     Translates a term between languages using the lexicon database.
     

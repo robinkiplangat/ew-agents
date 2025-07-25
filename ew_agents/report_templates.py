@@ -15,7 +15,7 @@ class ElectionWatchReportTemplate:
     """
     
     @staticmethod
-    def get_analysis_template() -> Dict[str, Any]:
+    def get_analysis_template() -> dict:
         """
         Returns the unified analysis template for all types of election monitoring reports.
         This single template handles comprehensive, quick, multimedia, and trend analysis.
@@ -85,7 +85,7 @@ class ElectionWatchReportTemplate:
     @staticmethod
     def create_analysis_report(content_type: str = "text", 
                              analysis_depth: str = "standard", 
-                             **kwargs) -> Dict[str, Any]:
+                             **kwargs) -> dict:
         """
         Creates an analysis report using the unified template with provided data
         
@@ -116,7 +116,7 @@ class ElectionWatchReportTemplate:
         return template
     
     @staticmethod
-    def validate_analysis_report(report: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_analysis_report(report: dict) -> dict:
         """
         Validates if a report follows the expected structure
         
@@ -148,47 +148,42 @@ class ElectionWatchReportTemplate:
             }
     
     @staticmethod
-    def export_analysis_report(report_data: Dict[str, Any], filename: Optional[str] = None) -> Dict[str, Any]:
+    def export_analysis_report(report_data: dict) -> dict:
         """
         Exports an analysis report as a JSON file
         """
-        if filename is None:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"electionwatch_analysis_{timestamp}.json"
-        
         try:
-            import os
-            output_dir = os.path.join(os.path.dirname(__file__), "..", "data", "outputs")
-            os.makedirs(output_dir, exist_ok=True)
+            # Generate filename automatically
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"electionwatch_report_{timestamp}.json"
             
-            filepath = os.path.join(output_dir, filename)
-            with open(filepath, 'w', encoding='utf-8') as f:
-                json.dump(report_data, f, indent=2, ensure_ascii=False)
-            
+            # For now, return the data instead of writing to file (API context)
             return {
-                "status": "success",
+                "success": True,
                 "filename": filename,
-                "filepath": filepath,
-                "message": f"Analysis report exported successfully to {filename}"
+                "report_data": report_data,
+                "export_timestamp": datetime.now().isoformat(),
+                "message": f"Report prepared for export as {filename}"
             }
         except Exception as e:
             return {
-                "status": "error",
-                "message": f"Failed to export report: {str(e)}"
+                "success": False,
+                "error": str(e),
+                "timestamp": datetime.now().isoformat()
             }
 
 # Utility functions for backwards compatibility and easy access
-def get_analysis_template() -> Dict[str, Any]:
+def get_analysis_template() -> dict:
     """Get the unified analysis template"""
     return ElectionWatchReportTemplate.get_analysis_template()
 
-def create_analysis_report(content_type: str = "text", analysis_depth: str = "standard", **kwargs) -> Dict[str, Any]:
+def create_analysis_report(content_type: str = "text", analysis_depth: str = "standard", **kwargs) -> dict:
     """Create analysis report with provided data"""
     return ElectionWatchReportTemplate.create_analysis_report(content_type, analysis_depth, **kwargs)
 
-def export_analysis_report(report_data: Dict[str, Any], filename: Optional[str] = None) -> Dict[str, Any]:
+def export_analysis_report(report_data: dict) -> dict:
     """Export analysis report as JSON file"""
-    return ElectionWatchReportTemplate.export_analysis_report(report_data, filename)
+    return ElectionWatchReportTemplate.export_analysis_report(report_data)
 
 # Template instruction for agents
 AGENT_TEMPLATE_INSTRUCTION = """
