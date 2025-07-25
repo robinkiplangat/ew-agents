@@ -173,8 +173,8 @@ class ElectionWatchReportTemplate:
             }
 
 # Utility functions for backwards compatibility and easy access
-def get_analysis_template() -> dict:
-    """Get the unified analysis template"""
+def get_analysis_template(content_type: str = "text", analysis_depth: str = "comprehensive") -> dict:
+    """Get the unified analysis template with optional parameters"""
     return ElectionWatchReportTemplate.get_analysis_template()
 
 def create_analysis_report(content_type: str = "text", analysis_depth: str = "standard", **kwargs) -> dict:

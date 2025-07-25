@@ -27,7 +27,7 @@ def update_lexicon_term(
     language_code: str,
     severity_level: str,
     tags: list,
-    related_terms: list = None,
+    related_terms = None,
     source: str = "manual input"
 ) -> dict:
     """
@@ -169,7 +169,7 @@ def get_lexicon_term(term: str, language_code: str) -> dict:
 def detect_coded_language(
     text: str,
     language_code: str = "en",
-    context_keywords: list = None
+    context_keywords = None
 ) -> dict:
     """
     Detects new or coded language within a text sample using NLP analysis and existing lexicon.

@@ -55,7 +55,7 @@ def classify_narrative(text: str, source_platform: str = "unknown") -> dict:
             "source_platform": source_platform
         }
 
-def track_keywords(keywords: list, platforms: list = None) -> dict:
+def track_keywords(keywords: list, platforms = None) -> dict:
     """
     Monitors for specific keywords and hashtags across specified platforms.
     
