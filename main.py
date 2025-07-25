@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Standard ADK FastAPI Setup for ElectionWatch
-============================================
-
-This follows the recommended Google ADK pattern for serving agents with FastAPI.
-Uses get_fast_api_app() instead of custom FastAPI endpoints.
-Adds ElectionWatch-specific endpoints for analysis and reporting.
+ElectionWatch Standard FastAPI + ADK Integration
+==============================================================
 """
+
+# Load environment variables first, before any other imports
+from dotenv import load_dotenv
+load_dotenv()
 
 import os
 import json
@@ -278,8 +278,14 @@ def create_app():
                         }
                     }
                     
-                    # Store in MongoDB for later retrieval
-                    await store_analysis_result(analysis_id, analysis_result)
+                    # Store in MongoDB for later retrieval with better error handling
+                    storage_success = await store_analysis_result(analysis_id, analysis_result)
+                    if not storage_success:
+                        logger.warning(f"⚠️ Failed to store analysis {analysis_id} in MongoDB, but analysis completed")
+                        # Add storage status to response
+                        analysis_result["processing_metadata"]["storage_status"] = "failed"
+                    else:
+                        analysis_result["processing_metadata"]["storage_status"] = "stored"
                     
                     return analysis_result
                     
@@ -439,6 +445,39 @@ def create_app():
                 detail=f"Failed to list analyses: {str(e)}"
             )
     
+    @app.get("/storage/stats")
+    async def get_storage_statistics():
+        """
+        Get MongoDB storage statistics and collection information.
+        """
+        try:
+            stats = await get_stats()
+            return stats
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to retrieve storage stats: {str(e)}"
+            )
+
+    @app.get("/storage/recent")
+    async def get_recent_analyses(limit: int = 10):
+        """
+        Get recent analysis results from storage.
+        """
+        try:
+            from ew_agents.mongodb_storage import storage
+            recent = await storage.list_recent_analyses(limit=limit)
+            return {
+                "recent_analyses": recent,
+                "count": len(recent),
+                "limit": limit
+            }
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to retrieve recent analyses: {str(e)}"
+            )
+    
     @app.get("/storage-info")
     async def get_storage_info():
         """Get detailed MongoDB storage information."""
@@ -467,6 +506,99 @@ def create_app():
                 detail=f"Failed to get storage info: {str(e)}"
             )
     
+    @app.get("/storage/test-connection")
+    async def test_mongodb_connection():
+        """
+        Test MongoDB Atlas connection and return status.
+        """
+        try:
+            from ew_agents.mongodb_storage import storage
+            
+            # Test by getting stats
+            stats = await storage.get_collection_stats()
+            
+            if "error" in stats:
+                return {
+                    "status": "disconnected",
+                    "error": stats["error"],
+                    "message": "MongoDB Atlas connection failed",
+                    "help": "Make sure MONGODB_ATLAS_URI is set correctly in .env: MONGODB_ATLAS_URI='mongodb+srv://username:password@cluster.mongodb.net/'"
+                }
+            else:
+                return {
+                    "status": "connected",
+                    "database": stats.get("database"),
+                    "collections": stats.get("collections", {}),
+                    "message": "MongoDB Atlas connection successful"
+                }
+                
+        except Exception as e:
+            return {
+                "status": "error",
+                "error": str(e),
+                "message": "Failed to test MongoDB Atlas connection",
+                "help": "Check your MONGODB_ATLAS_URI configuration in .env file"
+            }
+
+    @app.get("/debug/env-check")
+    async def debug_environment_check():
+        """
+        Debug endpoint to check environment configuration (without exposing sensitive data).
+        """
+        try:
+            mongodb_atlas_uri = os.getenv("MONGODB_ATLAS_URI")
+            mongodb_uri = os.getenv("MONGODB_URI")
+            
+            env_info = {
+                "environment_variables": {
+                    "MONGODB_ATLAS_URI": "set" if mongodb_atlas_uri else "not_set",
+                    "MONGODB_URI": "set" if mongodb_uri else "not_set (legacy fallback)",
+                    "GOOGLE_API_KEY": "set" if os.getenv("GOOGLE_API_KEY") else "not_set"
+                },
+                "mongodb_config": {}
+            }
+            
+            # Check which URI is being used (without exposing credentials)
+            if mongodb_atlas_uri:
+                if "<username>" in mongodb_atlas_uri:
+                    env_info["mongodb_config"]["status"] = "placeholder_values_detected"
+                    env_info["mongodb_config"]["issue"] = "MONGODB_ATLAS_URI contains placeholder values like <username>"
+                else:
+                    env_info["mongodb_config"]["status"] = "uri_configured"
+                    if mongodb_atlas_uri.startswith("mongodb+srv://"):
+                        cluster_part = mongodb_atlas_uri.split("@")[1] if "@" in mongodb_atlas_uri else "unknown"
+                        env_info["mongodb_config"]["cluster"] = cluster_part
+                        env_info["mongodb_config"]["type"] = "atlas"
+                    else:
+                        env_info["mongodb_config"]["type"] = "custom"
+            elif mongodb_uri:
+                env_info["mongodb_config"]["status"] = "using_legacy_fallback"
+                env_info["mongodb_config"]["recommendation"] = "Consider migrating to MONGODB_ATLAS_URI"
+            else:
+                env_info["mongodb_config"]["status"] = "no_uri_configured"
+                env_info["mongodb_config"]["issue"] = "No MongoDB URI found in environment"
+            
+            # Check pymongo availability
+            try:
+                import pymongo
+                env_info["pymongo"] = {
+                    "available": True,
+                    "version": pymongo.version
+                }
+            except ImportError:
+                env_info["pymongo"] = {
+                    "available": False,
+                    "issue": "pymongo not installed"
+                }
+            
+            return env_info
+            
+        except Exception as e:
+            return {
+                "error": "Failed to check environment",
+                "details": str(e)
+            }
+
     return app
 
 # Create the app instance
@@ -476,6 +608,27 @@ if __name__ == "__main__":
     # Cloud Run compatible port configuration
     port = int(os.environ.get("PORT", 8080))
     
+    # MongoDB Atlas connection info at startup
+    logger.info("🔗 MongoDB Atlas Configuration:")
+    mongodb_atlas_uri = os.getenv("MONGODB_ATLAS_URI")
+    mongodb_uri = os.getenv("MONGODB_URI")
+
+    if mongodb_atlas_uri:
+        # Don't log the full URI for security, just indicate it's set
+        if mongodb_atlas_uri.startswith("mongodb+srv://"):
+            logger.info("✅ MongoDB Atlas URI configured (MONGODB_ATLAS_URI)")
+        else:
+            logger.info("⚠️ Custom MongoDB URI configured (MONGODB_ATLAS_URI)")
+    elif mongodb_uri:
+        if mongodb_uri.startswith("mongodb+srv://"):
+            logger.info("✅ MongoDB Atlas URI configured (MONGODB_URI - legacy)")
+        else:
+            logger.info("⚠️ Custom MongoDB URI configured (MONGODB_URI - legacy)")
+    else:
+        logger.warning("❌ MONGODB_ATLAS_URI not set - storage will be disabled")
+        logger.info("💡 Set your MongoDB Atlas connection in .env file:")
+        logger.info("💡 MONGODB_ATLAS_URI='mongodb+srv://username:password@cluster.mongodb.net/'")
+
     print("🚀 Starting ElectionWatch with Standard ADK FastAPI Setup")
     print(f"📍 Agents Directory: {AGENT_DIR}")
     print(f"💾 Session DB: {SESSION_SERVICE_URI}")

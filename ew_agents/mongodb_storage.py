@@ -7,41 +7,138 @@ Handles persistent storage of analysis results and report submissions
 using MCP MongoDB operations with the election_watch database.
 """
 
-import json
 import logging
+from typing import Dict, Any, Optional, List
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+import os
+
+# Use pymongo for direct MongoDB access
+try:
+    from pymongo import MongoClient
+    from pymongo.errors import PyMongoError
+    import pymongo
+    PYMONGO_AVAILABLE = True
+except ImportError:
+    PYMONGO_AVAILABLE = False
+    print("Warning: pymongo not available. Install with: pip install pymongo")
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ElectionWatchStorage:
-    """MongoDB storage handler using MCP operations."""
+    """MongoDB storage handler with seamless MCP integration."""
     
-    def __init__(self, database_name: str = "election_watch"):
+    def __init__(self, database_name: str = "election_watch", mongo_uri: str = None):
         self.database_name = database_name
         self.analysis_collection = "analysis_results"
         self.reports_collection = "report_submissions"
-    
+        
+        # Get MongoDB URI from environment (.env file) - prefer MONGODB_ATLAS_URI
+        self.mongo_uri = mongo_uri or os.getenv(
+            "MONGODB_ATLAS_URI", 
+            os.getenv("MONGODB_URI", "mongodb+srv://<username>:<password>@<cluster>.mongodb.net/")
+        )
+        
+        # Debug logging (without exposing credentials)
+        if self.mongo_uri:
+            if "<username>" in self.mongo_uri:
+                logger.warning("🔍 MongoDB URI contains placeholder values - check your .env file")
+            else:
+                # Show connection type without credentials
+                if self.mongo_uri.startswith("mongodb+srv://"):
+                    cluster_part = self.mongo_uri.split("@")[1] if "@" in self.mongo_uri else "unknown"
+                    logger.info(f"🔍 Attempting MongoDB Atlas connection to: {cluster_part}")
+                elif self.mongo_uri.startswith("mongodb://"):
+                    logger.info("🔍 Attempting MongoDB connection (non-Atlas)")
+                else:
+                    logger.warning("🔍 Invalid MongoDB URI format")
+        else:
+            logger.error("🔍 No MongoDB URI found in environment variables")
+        
+        # Check if pymongo is available
+        if not PYMONGO_AVAILABLE:
+            logger.error("❌ pymongo not available - storage will be disabled")
+            logger.info("💡 Install with: pip install pymongo")
+            self.client = None
+            self.db = None
+            return
+        
+        logger.info(f"🔍 pymongo version available: {pymongo.version}")
+        
+        if PYMONGO_AVAILABLE:
+            try:
+                # For MongoDB Atlas, we need to handle SSL and authentication
+                if self.mongo_uri.startswith("mongodb+srv://") or self.mongo_uri.startswith("mongodb://"):
+                    if "<username>" in self.mongo_uri or "<password>" in self.mongo_uri or "<cluster>" in self.mongo_uri:
+                        logger.error("❌ MongoDB Atlas URI not properly configured. Please set MONGODB_ATLAS_URI environment variable.")
+                        logger.info("💡 Example: MONGODB_ATLAS_URI='mongodb+srv://username:password@cluster.mongodb.net/'")
+                        logger.info("💡 Make sure to replace <username>, <password>, and <cluster> with actual values")
+                        self.client = None
+                        self.db = None
+                        return
+                    
+                    logger.info("🔗 Creating MongoDB Atlas client...")
+                    # Connect to MongoDB Atlas with proper SSL settings
+                    self.client = MongoClient(
+                        self.mongo_uri,
+                        tls=True,  # Enable TLS for Atlas
+                        tlsAllowInvalidCertificates=False,
+                        serverSelectionTimeoutMS=5000,  # 5 second timeout
+                        connectTimeoutMS=10000,  # 10 second connection timeout
+                        socketTimeoutMS=30000,   # 30 second socket timeout
+                        maxPoolSize=10,          # Connection pool size
+                        retryWrites=True         # Enable retryable writes
+                    )
+                else:
+                    logger.info("🔗 Creating MongoDB client (local/custom)...")
+                    # Fallback for local MongoDB (if someone overrides the URI)
+                    self.client = MongoClient(self.mongo_uri)
+                
+                self.db = self.client[self.database_name]
+                
+                logger.info("🔗 Testing MongoDB connection...")
+                # Test connection with Atlas-friendly ping
+                self.client.admin.command('ping')
+                logger.info(f"✅ MongoDB Atlas connected successfully: {self.database_name}")
+                
+            except Exception as e:
+                logger.error(f"❌ MongoDB Atlas connection failed: {type(e).__name__}: {e}")
+                if "authentication failed" in str(e).lower():
+                    logger.info("💡 Check your username and password in MONGODB_ATLAS_URI")
+                elif "network" in str(e).lower() or "timeout" in str(e).lower():
+                    logger.info("💡 Check your network connection and cluster availability")
+                elif "ssl" in str(e).lower() or "tls" in str(e).lower():
+                    logger.info("💡 TLS/SSL connection issue - check your Atlas cluster configuration")
+                else:
+                    logger.info("💡 Make sure your MONGODB_ATLAS_URI is set correctly for MongoDB Atlas")
+                logger.info("💡 Example: MONGODB_ATLAS_URI='mongodb+srv://username:password@cluster.mongodb.net/'")
+                self.client = None
+                self.db = None
+        else:
+            self.client = None
+            self.db = None
+            logger.error("❌ pymongo not available - storage will be disabled")
+            logger.info("💡 Install with: pip install pymongo")
+
     async def store_analysis_result(self, analysis_id: str, analysis_data: Dict[str, Any]) -> bool:
-        """Store analysis result in MongoDB using MCP."""
-        try:
-            # Import MCP MongoDB tools
-            import sys
-            sys.path.append('..')
+        """Store analysis result in MongoDB seamlessly."""
+        if self.db is None:
+            logger.warning("⚠️ MongoDB not available - skipping storage")
+            return False
             
-            # Use MCP insert-many with single document
+        try:
+            # Create document with standardized structure
             document = {
                 "analysis_id": analysis_id,
                 "created_at": datetime.utcnow().isoformat(),
                 "data": analysis_data,
                 "status": "completed",
-                "version": "v2_unified"
+                "version": "v2_unified",
+                "_id": analysis_id  # Use analysis_id as MongoDB _id for easy retrieval
             }
             
-            # Call MCP MongoDB insert-many (this would be replaced with actual MCP call)
-            # For now, using a direct approach that works with MCP tools
+            # Insert into MongoDB
             result = await self._mcp_insert_document(
                 collection=self.analysis_collection,
                 document=document
@@ -57,19 +154,23 @@ class ElectionWatchStorage:
         except Exception as e:
             logger.error(f"❌ Failed to store analysis {analysis_id}: {e}")
             return False
-    
+
     async def get_analysis_result(self, analysis_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieve analysis result from MongoDB using MCP."""
+        """Retrieve analysis result from MongoDB seamlessly."""
+        if self.db is None:
+            logger.warning("⚠️ MongoDB not available - cannot retrieve")
+            return None
+            
         try:
-            # Use MCP find operation
+            # Use analysis_id as _id for direct lookup
             result = await self._mcp_find_document(
                 collection=self.analysis_collection,
-                filter={"analysis_id": analysis_id}
+                filter={"_id": analysis_id}
             )
             
             if result:
                 logger.info(f"✅ Retrieved analysis result: {analysis_id}")
-                return result
+                return result.get("data", result)  # Return the data field or full document
             
             logger.warning(f"⚠️ Analysis not found: {analysis_id}")
             return None
@@ -77,16 +178,21 @@ class ElectionWatchStorage:
         except Exception as e:
             logger.error(f"❌ Failed to retrieve analysis {analysis_id}: {e}")
             return None
-    
+
     async def store_report_submission(self, submission_id: str, report_data: Dict[str, Any]) -> bool:
-        """Store report submission in MongoDB using MCP."""
+        """Store report submission in MongoDB seamlessly."""
+        if self.db is None:
+            logger.warning("⚠️ MongoDB not available - skipping storage")
+            return False
+            
         try:
             document = {
                 "submission_id": submission_id,
                 "submitted_at": datetime.utcnow().isoformat(),
                 "data": report_data,
                 "status": "submitted",
-                "version": "v2_unified"
+                "version": "v2_unified",
+                "_id": submission_id  # Use submission_id as MongoDB _id
             }
             
             result = await self._mcp_insert_document(
@@ -104,18 +210,22 @@ class ElectionWatchStorage:
         except Exception as e:
             logger.error(f"❌ Failed to store report {submission_id}: {e}")
             return False
-    
+
     async def get_report_submission(self, submission_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieve report submission from MongoDB using MCP."""
+        """Retrieve report submission from MongoDB seamlessly."""
+        if self.db is None:
+            logger.warning("⚠️ MongoDB not available - cannot retrieve")
+            return None
+            
         try:
             result = await self._mcp_find_document(
                 collection=self.reports_collection,
-                filter={"submission_id": submission_id}
+                filter={"_id": submission_id}
             )
             
             if result:
                 logger.info(f"✅ Retrieved report submission: {submission_id}")
-                return result
+                return result.get("data", result)
                 
             logger.warning(f"⚠️ Report not found: {submission_id}")
             return None
@@ -123,9 +233,12 @@ class ElectionWatchStorage:
         except Exception as e:
             logger.error(f"❌ Failed to retrieve report {submission_id}: {e}")
             return None
-    
-    async def list_recent_analyses(self, limit: int = 50) -> List[Dict[str, Any]]:
+
+    async def list_recent_analyses(self, limit: int = 10) -> List[Dict[str, Any]]:
         """List recent analysis results."""
+        if self.db is None:
+            return []
+            
         try:
             results = await self._mcp_find_documents(
                 collection=self.analysis_collection,
@@ -135,116 +248,125 @@ class ElectionWatchStorage:
             )
             
             logger.info(f"✅ Retrieved {len(results)} recent analyses")
-            return results or []
+            return results
             
         except Exception as e:
-            logger.error(f"❌ Failed to list recent analyses: {e}")
+            logger.error(f"❌ Failed to list analyses: {e}")
             return []
-    
-    async def get_storage_stats(self) -> Dict[str, Any]:
-        """Get storage statistics using MCP."""
+
+    async def get_collection_stats(self) -> Dict[str, Any]:
+        """Get statistics about stored data."""
+        if self.db is None:
+            return {"error": "MongoDB not available"}
+            
         try:
             analysis_count = await self._mcp_count_documents(self.analysis_collection)
             reports_count = await self._mcp_count_documents(self.reports_collection)
             
-            return {
-                "analysis_count": analysis_count,
-                "reports_count": reports_count,
+            stats = {
                 "database": self.database_name,
+                "collections": {
+                    "analysis_results": analysis_count,
+                    "report_submissions": reports_count
+                },
+                "total_documents": analysis_count + reports_count,
                 "status": "connected"
             }
             
+            logger.info(f"✅ Retrieved storage stats: {stats}")
+            return stats
+            
         except Exception as e:
-            logger.error(f"❌ Failed to get storage stats: {e}")
-            return {
-                "analysis_count": 0,
-                "reports_count": 0,
-                "database": self.database_name,
-                "status": "error",
-                "error": str(e)
-            }
-    
-    # ===== MCP INTEGRATION METHODS =====
-    
+            logger.error(f"❌ Failed to get stats: {e}")
+            return {"error": str(e)}
+
     async def _mcp_insert_document(self, collection: str, document: Dict[str, Any]) -> bool:
-        """Insert document using MCP MongoDB insert-many."""
+        """Insert document using pymongo with seamless error handling."""
+        if self.db is None:
+            return False
+            
         try:
-            # Import asyncio for running MCP tools
-            import asyncio
-            
-            # Use real MCP MongoDB insert-many
-            def sync_insert():
-                # This would import the actual MCP function
-                # For integration with FastAPI, we use executor
-                return True  # Placeholder for sync MCP call
-            
-            # Run in executor to handle sync MCP calls
-            result = await asyncio.get_event_loop().run_in_executor(
-                None, sync_insert
+            # Use replace_one with upsert=True for seamless updates
+            result = self.db[collection].replace_one(
+                {"_id": document["_id"]},
+                document,
+                upsert=True
             )
             
-            logger.info(f"✅ MCP insert successful for collection: {collection}")
-            return result
+            action = "updated" if result.matched_count > 0 else "inserted"
+            logger.info(f"✅ MongoDB {action} document in {collection}: {document['_id']}")
+            return True
             
-        except Exception as e:
-            logger.error(f"❌ MCP insert error: {e}")
+        except PyMongoError as e:
+            logger.error(f"❌ MongoDB insert error in {collection}: {e}")
             return False
-    
+        except Exception as e:
+            logger.error(f"❌ Unexpected error in {collection}: {e}")
+            return False
+
     async def _mcp_find_document(self, collection: str, filter: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Find single document using MCP MongoDB find."""
+        """Find single document using pymongo."""
+        if self.db is None:
+            return None
+            
         try:
-            # Placeholder for MCP call
-            # results = mcp_mongodb_find(
-            #     database=self.database_name,
-            #     collection=collection,
-            #     filter=filter,
-            #     limit=1
-            # )
-            # return results[0] if results else None
-            
-            # Simulated response for now
+            result = self.db[collection].find_one(filter)
+            if result:
+                # Convert ObjectId to string if present
+                if "_id" in result and hasattr(result["_id"], "__str__"):
+                    result["_id"] = str(result["_id"])
+                logger.debug(f"✅ MongoDB find successful in {collection}")
+            return result
+        except PyMongoError as e:
+            logger.error(f"❌ MongoDB find error in {collection}: {e}")
             return None
-            
         except Exception as e:
-            logger.error(f"❌ MCP find error: {e}")
+            logger.error(f"❌ Unexpected find error in {collection}: {e}")
             return None
-    
+
     async def _mcp_find_documents(self, collection: str, filter: Dict[str, Any], sort: Dict[str, Any] = None, limit: int = 10) -> List[Dict[str, Any]]:
-        """Find multiple documents using MCP MongoDB find."""
-        try:
-            # Placeholder for MCP call
-            # results = mcp_mongodb_find(
-            #     database=self.database_name,
-            #     collection=collection,
-            #     filter=filter,
-            #     sort=sort,
-            #     limit=limit
-            # )
-            # return results or []
-            
-            # Simulated response for now
+        """Find multiple documents using pymongo."""
+        if self.db is None:
             return []
             
+        try:
+            cursor = self.db[collection].find(filter)
+            if sort:
+                cursor = cursor.sort(list(sort.items()))
+            if limit:
+                cursor = cursor.limit(limit)
+                
+            results = list(cursor)
+            
+            # Convert ObjectIds to strings
+            for result in results:
+                if "_id" in result and hasattr(result["_id"], "__str__"):
+                    result["_id"] = str(result["_id"])
+                    
+            logger.debug(f"✅ MongoDB find_many successful in {collection}, count: {len(results)}")
+            return results
+            
+        except PyMongoError as e:
+            logger.error(f"❌ MongoDB find_many error in {collection}: {e}")
+            return []
         except Exception as e:
-            logger.error(f"❌ MCP find documents error: {e}")
+            logger.error(f"❌ Unexpected find_many error in {collection}: {e}")
             return []
-    
+
     async def _mcp_count_documents(self, collection: str, query: Dict[str, Any] = None) -> int:
-        """Count documents using MCP MongoDB count."""
-        try:
-            # Placeholder for MCP call
-            # count = mcp_mongodb_count(
-            #     database=self.database_name,
-            #     collection=collection,
-            #     query=query or {}
-            # )
-            # return count
-            
-            # Simulated response for now
+        """Count documents using pymongo."""
+        if self.db is None:
             return 0
             
+        try:
+            count = self.db[collection].count_documents(query or {})
+            logger.debug(f"✅ MongoDB count for {collection}: {count}")
+            return count
+        except PyMongoError as e:
+            logger.error(f"❌ MongoDB count error in {collection}: {e}")
+            return 0
         except Exception as e:
-            logger.error(f"❌ MCP count error: {e}")
+            logger.error(f"❌ Unexpected count error in {collection}: {e}")
             return 0
 
 # Global storage instance
@@ -269,4 +391,4 @@ async def get_report(submission_id: str) -> Optional[Dict[str, Any]]:
 
 async def get_stats() -> Dict[str, Any]:
     """Get storage statistics (convenience function)."""
-    return await storage.get_storage_stats() 
+    return await storage.get_collection_stats() 
