@@ -20,7 +20,7 @@ All tools within these agents are currently implemented as mock functions, simul
     *   Authenticate using: `gcloud auth application-default login`
 *   Environment variables for GCP:
     *   `GOOGLE_CLOUD_PROJECT`: Your GCP project ID.
-    *   `GOOGLE_CLOUD_LOCATION`: Your GCP region (e.g., `us-central1`).
+    *   `GOOGLE_CLOUD_LOCATION`: Your GCP region (e.g., `europe-west1`).
 *   Required Python packages (see `ml/requirements.txt`). Install using:
     ```bash
     pip install -r ml/requirements.txt

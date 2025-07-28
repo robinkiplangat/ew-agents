@@ -75,11 +75,15 @@ class KnowledgeRetriever:
         Initialize the knowledge retrieval system.
         
         Args:
-            mongodb_uri: MongoDB connection string
+            mongodb_uri: MongoDB connection string (Atlas URI recommended)
             database_name: Name of the knowledge database
             embedding_model: HuggingFace embedding model to use
         """
-        self.mongodb_uri = mongodb_uri or os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+        # Use MONGODB_ATLAS_URI as primary, MONGODB_URI as fallback for consistency
+        self.mongodb_uri = mongodb_uri or os.getenv(
+            "MONGODB_ATLAS_URI", 
+            os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+        )
         self.database_name = database_name
         self.embedding_model_name = embedding_model
         
@@ -478,7 +482,7 @@ async def get_knowledge_retriever() -> KnowledgeRetriever:
     
     return knowledge_retriever
 
-async def search_knowledge(query_text: str, collections: List[str] = None) -> Dict[str, Any]:
+async def search_knowledge(query_text: str, collections: Optional[List[str]] = None) -> Dict[str, Any]:
     """Convenience function for knowledge search"""
     retriever = await get_knowledge_retriever()
     query = KnowledgeQuery(query_text=query_text, collections=collections)

@@ -72,7 +72,8 @@ class ElectionWatchReportTemplate:
                     "electoral_impact": "",
                     "social_cohesion_threat": "",
                     "urgency_level": ""
-                },
+                }
+                ,
                 "processing_metadata": {
                     "agents_utilized": [],
                     "analysis_duration": 0.0,

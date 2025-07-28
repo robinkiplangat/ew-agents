@@ -320,7 +320,7 @@ def create_app():
                             
                             # Store and return the complete template
                             storage_success = await store_analysis_result(analysis_id, template_result)
-                            template_result.setdefault("processing_metadata", {}).update({
+                            template_result.setdefault("analysis_insights", {}).setdefault("processing_metadata", {}).update({
                                 "analysis_id": analysis_id,
                                 "priority": priority,
                                 "agent_used": "ElectionWatchCoordinator",
@@ -350,54 +350,71 @@ def create_app():
                             })
                             # Add storage status
                             storage_success = await store_analysis_result(analysis_id, parsed_analysis)
-                            parsed_analysis.setdefault("processing_metadata", {})["storage_status"] = "stored" if storage_success else "failed"
+                            parsed_analysis.setdefault("analysis_insights", {}).setdefault("processing_metadata", {})["storage_status"] = "stored" if storage_success else "failed"
                             return parsed_analysis
                     except (json.JSONDecodeError, KeyError, TypeError):
                         logger.info("Agent response not in ElectionWatch format, using fallback template")
                     
-                    # Fallback: Generate generic ElectionWatch response format
+                    # Fallback: Generate unified ElectionWatch template format
                     end_time = datetime.now()
                     processing_time = (end_time - start_time).total_seconds()
                     
-                    analysis_result = {
-                        "report_metadata": {
-                            "report_id": analysis_id,
-                            "analysis_timestamp": end_time.isoformat(),
-                            "content_source": source,
-                            "content_type": metadata_dict.get("content_type", "text_post"),
-                            "processing_time_seconds": processing_time
-                        },
-                        "content_analysis": {
-                            "summary": analysis_text,
-                            "files_processed": len(processed_files),
-                            "total_content_length": len(all_text)
-                        },
-                        "risk_assessment": {
-                            "overall_risk": "Medium",  # This would come from agent analysis
-                            "analysis_method": "adk_agent",
-                            "confidence_score": 0.85
-                        },
-                        "recommendations": [
-                            "Content analyzed using ElectionWatch AI system",
-                            f"Processed {len(processed_files)} uploaded files",
-                            "Monitor for similar content patterns"
-                        ],
-                        "processing_metadata": {
-                            "analysis_id": analysis_id,
-                            "priority": priority,
-                            "agent_used": "ElectionWatchCoordinator",
-                            "files_info": processed_files
-                        }
+                    # Import and use the unified template
+                    sys.path.append('ew_agents')
+                    from ew_agents.report_templates import get_analysis_template
+                    analysis_result = get_analysis_template(content_type=metadata_dict.get("content_type", "text_post"), analysis_depth="standard")
+                    
+                    # Update with actual metadata
+                    analysis_result['report_metadata'].update({
+                        "report_id": analysis_id,
+                        "analysis_timestamp": end_time.isoformat(),
+                        "content_source": source,
+                        "processing_time_seconds": processing_time
+                    })
+                    
+                    # Populate with analysis data
+                    analysis_result['analysis_insights']['content_statistics'].update({
+                        "word_count": len(all_text.split()),
+                        "character_count": len(all_text),
+                        "language_detected": "en"
+                    })
+                    
+                    # Add processing metadata inside analysis_insights to match template structure
+                    analysis_result.setdefault("analysis_insights", {}).setdefault("processing_metadata", {}).update({
+                        "analysis_id": analysis_id,
+                        "priority": priority,
+                        "agent_used": "ElectionWatchCoordinator",
+                        "files_info": processed_files,
+                        "analysis_duration": processing_time,
+                        "storage_status": "stored"  # Will update this after storage attempt
+                    })
+                    
+                    # Add basic risk assessment
+                    analysis_result['risk_level'] = "Medium"
+                    analysis_result['narrative_classification'] = {
+                        "theme": "general_election_content",
+                        "threat_level": "low",
+                        "details": "Content analyzed using ElectionWatch AI system",
+                        "confidence_score": 0.85,
+                        "alternative_themes": [],
+                        "threat_indicators": []
                     }
+                    
+                    # Add basic recommendations
+                    analysis_result['recommendations'] = [
+                        "Content analyzed using ElectionWatch AI system",
+                        f"Processed {len(processed_files)} uploaded files",
+                        "Monitor for similar content patterns"
+                    ]
                     
                     # Store in MongoDB for later retrieval with better error handling
                     storage_success = await store_analysis_result(analysis_id, analysis_result)
                     if not storage_success:
                         logger.warning(f"⚠️ Failed to store analysis {analysis_id} in MongoDB, but analysis completed")
-                        # Add storage status to response
-                        analysis_result["processing_metadata"]["storage_status"] = "failed"
+                        # Update storage status
+                        analysis_result.setdefault("analysis_insights", {}).setdefault("processing_metadata", {})["storage_status"] = "failed"
                     else:
-                        analysis_result["processing_metadata"]["storage_status"] = "stored"
+                        analysis_result.setdefault("analysis_insights", {}).setdefault("processing_metadata", {})["storage_status"] = "stored"
                     
                     return analysis_result
                     
