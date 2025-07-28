@@ -164,7 +164,7 @@ def create_app():
                         # Handle different file types
                         if file.content_type in ["text/csv", "application/csv"]:
                             csv_text = content.decode('utf-8')
-                            all_text += f"\n\nCSV file '{file.filename}':\n{csv_text[:2000]}"
+                            all_text += f"\n\nCSV file '{file.filename}':\n{csv_text}"
                             file_info["processed"] = "csv_content"
                             
                         elif file.content_type and file.content_type.startswith("text/"):
@@ -200,9 +200,11 @@ def create_app():
                     runner = InMemoryRunner(root_agent)
                     
                     # Create proper ADK Content object
+                    # Use proper ADK Content object
                     user_content = types.Content(
                         role="user",
-                        parts=[types.Part(text=f"Analyze this content for election-related misinformation, narratives, and risks:\n\n{all_text}\n\nMetadata: {json.dumps(metadata_dict)}")]
+                        parts=[
+                            types.Part(text=f"Analyze this content for election-related misinformation, narratives, and risks. Process both text and any CSV data thoroughly: {all_text} Metadata: {json.dumps(metadata_dict)}")]
                     )
                     
                     # Generate unique session ID and create session
@@ -246,10 +248,11 @@ def create_app():
                     
                     # Check if the workflow completed all agents (look for specific indicators)
                     workflow_completed = any(phrase in analysis_text for phrase in [
-                        "LEXICON ANALYSIS COMPLETE", 
-                        "TREND ANALYSIS COMPLETE",
-                        "TRANSFERRING TO TREND ANALYSIS",
-                        "ElectionWatch analysis workflow"
+                        "ElectionWatch analysis workflow",
+                        "DataEngAgent: Extraction complete",
+                        "OsintAgent: Analysis complete",
+                        "LexiconAgent: Analysis complete",
+                        "TrendAnalysisAgent: Analysis complete"
                     ])
                     
                     if workflow_completed:

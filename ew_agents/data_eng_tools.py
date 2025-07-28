@@ -110,6 +110,14 @@ def process_csv_data(csv_content: str, expected_columns: list = []) -> dict:
         if expected_columns:
             missing_columns = [col for col in expected_columns if col not in fieldnames]
         
+        # Extract tweet content for analysis
+        tweet_content = []
+        for row in rows:
+            # Try to find tweet content in various possible columns
+            tweet_text = row.get('Tweet') or row.get('tweet') or row.get('text') or ''
+            if tweet_text:
+                tweet_content.append(tweet_text)
+        
         # Basic statistics
         total_rows = len(rows)
         non_empty_rows = len([row for row in rows if any(row.values())])
@@ -123,11 +131,12 @@ def process_csv_data(csv_content: str, expected_columns: list = []) -> dict:
             "missing_expected_columns": missing_columns,
             "sample_data": rows[:3],  # First 3 rows as sample
             "data": rows,  # Full data for processing
+            "tweet_content": tweet_content,  # Extracted tweet content for analysis
             "processing_timestamp": datetime.now().isoformat(),
             "message": f"Successfully processed CSV with {total_rows} rows and {len(fieldnames)} columns"
         }
         
-        logger.info(f"✅ CSV processing completed: {total_rows} rows, {len(fieldnames)} columns")
+        logger.info(f"✅ CSV processing completed: {total_rows} rows, {len(fieldnames)} columns extracted, {len(tweet_content)} tweets found")
         return processed_data
         
     except Exception as e:
@@ -389,7 +398,7 @@ def query_stored_results(query_params: Optional[dict] = None, collection: str = 
         }
 
 # =============================================================================
-# HELPER FUNCTIONS (unchanged)
+# HELPER FUNCTIONS
 # =============================================================================
 
 def analyze_sentiment_simple(text: str) -> float:
@@ -468,12 +477,7 @@ def detect_risk_patterns_simple(text: str) -> List[str]:
 # TOOL REGISTRATION FOR ADK AGENTS (REMOVED)
 # =============================================================================
 
-# Backward compatibility function aliases
-social_media_collector = process_social_media_data
-store_analysis_results_alias = store_analysis_results
-query_knowledge_base = query_stored_results
-
-# Export all processing functions and backward compatibility aliases
+# Export all processing functions
 __all__ = [
     'process_social_media_data',
     'process_csv_data',
@@ -482,7 +486,4 @@ __all__ = [
     'extract_audio_transcript_from_video',
     'store_analysis_results',
     'query_stored_results',
-    'social_media_collector',  # backward compatibility
-    'store_analysis_results_alias',  # backward compatibility
-    'query_knowledge_base'  # backward compatibility
 ]

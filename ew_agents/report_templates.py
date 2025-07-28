@@ -212,16 +212,24 @@ Export final reports using export_analysis_report() for persistent storage.
 """
 
 # Create FunctionTool instances for coordinator use
-from google.adk.tools import FunctionTool
-
-get_analysis_template_tool = FunctionTool(
-    func=get_analysis_template
-)
-
-export_analysis_report_tool = FunctionTool(
-    func=export_analysis_report
-)
-
-# Aliases for agent.py compatibility
-generate_analysis_template_tool = get_analysis_template_tool
-generate_report_template_tool = export_analysis_report_tool 
+try:
+    from google.adk.tools import FunctionTool
+    
+    get_analysis_template_tool = FunctionTool(
+        func=get_analysis_template
+    )
+    
+    export_analysis_report_tool = FunctionTool(
+        func=export_analysis_report
+    )
+    
+    # Aliases for agent.py compatibility
+    generate_analysis_template_tool = get_analysis_template_tool
+    generate_report_template_tool = export_analysis_report_tool
+    
+except ImportError:
+    # Fallback for when google.adk.tools is not available
+    get_analysis_template_tool = None
+    export_analysis_report_tool = None
+    generate_analysis_template_tool = None
+    generate_report_template_tool = None 

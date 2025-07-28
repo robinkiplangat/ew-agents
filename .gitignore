@@ -15,3 +15,5 @@ __pycache__/
 .gcloudignore
 
 ew-agent-service-key.json
+/data/
+/docs/

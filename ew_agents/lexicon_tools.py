@@ -27,7 +27,7 @@ def update_lexicon_term(
     language_code: str,
     severity_level: str,
     tags: list,
-    related_terms = None,
+    related_terms: list = None,
     source: str = "manual input"
 ) -> dict:
     """
