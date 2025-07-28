@@ -13,7 +13,14 @@ def get_mongo_connection():
     """Get MongoDB Atlas connection"""
     try:
         mongo_uri = os.getenv('MONGODB_ATLAS_URI', 'mongodb+srv://ew_ml:moHsc5i6gYFrLsvL@ewcluster1.fpkzpxg.mongodb.net/')
-        client = MongoClient(mongo_uri, tlsAllowInvalidCertificates=True)
+        # Enhanced SSL configuration for MongoDB Atlas
+        client = MongoClient(
+            mongo_uri,
+            tlsAllowInvalidCertificates=True,
+            tls=True,
+            ssl_cert_reqs='CERT_NONE',
+            serverSelectionTimeoutMS=5000  # 5 second timeout
+        )
         db = client["election_watch"]
         return client, db
     except Exception as e:

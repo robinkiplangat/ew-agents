@@ -110,33 +110,8 @@ class KnowledgeRetriever:
     async def initialize(self):
         """Initialize MongoDB connection, embeddings, and build indexes"""
         try:
-            # Connect to MongoDB with enhanced SSL configuration
-            import ssl
-            from pymongo import MongoClient
-            
-            # Configure SSL for MongoDB Atlas
-            if "mongodb+srv://" in self.mongodb_uri:
-                # Add SSL parameters for MongoDB Atlas
-                if "?" in self.mongodb_uri:
-                    self.mongodb_uri += "&tlsAllowInvalidCertificates=true&ssl=true"
-                else:
-                    self.mongodb_uri += "?tlsAllowInvalidCertificates=true&ssl=true"
-            
-            # Enhanced SSL configuration for MongoDB Atlas
-            self.client = MongoClient(
-                self.mongodb_uri,
-                tlsAllowInvalidCertificates=True,
-                serverSelectionTimeoutMS=5000  # 5 second timeout
-            )
-            
-            # Test connection
-            try:
-                self.client.admin.command('ping')
-                logger.info("✅ MongoDB connection successful")
-            except Exception as ping_error:
-                logger.warning(f"⚠️ MongoDB ping failed: {ping_error}")
-                # Continue anyway - connection might still work
-            
+            # Connect to MongoDB
+            self.client = MongoClient(self.mongodb_uri)
             self.db = self.client[self.database_name]
             
             # Initialize embedding model
