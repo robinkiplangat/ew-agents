@@ -1200,8 +1200,13 @@ def create_app():
                         lexicon_search = await search_knowledge(llm_response, collections=['hate_speech_lexicon'])
                         logger.info(f'📖 Lexicon search: {len(lexicon_search.get("hate_speech_lexicon", {}).get("source_nodes", []))} matches found')
                         
+                    except Exception as kb_error:
+                        logger.warning(f'⚠️ Knowledge base integration failed: {kb_error}')
+                        logger.info('🔄 Falling back to basic analysis without knowledge base enhancement')
+                        # Continue with basic analysis
+                        
                         # Extract narrative classification from knowledge base results
-                        if narrative_search.get('narratives', {}).get('source_nodes'):
+                        if narrative_search and narrative_search.get('narratives', {}).get('source_nodes'):
                             best_narrative = narrative_search['narratives']['source_nodes'][0]
                             narrative_meta = best_narrative.get('metadata', {})
                             confidence = best_narrative.get('score', 0.5)
@@ -1231,7 +1236,7 @@ def create_app():
                         lexicon_terms = []
                         
                         # Add knowledge base lexicon matches
-                        if lexicon_search.get('hate_speech_lexicon', {}).get('source_nodes'):
+                        if lexicon_search and lexicon_search.get('hate_speech_lexicon', {}).get('source_nodes'):
                             for lexicon_node in lexicon_search['hate_speech_lexicon']['source_nodes'][:3]:  # Top 3 matches
                                 lexicon_meta = lexicon_node.get('metadata', {})
                                 lexicon_terms.append({
@@ -1298,7 +1303,7 @@ def create_app():
                         logger.info('✅ Added LLM response to analysis_insights')
                         
                         # Extract key findings from knowledge base
-                        if narrative_search.get('narratives', {}).get('response'):
+                        if narrative_search and narrative_search.get('narratives', {}).get('response'):
                             report['analysis_insights']['key_findings'] = narrative_search['narratives']['response'][:500]
                         else:
                             report['analysis_insights']['key_findings'] = f"Analysis of {len(all_text.split())} words of content for election-related patterns"
