@@ -46,11 +46,25 @@ async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, An
     """
     Format the LLM response into a clean, professional report using Qwen via OpenRouter.
     """
-    try:
-        openrouter_api_key = os.getenv("OPEN_ROUTER_API_KEY")
-        if not openrouter_api_key:
-            logger.warning("OPEN_ROUTER_API_KEY not found, returning raw response")
-            return llm_response
+                    try:
+                    # Try to get API key from environment variable first
+                    openrouter_api_key = os.getenv("OPEN_ROUTER_API_KEY")
+                    
+                    # If not found, try to get from Google Cloud Secrets Manager
+                    if not openrouter_api_key:
+                        try:
+                            from google.cloud import secretmanager
+                            client = secretmanager.SecretManagerServiceClient()
+                            name = f"projects/{os.getenv('GOOGLE_CLOUD_PROJECT', 'ew-agents-v02')}/secrets/open-router-api-key/versions/latest"
+                            response = client.access_secret_version(request={"name": name})
+                            openrouter_api_key = response.payload.data.decode("UTF-8")
+                            logger.info("Retrieved OPEN_ROUTER_API_KEY from Google Cloud Secrets Manager")
+                        except Exception as secret_error:
+                            logger.warning(f"Could not retrieve OPEN_ROUTER_API_KEY from Secrets Manager: {secret_error}")
+                    
+                    if not openrouter_api_key:
+                        logger.warning("OPEN_ROUTER_API_KEY not found, returning raw response")
+                        return llm_response
         
         # Extract key information from analysis data
         analysis_id = analysis_data.get("structured_report", {}).get("report_metadata", {}).get("report_id", "Unknown")
@@ -81,44 +95,44 @@ async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, An
         **RAW ANALYSIS DATA:**
         {llm_response}
         
-        **OUTPUT FORMAT:**
-        Return the report in clean HTML format with the following structure:
-        
-        <div class="report-container">
-            <div class="header">
-                <h1>ElectionWatch Security Analysis Report</h1>
-                <div class="metadata">
-                    <p><strong>Report ID:</strong> {analysis_id}</p>
-                    <p><strong>Analysis Date:</strong> {date_analyzed}</p>
-                    <p><strong>Risk Level:</strong> <span class="risk-{risk_level}">{risk_level.upper()}</span></p>
-                </div>
-            </div>
-            
-            <div class="executive-summary">
-                <h2>Executive Summary</h2>
-                <!-- Concise overview of key findings -->
-            </div>
-            
-            <div class="key-findings">
-                <h2>Key Findings</h2>
-                <!-- Bullet points of main discoveries -->
-            </div>
-            
-            <div class="risk-assessment">
-                <h2>Risk Assessment</h2>
-                <!-- Detailed risk analysis with severity levels -->
-            </div>
-            
-            <div class="recommendations">
-                <h2>Recommendations</h2>
-                <!-- Actionable next steps -->
-            </div>
-            
-            <div class="technical-details">
-                <h2>Technical Analysis</h2>
-                <!-- Detailed technical findings -->
-            </div>
-        </div>
+                            **OUTPUT FORMAT:**
+                    Return the report in clean HTML format with the following structure:
+                    
+                    <div class="report-container">
+                        <div class="header">
+                            <h1>ElectionWatch Security Analysis Report</h1>
+                            <div class="metadata">
+                                <p><strong>Report ID:</strong> {analysis_id}</p>
+                                <p><strong>Analysis Date:</strong> {date_analyzed}</p>
+                                <p><strong>Risk Level:</strong> <span class="risk-{risk_level}">{risk_level.upper()}</span></p>
+                            </div>
+                        </div>
+                        
+                        <div class="executive-summary">
+                            <h2>EXECUTIVE SUMMARY</h2>
+                            <!-- Concise overview of key findings -->
+                        </div>
+                        
+                        <div class="key-findings">
+                            <h2>KEY FINDINGS</h2>
+                            <!-- Bullet points of main discoveries -->
+                        </div>
+                        
+                        <div class="risk-assessment">
+                            <h2>RISK ASSESSMENT</h2>
+                            <!-- Detailed risk analysis with severity levels -->
+                        </div>
+                        
+                        <div class="recommendations">
+                            <h2>RECOMMENDATIONS</h2>
+                            <!-- Actionable next steps -->
+                        </div>
+                        
+                        <div class="technical-details">
+                            <h2>TECHNICAL ANALYSIS</h2>
+                            <!-- Detailed technical findings -->
+                        </div>
+                    </div>
         
         **STYLING GUIDELINES:**
         - Use professional color scheme (blues, grays, whites)
@@ -139,7 +153,15 @@ async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, An
         Create a report that would be suitable for presentation to election officials, security teams, and government stakeholders.
         """
         
-        async with aiohttp.ClientSession() as session:
+        # Create SSL context to handle certificate issues
+        import ssl
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
+        connector = aiohttp.TCPConnector(ssl=ssl_context)
+        
+        async with aiohttp.ClientSession(connector=connector) as session:
             headers = {
                 "Authorization": f"Bearer {openrouter_api_key}",
                 "Content-Type": "application/json"
@@ -255,8 +277,11 @@ async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, An
                     </style>
                     """
                     
-                    # Combine the CSS with the formatted report
-                    final_report = css_styles + formatted_report
+                    # Clean up markdown code blocks from the LLM response
+                    cleaned_report = formatted_report.replace("```html", "").replace("```", "")
+                                
+                    # Combine the CSS with the cleaned report
+                    final_report = css_styles + cleaned_report
                     return final_report
                     
                 else:
@@ -269,64 +294,140 @@ async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, An
 
 def generate_pdf_report(report_content: str, analysis_id: str) -> BytesIO:
     """
-    Generate a PDF report from the formatted content.
+    Generate a PDF report from the formatted content with enhanced aesthetics.
     """
     try:
         # Create a buffer for the PDF
         buffer = BytesIO()
         
-        # Create the PDF document
-        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        # Create the PDF document with margins
+        doc = SimpleDocTemplate(buffer, pagesize=A4, 
+                              leftMargin=50, rightMargin=50, 
+                              topMargin=50, bottomMargin=50)
         styles = getSampleStyleSheet()
         
-        # Create custom styles
+        # Create enhanced custom styles
         title_style = ParagraphStyle(
             'CustomTitle',
             parent=styles['Heading1'],
-            fontSize=16,
+            fontSize=24,
             spaceAfter=30,
-            textColor=colors.darkblue
+            textColor=colors.darkblue,
+            alignment=1,  # Center alignment
+            fontName='Helvetica-Bold'
+        )
+        
+        subtitle_style = ParagraphStyle(
+            'CustomSubtitle',
+            parent=styles['Normal'],
+            fontSize=12,
+            spaceAfter=20,
+            textColor=colors.grey,
+            alignment=1,  # Center alignment
+            fontName='Helvetica'
         )
         
         heading_style = ParagraphStyle(
             'CustomHeading',
             parent=styles['Heading2'],
-            fontSize=14,
-            spaceAfter=12,
-            textColor=colors.darkblue
+            fontSize=16,
+            spaceAfter=15,
+            spaceBefore=20,
+            textColor=colors.darkblue,
+            fontName='Helvetica-Bold',
+            leftIndent=0
+        )
+        
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontSize=11,
+            spaceAfter=8,
+            textColor=colors.black,
+            fontName='Helvetica',
+            leftIndent=0
+        )
+        
+        highlight_style = ParagraphStyle(
+            'CustomHighlight',
+            parent=styles['Normal'],
+            fontSize=11,
+            spaceAfter=8,
+            textColor=colors.black,
+            fontName='Helvetica',
+            leftIndent=20,
+            backColor=colors.lightgrey
         )
         
         # Build the PDF content
         story = []
         
-        # Title
-        story.append(Paragraph("ElectionWatch Analysis Report", title_style))
-        story.append(Spacer(1, 20))
+        # Professional header with icon-like elements
+        story.append(Paragraph("🔍 ELECTIONWATCH SECURITY ANALYSIS", title_style))
+        story.append(Paragraph("Professional Intelligence Report", subtitle_style))
         
-        # Analysis ID
-        story.append(Paragraph(f"Report ID: {analysis_id}", styles['Normal']))
-        story.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
-        story.append(Spacer(1, 20))
+        # Metadata section with clean formatting
+        story.append(Paragraph(f"📋 Report ID: {analysis_id}", normal_style))
+        story.append(Paragraph(f"📅 Generated: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}", normal_style))
+        story.append(Spacer(1, 30))
         
-        # Parse HTML content and convert to PDF
-        # Simple HTML parsing for basic formatting
-        lines = report_content.split('\n')
+        # Parse HTML content and convert to PDF with better structure
+        import re
+        
+        # Remove CSS styles
+        content_without_css = re.sub(r'<style>.*?</style>', '', report_content, flags=re.DOTALL)
+        
+        # Extract structured content from HTML
+        sections = []
+        
+        # Find main sections
+        section_patterns = [
+            (r'<h1[^>]*>(.*?)</h1>', 'h1'),
+            (r'<h2[^>]*>(.*?)</h2>', 'h2'),
+            (r'<div class="([^"]*)"[^>]*>(.*?)</div>', 'div'),
+            (r'<p[^>]*>(.*?)</p>', 'p')
+        ]
+        
+        # Extract text content while preserving structure
+        content_text = re.sub(r'<[^>]+>', '', content_without_css)
+        
+        # Split into lines and process with better formatting
+        lines = content_text.split('\n')
+        current_section = ""
+        
         for line in lines:
             line = line.strip()
             if not line:
                 continue
-                
-            if line.startswith('<h1>') or line.startswith('<h2>'):
-                # Extract text from HTML tags
-                text = line.replace('<h1>', '').replace('</h1>', '').replace('<h2>', '').replace('</h2>', '')
-                story.append(Paragraph(text, heading_style))
-            elif line.startswith('<p>'):
-                text = line.replace('<p>', '').replace('</p>', '')
-                story.append(Paragraph(text, styles['Normal']))
-            else:
-                story.append(Paragraph(line, styles['Normal']))
             
-            story.append(Spacer(1, 6))
+            # Skip CSS remnants and empty lines
+            if not line or line.startswith('{') or line.startswith('}') or line.startswith('.'):
+                continue
+            
+            # Detect section headers (common patterns from LLM output)
+            if any(keyword in line.lower() for keyword in ['executive summary', 'key findings', 'risk assessment', 'recommendations', 'technical analysis', 'technical details']):
+                if current_section:  # Add spacing between sections
+                    story.append(Spacer(1, 15))
+                current_section = line
+                story.append(Paragraph(f"📊 {line.upper()}", heading_style))
+                story.append(Spacer(1, 10))
+            elif line.startswith('•') or line.startswith('-') or line.startswith('*'):
+                # Bullet points
+                story.append(Paragraph(f"  {line}", normal_style))
+            elif len(line) > 100:  # Long paragraphs
+                story.append(Paragraph(line, normal_style))
+                story.append(Spacer(1, 5))
+            elif line.isupper() and len(line) < 50:  # Small caps headers
+                story.append(Paragraph(line, heading_style))
+            else:
+                # Regular content
+                story.append(Paragraph(line, normal_style))
+        
+        # Add footer
+        story.append(Spacer(1, 30))
+        story.append(Paragraph("─" * 50, normal_style))
+        story.append(Paragraph("Generated by ElectionWatch Security Intelligence Platform", subtitle_style))
+        story.append(Paragraph("For official use only", subtitle_style))
         
         # Build the PDF
         doc.build(story)
@@ -2628,11 +2729,15 @@ def create_app():
             # Generate PDF
             pdf_buffer = generate_pdf_report(formatted_report, analysis_id)
             
-            # Return the PDF as a file response
-            return FileResponse(
-                BytesIO(pdf_buffer.getvalue()),
+            # Return the PDF as a response with proper headers
+            from fastapi.responses import Response
+            
+            return Response(
+                content=pdf_buffer.getvalue(),
                 media_type="application/pdf",
-                filename=f"electionwatch_report_{analysis_id}.pdf"
+                headers={
+                    "Content-Disposition": f"attachment; filename=electionwatch_report_{analysis_id}.pdf"
+                }
             )
             
         except HTTPException:
