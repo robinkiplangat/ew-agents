@@ -21,14 +21,690 @@ import sys # Added for sys.path.append
 # Set up logging
 logger = logging.getLogger(__name__)
 
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, status, Request
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+import aiohttp
+import base64
+from io import BytesIO
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
 
 from google.adk.cli.fast_api import get_fast_api_app
 
 # Get the directory where main.py is located
 AGENT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# ===== REPORT GENERATION FUNCTIONS =====
+
+async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, Any]) -> str:
+    """
+    Format the LLM response into a clean, professional report using Qwen via OpenRouter.
+    """
+    try:
+        openrouter_api_key = os.getenv("OPEN_ROUTER_API_KEY")
+        if not openrouter_api_key:
+            logger.warning("OPEN_ROUTER_API_KEY not found, returning raw response")
+            return llm_response
+        
+        # Extract key information from analysis data
+        analysis_id = analysis_data.get("structured_report", {}).get("report_metadata", {}).get("report_id", "Unknown")
+        analysis_type = analysis_data.get("metadata", {}).get("analysis_type", "election_analysis")
+        risk_level = analysis_data.get("structured_report", {}).get("risk_level", "unknown")
+        date_analyzed = analysis_data.get("structured_report", {}).get("date_analyzed", "Unknown")
+        
+        # Create a comprehensive prompt for professional report generation
+        prompt = f"""
+        You are a senior election security analyst tasked with creating a professional, executive-level report. 
+        
+        Transform the following raw analysis data into a clean, aesthetically appealing, and insightful report.
+        
+        **REPORT REQUIREMENTS:**
+        1. Create a professional executive summary
+        2. Extract and highlight key insights and findings
+        3. Provide clear assessments with visual indicators
+        4. Offer actionable recommendations
+        5. Include relevant technical details in an accessible format
+        6. Use professional language suitable for all stakeholders
+        
+        **ANALYSIS CONTEXT:**
+        - Analysis ID: {analysis_id}
+        - Analysis Type: {analysis_type}
+        - Risk Level: {risk_level}
+        - Date Analyzed: {date_analyzed}
+        
+        **RAW ANALYSIS DATA:**
+        {llm_response}
+        
+        **OUTPUT FORMAT:**
+        Return the report in clean HTML format with the following structure:
+        
+        <div class="report-container">
+            <div class="header">
+                <h1>ElectionWatch Security Analysis Report</h1>
+                <div class="metadata">
+                    <p><strong>Report ID:</strong> {analysis_id}</p>
+                    <p><strong>Analysis Date:</strong> {date_analyzed}</p>
+                    <p><strong>Risk Level:</strong> <span class="risk-{risk_level}">{risk_level.upper()}</span></p>
+                </div>
+            </div>
+            
+            <div class="executive-summary">
+                <h2>Executive Summary</h2>
+                <!-- Concise overview of key findings -->
+            </div>
+            
+            <div class="key-findings">
+                <h2>Key Findings</h2>
+                <!-- Bullet points of main discoveries -->
+            </div>
+            
+            <div class="risk-assessment">
+                <h2>Risk Assessment</h2>
+                <!-- Detailed risk analysis with severity levels -->
+            </div>
+            
+            <div class="recommendations">
+                <h2>Recommendations</h2>
+                <!-- Actionable next steps -->
+            </div>
+            
+            <div class="technical-details">
+                <h2>Technical Analysis</h2>
+                <!-- Detailed technical findings -->
+            </div>
+        </div>
+        
+        **STYLING GUIDELINES:**
+        - Use professional color scheme (blues, grays, whites)
+        - Include appropriate CSS classes for styling
+        - Make risk levels visually distinct (red for high, yellow for medium, green for low)
+        - Use bullet points and numbered lists for clarity
+        - Ensure the report is scannable and easy to read
+        - Include relevant icons or visual indicators where appropriate
+        
+        **CONTENT GUIDELINES:**
+        - Extract the most important insights from the raw data
+        - Present information in a logical, flowing manner
+        - Use clear, professional language
+        - Focus on actionable intelligence
+        - Highlight critical security concerns
+        - Provide context for technical findings
+        
+        Create a report that would be suitable for presentation to election officials, security teams, and government stakeholders.
+        """
+        
+        async with aiohttp.ClientSession() as session:
+            headers = {
+                "Authorization": f"Bearer {openrouter_api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            payload = {
+                "model": "qwen/qwen3-235b-a22b-2507:free",
+                "messages": [
+                    {
+                        "role": "system", 
+                        "content": "You are a senior election security analyst with expertise in creating professional, executive-level reports. You excel at transforming raw analysis data into clear, actionable intelligence reports that are both comprehensive and accessible to stakeholders."
+                    },
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": 0.2,  # Lower temperature for more consistent formatting
+                "max_tokens": 4000   # Increased token limit for comprehensive reports
+            }
+            
+            async with session.post("https://openrouter.ai/api/v1/chat/completions", 
+                                  headers=headers, json=payload) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    formatted_report = result["choices"][0]["message"]["content"]
+                    
+                    # Add CSS styling to make the report more visually appealing
+                    css_styles = """
+                    <style>
+                    .report-container {
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        max-width: 1200px;
+                        margin: 0 auto;
+                        padding: 20px;
+                        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+                        min-height: 100vh;
+                    }
+                    .header {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        padding: 30px;
+                        border-radius: 10px;
+                        margin-bottom: 30px;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                    }
+                    .header h1 {
+                        margin: 0 0 20px 0;
+                        font-size: 2.5em;
+                        font-weight: 300;
+                    }
+                    .metadata {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                        gap: 15px;
+                        margin-top: 20px;
+                    }
+                    .metadata p {
+                        margin: 5px 0;
+                        font-size: 1.1em;
+                    }
+                    .risk-high { color: #dc3545; font-weight: bold; background: #ffe6e6; padding: 5px 10px; border-radius: 5px; }
+                    .risk-medium { color: #ffc107; font-weight: bold; background: #fff3cd; padding: 5px 10px; border-radius: 5px; }
+                    .risk-low { color: #28a745; font-weight: bold; background: #d4edda; padding: 5px 10px; border-radius: 5px; }
+                    .risk-unknown { color: #6c757d; font-weight: bold; background: #f8f9fa; padding: 5px 10px; border-radius: 5px; }
+                    
+                    .executive-summary, .key-findings, .risk-assessment, .recommendations, .technical-details {
+                        background: white;
+                        padding: 25px;
+                        margin-bottom: 25px;
+                        border-radius: 10px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+                        border-left: 5px solid #667eea;
+                    }
+                    
+                    h2 {
+                        color: #2c3e50;
+                        border-bottom: 2px solid #ecf0f1;
+                        padding-bottom: 10px;
+                        margin-bottom: 20px;
+                        font-size: 1.8em;
+                    }
+                    
+                    ul, ol {
+                        padding-left: 25px;
+                    }
+                    
+                    li {
+                        margin-bottom: 8px;
+                        line-height: 1.6;
+                    }
+                    
+                    .highlight {
+                        background: #fff3cd;
+                        padding: 15px;
+                        border-radius: 5px;
+                        border-left: 4px solid #ffc107;
+                        margin: 15px 0;
+                    }
+                    
+                    .critical {
+                        background: #f8d7da;
+                        padding: 15px;
+                        border-radius: 5px;
+                        border-left: 4px solid #dc3545;
+                        margin: 15px 0;
+                    }
+                    
+                    .success {
+                        background: #d4edda;
+                        padding: 15px;
+                        border-radius: 5px;
+                        border-left: 4px solid #28a745;
+                        margin: 15px 0;
+                    }
+                    </style>
+                    """
+                    
+                    # Combine the CSS with the formatted report
+                    final_report = css_styles + formatted_report
+                    return final_report
+                    
+                else:
+                    logger.error(f"OpenRouter API error: {response.status}")
+                    return llm_response
+                    
+    except Exception as e:
+        logger.error(f"Error formatting report with Qwen: {e}")
+        return llm_response
+
+def generate_pdf_report(report_content: str, analysis_id: str) -> BytesIO:
+    """
+    Generate a PDF report from the formatted content.
+    """
+    try:
+        # Create a buffer for the PDF
+        buffer = BytesIO()
+        
+        # Create the PDF document
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        styles = getSampleStyleSheet()
+        
+        # Create custom styles
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=16,
+            spaceAfter=30,
+            textColor=colors.darkblue
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=14,
+            spaceAfter=12,
+            textColor=colors.darkblue
+        )
+        
+        # Build the PDF content
+        story = []
+        
+        # Title
+        story.append(Paragraph("ElectionWatch Analysis Report", title_style))
+        story.append(Spacer(1, 20))
+        
+        # Analysis ID
+        story.append(Paragraph(f"Report ID: {analysis_id}", styles['Normal']))
+        story.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+        story.append(Spacer(1, 20))
+        
+        # Parse HTML content and convert to PDF
+        # Simple HTML parsing for basic formatting
+        lines = report_content.split('\n')
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+                
+            if line.startswith('<h1>') or line.startswith('<h2>'):
+                # Extract text from HTML tags
+                text = line.replace('<h1>', '').replace('</h1>', '').replace('<h2>', '').replace('</h2>', '')
+                story.append(Paragraph(text, heading_style))
+            elif line.startswith('<p>'):
+                text = line.replace('<p>', '').replace('</p>', '')
+                story.append(Paragraph(text, styles['Normal']))
+            else:
+                story.append(Paragraph(line, styles['Normal']))
+            
+            story.append(Spacer(1, 6))
+        
+        # Build the PDF
+        doc.build(story)
+        buffer.seek(0)
+        return buffer
+        
+    except Exception as e:
+        logger.error(f"Error generating PDF: {e}")
+        # Return a simple error PDF
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        story = [Paragraph("Error generating PDF report", styles['Heading1'])]
+        doc.build(story)
+        buffer.seek(0)
+        return buffer
+
+def create_html_template() -> str:
+    """
+    Create the HTML template for the reports view page.
+    """
+    return """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ElectionWatch - View Reports</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                padding: 20px;
+            }
+            
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 15px;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                overflow: hidden;
+            }
+            
+            .header {
+                background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+                color: white;
+                padding: 30px;
+                text-align: center;
+            }
+            
+            .header h1 {
+                font-size: 2.5em;
+                margin-bottom: 10px;
+                font-weight: 300;
+            }
+            
+            .header p {
+                font-size: 1.1em;
+                opacity: 0.9;
+            }
+            
+            .content {
+                padding: 40px;
+            }
+            
+            .form-section {
+                background: #f8f9fa;
+                padding: 30px;
+                border-radius: 10px;
+                margin-bottom: 30px;
+                border: 1px solid #e9ecef;
+            }
+            
+            .form-group {
+                margin-bottom: 20px;
+            }
+            
+            label {
+                display: block;
+                margin-bottom: 8px;
+                font-weight: 600;
+                color: #2c3e50;
+            }
+            
+            select, button {
+                width: 100%;
+                padding: 12px 15px;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                font-size: 16px;
+                transition: all 0.3s ease;
+            }
+            
+            select:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+            
+            .btn-primary {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                cursor: pointer;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+            
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            }
+            
+            .btn-secondary {
+                background: #6c757d;
+                color: white;
+                border: none;
+                cursor: pointer;
+                font-weight: 600;
+                margin-top: 10px;
+            }
+            
+            .btn-secondary:hover {
+                background: #5a6268;
+            }
+            
+            .report-section {
+                margin-top: 30px;
+                display: none;
+            }
+            
+            .report-content {
+                background: white;
+                border: 1px solid #e9ecef;
+                border-radius: 10px;
+                padding: 30px;
+                margin-top: 20px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            }
+            
+            .loading {
+                text-align: center;
+                padding: 40px;
+                color: #6c757d;
+            }
+            
+            .error {
+                background: #f8d7da;
+                color: #721c24;
+                padding: 15px;
+                border-radius: 8px;
+                margin-top: 20px;
+                border: 1px solid #f5c6cb;
+            }
+            
+            .success {
+                background: #d4edda;
+                color: #155724;
+                padding: 15px;
+                border-radius: 8px;
+                margin-top: 20px;
+                border: 1px solid #c3e6cb;
+            }
+            
+            .report-actions {
+                margin-top: 20px;
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            
+            .report-actions button {
+                flex: 1;
+                min-width: 150px;
+            }
+            
+            @media (max-width: 768px) {
+                .content {
+                    padding: 20px;
+                }
+                
+                .header h1 {
+                    font-size: 2em;
+                }
+                
+                .report-actions {
+                    flex-direction: column;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>📊 ElectionWatch Reports</h1>
+                <p>View and download analysis reports from our database</p>
+            </div>
+            
+            <div class="content">
+                <div class="form-section">
+                    <h2 style="margin-bottom: 20px; color: #2c3e50;">Select Report</h2>
+                    
+                    <div class="form-group">
+                        <label for="reportSelect">Available Reports:</label>
+                        <select id="reportSelect">
+                            <option value="">-- Select a report --</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn-primary" onclick="viewReport()">View Report</button>
+                </div>
+                
+                <div id="reportSection" class="report-section">
+                    <div id="loading" class="loading" style="display: none;">
+                        <h3>🔄 Generating Report...</h3>
+                        <p>Please wait while we format your report with AI assistance.</p>
+                    </div>
+                    
+                    <div id="error" class="error" style="display: none;"></div>
+                    
+                    <div id="reportContent" class="report-content" style="display: none;"></div>
+                    
+                    <div id="reportActions" class="report-actions" style="display: none;">
+                        <button class="btn-secondary" onclick="downloadPDF()">📄 Download PDF</button>
+                        <button class="btn-secondary" onclick="printReport()">🖨️ Print Report</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            let currentAnalysisId = null;
+            
+            // Load available reports on page load
+            window.onload = function() {
+                loadAvailableReports();
+            };
+            
+            async function loadAvailableReports() {
+                try {
+                    const response = await fetch('/api/reports/available');
+                    const data = await response.json();
+                    
+                    const select = document.getElementById('reportSelect');
+                    select.innerHTML = '<option value="">-- Select a report --</option>';
+                    
+                    data.reports.forEach(report => {
+                        const option = document.createElement('option');
+                        option.value = report.analysis_id;
+                        option.textContent = `${report.analysis_id} - ${report.date_analyzed} (${report.analysis_type})`;
+                        select.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error loading reports:', error);
+                    showError('Failed to load available reports');
+                }
+            }
+            
+            async function viewReport() {
+                const analysisId = document.getElementById('reportSelect').value;
+                if (!analysisId) {
+                    showError('Please select a report first');
+                    return;
+                }
+                
+                currentAnalysisId = analysisId;
+                showLoading();
+                hideError();
+                hideReport();
+                
+                try {
+                    const response = await fetch(`/api/reports/generate/${analysisId}`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showReport(data.formatted_report);
+                    } else {
+                        showError(data.error || 'Failed to generate report');
+                    }
+                } catch (error) {
+                    console.error('Error generating report:', error);
+                    showError('Failed to generate report');
+                }
+            }
+            
+            function showLoading() {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('reportSection').style.display = 'block';
+            }
+            
+            function hideLoading() {
+                document.getElementById('loading').style.display = 'none';
+            }
+            
+            function showError(message) {
+                document.getElementById('error').textContent = message;
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('reportSection').style.display = 'block';
+                hideLoading();
+            }
+            
+            function hideError() {
+                document.getElementById('error').style.display = 'none';
+            }
+            
+            function showReport(content) {
+                document.getElementById('reportContent').innerHTML = content;
+                document.getElementById('reportContent').style.display = 'block';
+                document.getElementById('reportActions').style.display = 'flex';
+                document.getElementById('reportSection').style.display = 'block';
+                hideLoading();
+            }
+            
+            function hideReport() {
+                document.getElementById('reportContent').style.display = 'none';
+                document.getElementById('reportActions').style.display = 'none';
+            }
+            
+            async function downloadPDF() {
+                if (!currentAnalysisId) return;
+                
+                try {
+                    const response = await fetch(`/api/reports/download/${currentAnalysisId}`);
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `electionwatch_report_${currentAnalysisId}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    } else {
+                        showError('Failed to download PDF');
+                    }
+                } catch (error) {
+                    console.error('Error downloading PDF:', error);
+                    showError('Failed to download PDF');
+                }
+            }
+            
+            function printReport() {
+                const content = document.getElementById('reportContent').innerHTML;
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(`
+                    <html>
+                        <head>
+                            <title>ElectionWatch Report</title>
+                            <style>
+                                body { font-family: Arial, sans-serif; margin: 20px; }
+                                h1, h2, h3 { color: #2c3e50; }
+                                .header { text-align: center; margin-bottom: 30px; }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="header">
+                                <h1>ElectionWatch Analysis Report</h1>
+                            </div>
+                            ${content}
+                        </body>
+                    </html>
+                `);
+                printWindow.document.close();
+                printWindow.print();
+            }
+        </script>
+    </body>
+    </html>
+    """
 
 # Configuration following ADK standards
 SESSION_SERVICE_URI = "sqlite:///./sessions.db"
@@ -1022,9 +1698,9 @@ def create_app():
     async def run_analysis(
         text: str = Form(None),
         files: List[UploadFile] = File(default=[]),
-        analysis_type: str = Form("comprehensive"),
+        analysis_type: str = Form("misinformation_detection"),
         priority: str = Form("medium"),
-        source: str = Form("api_test"),
+        source: str = Form("api_upload"),
         metadata: str = Form("{}")
     ):
         """
@@ -1036,7 +1712,7 @@ def create_app():
         - Report: Structured JSON following data/outputs/response_*.json format
         """
         start_time = datetime.now()
-        analysis_id = f"test_analysis_{int(start_time.timestamp())}"
+        analysis_id = f"analysis_{int(start_time.timestamp())}"
         
         try:
             # Parse metadata safely
@@ -1179,7 +1855,7 @@ def create_app():
                         "ElectionWatch analysis workflow",
                         "DataEngAgent: Extraction complete",
                         "OsintAgent: Analysis complete",
-                        "✓ OsintAgent: Analysis complete",
+                        # "✓ OsintAgent: Analysis complete",
                         "Narrative Classification",
                         "Political Actors and Their Roles"
                     ]
@@ -1353,13 +2029,73 @@ def create_app():
                         report['analysis_insights']['key_findings'] = f"Analysis of {len(all_text.split())} words of content (knowledge base unavailable)"
                         report['recommendations'] = ["Manual review recommended - knowledge base integration failed"]
                     
+                    # Store the complete analysis result in MongoDB
+                    try:
+                        # Determine if knowledge base was used successfully
+                        kb_used = 'kb_error' not in locals()
+                        kb_error_reason = str(kb_error) if 'kb_error' in locals() else None
+                        
+                        analysis_data = {
+                            "llm_response": llm_response,
+                            "structured_report": report,
+                            "metadata": {
+                                "source": source,
+                                "analysis_type": analysis_type,
+                                "priority": priority,
+                                "processing_time": processing_time,
+                                "content_length": len(all_text),
+                                "word_count": len(all_text.split()),
+                                "knowledge_base_used": kb_used,
+                                "error_reason": kb_error_reason,
+                                "narrative_matches": len(narrative_search.get("narratives", {}).get("source_nodes", [])) if 'narrative_search' in locals() else 0,
+                                "lexicon_matches": len(lexicon_search.get("hate_speech_lexicon", {}).get("source_nodes", [])) if 'lexicon_search' in locals() else 0
+                            },
+                            "timestamp": end_time.isoformat()
+                        }
+                        
+                        storage_success = await store_analysis_result(analysis_id, analysis_data)
+                        
+                        if storage_success:
+                            logger.info(f'✅ Analysis result stored in MongoDB with ID: {analysis_id}')
+                        else:
+                            logger.warning(f'⚠️ Failed to store analysis result in MongoDB for ID: {analysis_id}')
+                            
+                    except Exception as storage_error:
+                        logger.error(f'❌ Error storing analysis result: {storage_error}')
+                        # Continue with response even if storage fails
+                    
                     # Return both raw LLM response and structured report
                     return {
                         "LLM_Response": llm_response,
-                        "Report": report
+                        # "Report": report
                     }
                     
                 except Exception as e:
+                    # Store error analysis result in MongoDB
+                    try:
+                        error_data = {
+                            "llm_response": f"Error: {str(e)}",
+                            "structured_report": {
+                                "error": f"Analysis failed: {str(e)}",
+                                "timestamp": datetime.now().isoformat()
+                            },
+                            "metadata": {
+                                "source": source,
+                                "analysis_type": analysis_type,
+                                "priority": priority,
+                                "processing_time": processing_time,
+                                "error_type": "analysis_failure",
+                                "error_message": str(e)
+                            },
+                            "timestamp": datetime.now().isoformat()
+                        }
+                        
+                        await store_analysis_result(analysis_id, error_data)
+                        logger.info(f'✅ Error analysis result stored in MongoDB with ID: {analysis_id}')
+                        
+                    except Exception as storage_error:
+                        logger.error(f'❌ Error storing error analysis result: {storage_error}')
+                    
                     return {
                         "LLM_Response": f"Error: {str(e)}",
                         "Report": {
@@ -1368,6 +2104,31 @@ def create_app():
                         }
                     }
             else:
+                # Store no content analysis result in MongoDB
+                try:
+                    no_content_data = {
+                        "llm_response": "No content provided",
+                        "structured_report": {
+                            "error": "No content provided for analysis",
+                            "timestamp": datetime.now().isoformat()
+                        },
+                        "metadata": {
+                            "source": source,
+                            "analysis_type": analysis_type,
+                            "priority": priority,
+                            "processing_time": processing_time,
+                            "error_type": "no_content",
+                            "error_message": "No content provided for analysis"
+                        },
+                        "timestamp": datetime.now().isoformat()
+                    }
+                    
+                    await store_analysis_result(analysis_id, no_content_data)
+                    logger.info(f'✅ No content analysis result stored in MongoDB with ID: {analysis_id}')
+                    
+                except Exception as storage_error:
+                    logger.error(f'❌ Error storing no content analysis result: {storage_error}')
+                
                 return {
                     "LLM_Response": "No content provided",
                     "Report": {
@@ -1377,6 +2138,31 @@ def create_app():
                 }
                 
         except Exception as e:
+            # Store endpoint error analysis result in MongoDB
+            try:
+                endpoint_error_data = {
+                    "llm_response": f"Endpoint error: {str(e)}",
+                    "structured_report": {
+                        "error": f"Endpoint processing error: {str(e)}",
+                        "timestamp": datetime.now().isoformat()
+                    },
+                    "metadata": {
+                        "source": source if 'source' in locals() else "unknown",
+                        "analysis_type": analysis_type if 'analysis_type' in locals() else "unknown",
+                        "priority": priority if 'priority' in locals() else "unknown",
+                        "processing_time": processing_time if 'processing_time' in locals() else 0,
+                        "error_type": "endpoint_failure",
+                        "error_message": str(e)
+                    },
+                    "timestamp": datetime.now().isoformat()
+                }
+                
+                await store_analysis_result(analysis_id, endpoint_error_data)
+                logger.info(f'✅ Endpoint error analysis result stored in MongoDB with ID: {analysis_id}')
+                
+            except Exception as storage_error:
+                logger.error(f'❌ Error storing endpoint error analysis result: {storage_error}')
+            
             return {
                 "LLM_Response": f"Endpoint error: {str(e)}",
                 "Report": {
@@ -1589,25 +2375,20 @@ def create_app():
         Test MongoDB Atlas connection and return status.
         """
         try:
-            from ew_agents.mongodb_storage import storage
+            from ew_agents.mongodb_storage import test_mongodb_connection as test_conn
             
-            # Test by getting stats
-            stats = await storage.get_collection_stats()
+            # Test connection with detailed diagnostics
+            connection_result = await test_conn()
             
-            if "error" in stats:
-                return {
-                    "status": "disconnected",
-                    "error": stats["error"],
-                    "message": "MongoDB Atlas connection failed",
-                    "help": "Make sure MONGODB_ATLAS_URI is set correctly in .env: MONGODB_ATLAS_URI='mongodb+srv://username:password@cluster.mongodb.net/'"
+            return {
+                "test_timestamp": datetime.now().isoformat(),
+                "connection_test": connection_result,
+                "environment": {
+                    "mongodb_atlas_uri_configured": bool(os.getenv("MONGODB_ATLAS_URI")),
+                    "mongodb_uri_configured": bool(os.getenv("MONGODB_URI")),
+                    "pymongo_available": True  # We know it's available if we got here
                 }
-            else:
-                return {
-                    "status": "connected",
-                    "database": stats.get("database"),
-                    "collections": stats.get("collections", {}),
-                    "message": "MongoDB Atlas connection successful"
-                }
+            }
                 
         except Exception as e:
             return {
@@ -1676,6 +2457,190 @@ def create_app():
                 "details": str(e)
             }
 
+    # ===== REPORT VIEWING ENDPOINTS =====
+    
+    @app.get("/view_reports")
+    async def view_reports_page():
+        """
+        Serve the reports viewing page with dropdown of available reports.
+        """
+        try:
+            html_content = create_html_template()
+            return HTMLResponse(content=html_content, status_code=200)
+        except Exception as e:
+            logger.error(f"Error serving reports page: {e}")
+            return HTMLResponse(
+                content="<h1>Error loading reports page</h1><p>Please try again later.</p>",
+                status_code=500
+            )
+
+    @app.get("/api/reports/available")
+    async def get_available_reports():
+        """
+        Get list of available reports from MongoDB analysis_results collection for the dropdown.
+        """
+        try:
+            # Get the actual analysis data directly from storage
+            from ew_agents.mongodb_storage import storage
+            analyses = await storage.list_recent_analyses(limit=50)
+            
+            reports = []
+            for analysis in analyses:
+                # Check if this analysis has LLM response data
+                # The list_recent_analyses returns full documents, so we need to look in data.llm_response
+                data = analysis.get("data", {})
+                llm_response = data.get("llm_response", "")
+                
+                # If not found in data, look in analysis_insights
+                if not llm_response:
+                    analysis_insights = data.get("analysis_insights", {})
+                    llm_response = analysis_insights.get("llm_response", "")
+                
+                if llm_response and len(llm_response.strip()) > 10:  # Only include analyses with substantial LLM responses
+                    # Get timestamp
+                    date_analyzed = data.get("date_analyzed", analysis.get("created_at", "Unknown"))
+                    if date_analyzed and date_analyzed != "Unknown":
+                        try:
+                            if isinstance(date_analyzed, str):
+                                dt = datetime.fromisoformat(date_analyzed.replace('Z', '+00:00'))
+                                date_str = dt.strftime("%Y-%m-%d %H:%M")
+                            else:
+                                date_str = date_analyzed.strftime("%Y-%m-%d %H:%M")
+                        except:
+                            date_str = "Unknown"
+                    else:
+                        date_str = "Unknown"
+                    
+                    reports.append({
+                        "analysis_id": analysis.get("analysis_id", "unknown"),
+                        "date_analyzed": date_str,
+                        "analysis_type": data.get("analysis_type", "misinformation_analysis"),
+                        "risk_level": data.get("risk_level", "unknown"),
+                        "content_preview": llm_response[:100] + "..." if len(llm_response) > 100 else llm_response
+                    })
+            
+            # Sort by date (newest first)
+            reports.sort(key=lambda x: x["date_analyzed"], reverse=True)
+            
+            return {
+                "success": True,
+                "reports": reports,
+                "total_count": len(reports)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting available reports: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "reports": [],
+                "total_count": 0
+            }
+
+    @app.get("/api/reports/generate/{analysis_id}")
+    async def generate_formatted_report(analysis_id: str):
+        """
+        Generate a formatted report using Qwen LLM for the specified analysis.
+        """
+        try:
+            # Get the analysis data from MongoDB storage
+            from ew_agents.mongodb_storage import storage
+            analysis_data = await storage.get_analysis_result(analysis_id)
+            
+            if not analysis_data:
+                return {
+                    "success": False,
+                    "error": f"Analysis with ID {analysis_id} not found"
+                }
+            
+            # Extract LLM response from the analysis data
+            # The MongoDB storage returns the data field directly (not wrapped)
+            # So analysis_data IS the data object containing llm_response
+            llm_response = analysis_data.get("llm_response", "")
+            
+            # If not found at top level, look in analysis_insights
+            if not llm_response:
+                analysis_insights = analysis_data.get("analysis_insights", {})
+                llm_response = analysis_insights.get("llm_response", "")
+            
+            # Debug logging
+            logger.info(f"Analysis data keys: {list(analysis_data.keys()) if analysis_data else 'None'}")
+            logger.info(f"LLM response found: {bool(llm_response)}")
+            logger.info(f"LLM response length: {len(llm_response) if llm_response else 0}")
+            
+            if not llm_response:
+                return {
+                    "success": False,
+                    "error": "No LLM response found in analysis data"
+                }
+            
+            # Format the report using Qwen
+            formatted_report = await format_report_with_qwen(llm_response, analysis_data)
+            
+            return {
+                "success": True,
+                "formatted_report": formatted_report,
+                "analysis_id": analysis_id,
+                "original_data": analysis_data
+            }
+            
+        except Exception as e:
+            logger.error(f"Error generating formatted report: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
+    @app.get("/api/reports/download/{analysis_id}")
+    async def download_pdf_report(analysis_id: str):
+        """
+        Download a PDF version of the formatted report.
+        """
+        try:
+            # Get the analysis data from MongoDB storage
+            from ew_agents.mongodb_storage import storage
+            analysis_data = await storage.get_analysis_result(analysis_id)
+            
+            if not analysis_data:
+                raise HTTPException(status_code=404, detail=f"Analysis with ID {analysis_id} not found")
+            
+            # Extract LLM response from the analysis data
+            # The MongoDB storage returns the data field directly (not wrapped)
+            # So analysis_data IS the data object containing llm_response
+            llm_response = analysis_data.get("llm_response", "")
+            
+            # If not found at top level, look in analysis_insights
+            if not llm_response:
+                analysis_insights = analysis_data.get("analysis_insights", {})
+                llm_response = analysis_insights.get("llm_response", "")
+            
+            # Debug logging
+            logger.info(f"Analysis data keys: {list(analysis_data.keys()) if analysis_data else 'None'}")
+            logger.info(f"LLM response found: {bool(llm_response)}")
+            logger.info(f"LLM response length: {len(llm_response) if llm_response else 0}")
+            
+            if not llm_response:
+                raise HTTPException(status_code=400, detail="No LLM response found in analysis data")
+            
+            # Format the report using Qwen
+            formatted_report = await format_report_with_qwen(llm_response, analysis_data)
+            
+            # Generate PDF
+            pdf_buffer = generate_pdf_report(formatted_report, analysis_id)
+            
+            # Return the PDF as a file response
+            return FileResponse(
+                BytesIO(pdf_buffer.getvalue()),
+                media_type="application/pdf",
+                filename=f"electionwatch_report_{analysis_id}.pdf"
+            )
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error downloading PDF report: {e}")
+            raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")
+
     return app
 
 # Create the app instance
@@ -1714,6 +2679,7 @@ if __name__ == "__main__":
     print("\n📋 Available Endpoints:")
     print("   Standard ADK: /run, /run_sse, /list-apps")
     print("   ElectionWatch: /AnalysePosts, /submitReport")
+    print("   Reports: /view_reports, /api/reports/*")
     print("   Raw JSON: /get_raw_json, /run_analysis")
     print("   Utilities: /health, /analysis-template, /dev-ui")
     

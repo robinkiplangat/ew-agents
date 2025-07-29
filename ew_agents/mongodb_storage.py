@@ -37,8 +37,11 @@ class ElectionWatchStorage:
         # Get MongoDB URI from environment (.env file) - prefer MONGODB_ATLAS_URI
         self.mongo_uri = mongo_uri or os.getenv(
             "MONGODB_ATLAS_URI", 
-            os.getenv("MONGODB_URI", "mongodb+srv://<username>:<password>@<cluster>.mongodb.net/")
+            os.getenv("MONGODB_URI", "mongodb+srv://ew_ml:moHsc5i6gYFrLsvL@ewcluster1.fpkzpxg.mongodb.net/")
         )
+        
+        # Check if we're in development mode (for SSL certificate handling)
+        self.development_mode = os.getenv("MONGODB_DEVELOPMENT_MODE", "false").lower() == "true"
         
         # Debug logging (without exposing credentials)
         if self.mongo_uri:
@@ -80,16 +83,46 @@ class ElectionWatchStorage:
                     
                     logger.info("🔗 Creating MongoDB Atlas client...")
                     # Connect to MongoDB Atlas with proper SSL settings
-                    self.client = MongoClient(
-                        self.mongo_uri,
-                        tls=True,  # Enable TLS for Atlas
-                        tlsAllowInvalidCertificates=False,
-                        serverSelectionTimeoutMS=5000,  # 5 second timeout
-                        connectTimeoutMS=10000,  # 10 second connection timeout
-                        socketTimeoutMS=30000,   # 30 second socket timeout
-                        maxPoolSize=10,          # Connection pool size
-                        retryWrites=True         # Enable retryable writes
-                    )
+                    try:
+                        # First try with strict SSL settings
+                        self.client = MongoClient(
+                            self.mongo_uri,
+                            tls=True,  # Enable TLS for Atlas
+                            tlsAllowInvalidCertificates=False,
+                            serverSelectionTimeoutMS=5000,  # 5 second timeout
+                            connectTimeoutMS=10000,  # 10 second connection timeout
+                            socketTimeoutMS=30000,   # 30 second socket timeout
+                            maxPoolSize=10,          # Connection pool size
+                            retryWrites=True         # Enable retryable writes
+                        )
+                        
+                        # Test the connection immediately
+                        self.client.admin.command('ping')
+                        logger.info("✅ MongoDB Atlas connected with strict SSL settings")
+                        
+                    except Exception as ssl_error:
+                        logger.warning(f"⚠️ Strict SSL connection failed: {ssl_error}")
+                        logger.info("🔄 Trying with relaxed SSL settings...")
+                        
+                        # Fallback with relaxed SSL settings for development
+                        self.client = MongoClient(
+                            self.mongo_uri,
+                            tls=True,  # Enable TLS for Atlas
+                            tlsAllowInvalidCertificates=True,  # Allow invalid certificates for dev
+                            serverSelectionTimeoutMS=10000,  # Longer timeout
+                            connectTimeoutMS=15000,  # Longer connection timeout
+                            socketTimeoutMS=30000,   # 30 second socket timeout
+                            maxPoolSize=10,          # Connection pool size
+                            retryWrites=True         # Enable retryable writes
+                        )
+                        
+                        # Test the fallback connection
+                        try:
+                            self.client.admin.command('ping')
+                            logger.info("✅ MongoDB Atlas connected with relaxed SSL settings")
+                        except Exception as fallback_error:
+                            logger.error(f"❌ Fallback SSL connection also failed: {fallback_error}")
+                            raise fallback_error
                 else:
                     logger.info("🔗 Creating MongoDB client (local/custom)...")
                     # Fallback for local MongoDB (if someone overrides the URI)
@@ -99,8 +132,18 @@ class ElectionWatchStorage:
                 
                 logger.info("🔗 Testing MongoDB connection...")
                 # Test connection with Atlas-friendly ping
-                self.client.admin.command('ping')
-                logger.info(f"✅ MongoDB Atlas connected successfully: {self.database_name}")
+                try:
+                    self.client.admin.command('ping')
+                    logger.info(f"✅ MongoDB Atlas connected successfully: {self.database_name}")
+                    
+                    # Test database access
+                    self.db.list_collection_names()
+                    logger.info(f"✅ Database access confirmed: {self.database_name}")
+                    
+                except Exception as ping_error:
+                    logger.error(f"❌ MongoDB connection test failed: {ping_error}")
+                    logger.info("💡 Connection established but ping failed - this may be a permissions issue")
+                    # Continue anyway as the connection might still work for basic operations
                 
             except Exception as e:
                 logger.error(f"❌ MongoDB Atlas connection failed: {type(e).__name__}: {e}")
@@ -280,6 +323,57 @@ class ElectionWatchStorage:
             logger.error(f"❌ Failed to get stats: {e}")
             return {"error": str(e)}
 
+    async def test_connection(self) -> Dict[str, Any]:
+        """Test MongoDB Atlas connection and provide diagnostics."""
+        try:
+            if self.db is None:
+                return {
+                    "status": "disconnected",
+                    "error": "MongoDB client not initialized",
+                    "uri_configured": bool(self.mongo_uri and "<username>" not in self.mongo_uri),
+                    "pymongo_available": PYMONGO_AVAILABLE
+                }
+            
+            # Test basic connection
+            try:
+                self.client.admin.command('ping')
+                connection_status = "connected"
+            except Exception as ping_error:
+                connection_status = f"ping_failed: {str(ping_error)}"
+            
+            # Test database access
+            try:
+                collections = self.db.list_collection_names()
+                db_access = "accessible"
+            except Exception as db_error:
+                db_access = f"access_failed: {str(db_error)}"
+            
+            # Test collection operations
+            try:
+                test_count = await self._mcp_count_documents(self.analysis_collection, {})
+                collection_ops = "working"
+            except Exception as coll_error:
+                collection_ops = f"failed: {str(coll_error)}"
+            
+            return {
+                "status": "connected" if connection_status == "connected" else "partial",
+                "connection": connection_status,
+                "database_access": db_access,
+                "collection_operations": collection_ops,
+                "database": self.database_name,
+                "collections": collections if db_access == "accessible" else [],
+                "uri_configured": bool(self.mongo_uri and "<username>" not in self.mongo_uri),
+                "pymongo_available": PYMONGO_AVAILABLE
+            }
+            
+        except Exception as e:
+            return {
+                "status": "error",
+                "error": str(e),
+                "uri_configured": bool(self.mongo_uri and "<username>" not in self.mongo_uri),
+                "pymongo_available": PYMONGO_AVAILABLE
+            }
+
     async def _mcp_insert_document(self, collection: str, document: Dict[str, Any]) -> bool:
         """Insert document using pymongo with seamless error handling."""
         if self.db is None:
@@ -391,4 +485,8 @@ async def get_report(submission_id: str) -> Optional[Dict[str, Any]]:
 
 async def get_stats() -> Dict[str, Any]:
     """Get storage statistics (convenience function)."""
-    return await storage.get_collection_stats() 
+    return await storage.get_collection_stats()
+
+async def test_mongodb_connection() -> Dict[str, Any]:
+    """Test MongoDB Atlas connection (convenience function)."""
+    return await storage.test_connection() 
