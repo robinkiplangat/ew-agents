@@ -92,6 +92,13 @@ echo -e "${YELLOW}   CPU: $CPU${NC}"
 echo -e "${YELLOW}   Min instances: $MIN_INSTANCES${NC}"
 echo -e "${YELLOW}   Max instances: $MAX_INSTANCES${NC}"
 
+# First, clear existing environment variables to avoid type conflicts
+echo -e "${YELLOW}🧹 Clearing existing environment variables...${NC}"
+gcloud run services update $SERVICE_NAME \
+    --region $REGION \
+    --clear-env-vars
+
+# Then deploy with new environment variables
 gcloud run deploy $SERVICE_NAME \
     --image $IMAGE_NAME \
     --platform managed \
@@ -104,7 +111,13 @@ gcloud run deploy $SERVICE_NAME \
     --timeout 3600 \
     --concurrency 80 \
     --port 8080 \
-    --set-env-vars="GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${REGION},VERTEX_AI_ENABLED=true,ADK_VERTEX_INTEGRATION=enabled,MONGODB_URI=mongodb+srv://ew_ml:moHsc5i6gYFrLsvL@ewcluster1.fpkzpxg.mongodb.net/knowledge?retryWrites=true&w=majority,ADK_AGENTS_ENABLED=true,ENHANCED_COORDINATOR_ENABLED=true" \
+    --set-env-vars="GOOGLE_CLOUD_PROJECT=${PROJECT_ID}" \
+    --set-env-vars="GOOGLE_CLOUD_LOCATION=${REGION}" \
+    --set-env-vars="VERTEX_AI_ENABLED=true" \
+    --set-env-vars="ADK_VERTEX_INTEGRATION=enabled" \
+    --set-env-vars="MONGODB_ATLAS_URI=mongodb+srv://ew_ml:moHsc5i6gYFrLsvL@ewcluster1.fpkzpxg.mongodb.net/knowledge?retryWrites=true&w=majority" \
+    --set-env-vars="ADK_AGENTS_ENABLED=true" \
+    --set-env-vars="ENHANCED_COORDINATOR_ENABLED=true" \
     --service-account="ew-agent-service@${PROJECT_ID}.iam.gserviceaccount.com"
 
 if [ $? -eq 0 ]; then

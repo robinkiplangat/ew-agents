@@ -46,25 +46,25 @@ async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, An
     """
     Format the LLM response into a clean, professional report using Qwen via OpenRouter.
     """
-                    try:
-                    # Try to get API key from environment variable first
-                    openrouter_api_key = os.getenv("OPEN_ROUTER_API_KEY")
-                    
-                    # If not found, try to get from Google Cloud Secrets Manager
-                    if not openrouter_api_key:
-                        try:
-                            from google.cloud import secretmanager
-                            client = secretmanager.SecretManagerServiceClient()
-                            name = f"projects/{os.getenv('GOOGLE_CLOUD_PROJECT', 'ew-agents-v02')}/secrets/open-router-api-key/versions/latest"
-                            response = client.access_secret_version(request={"name": name})
-                            openrouter_api_key = response.payload.data.decode("UTF-8")
-                            logger.info("Retrieved OPEN_ROUTER_API_KEY from Google Cloud Secrets Manager")
-                        except Exception as secret_error:
-                            logger.warning(f"Could not retrieve OPEN_ROUTER_API_KEY from Secrets Manager: {secret_error}")
-                    
-                    if not openrouter_api_key:
-                        logger.warning("OPEN_ROUTER_API_KEY not found, returning raw response")
-                        return llm_response
+    try:
+        # Try to get API key from environment variable first
+        openrouter_api_key = os.getenv("OPEN_ROUTER_API_KEY")
+        
+        # If not found, try to get from Google Cloud Secrets Manager
+        if not openrouter_api_key:
+            try:
+                from google.cloud import secretmanager
+                client = secretmanager.SecretManagerServiceClient()
+                name = f"projects/{os.getenv('GOOGLE_CLOUD_PROJECT', 'ew-agents-v02')}/secrets/open-router-api-key/versions/latest"
+                response = client.access_secret_version(request={"name": name})
+                openrouter_api_key = response.payload.data.decode("UTF-8")
+                logger.info("Retrieved OPEN_ROUTER_API_KEY from Google Cloud Secrets Manager")
+            except Exception as secret_error:
+                logger.warning(f"Could not retrieve OPEN_ROUTER_API_KEY from Secrets Manager: {secret_error}")
+        
+        if not openrouter_api_key:
+            logger.warning("OPEN_ROUTER_API_KEY not found, returning raw response")
+            return llm_response
         
         # Extract key information from analysis data
         analysis_id = analysis_data.get("structured_report", {}).get("report_metadata", {}).get("report_id", "Unknown")
@@ -143,7 +143,7 @@ async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, An
         - Include relevant icons or visual indicators where appropriate
         
         **CONTENT GUIDELINES:**
-        - Extract the most important insights from the raw data
+        - Extract the insights from the raw data
         - Present information in a logical, flowing manner
         - Use clear, professional language
         - Focus on actionable intelligence
@@ -172,7 +172,7 @@ async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, An
                 "messages": [
                     {
                         "role": "system", 
-                        "content": "You are a senior election security analyst with expertise in creating professional, executive-level reports. You excel at transforming raw analysis data into clear, actionable intelligence reports that are both comprehensive and accessible to stakeholders."
+                        "content": "You are a senior OSINT and election security analyst with expertise in creating executive-level reports. You excel at transforming raw analysis data into clear, actionable intelligence reports that are both comprehensive and accessible to stakeholders."
                     },
                     {"role": "user", "content": prompt}
                 ],

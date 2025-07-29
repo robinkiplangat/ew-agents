@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-# Install system dependencies for ADK + Vertex AI
+# Install system dependencies for ADK + Vertex AI + Reports
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     git \
