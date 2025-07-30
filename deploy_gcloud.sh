@@ -12,18 +12,87 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Configuration
-PROJECT_ID="ew-agents-v02"
-REGION="europe-west1"
-SERVICE_NAME="electionwatch-misinformation-api"
+# Configuration file path
+CONFIG_FILE="deploy_config.env"
+
+# Function to load configuration from file
+load_config_from_file() {
+    if [[ -f "$CONFIG_FILE" ]]; then
+        echo -e "${BLUE}📁 Loading configuration from $CONFIG_FILE${NC}"
+        # Source the config file, but only export variables that are set
+        set -a  # automatically export all variables
+        source "$CONFIG_FILE"
+        set +a  # stop automatically exporting
+        echo -e "${GREEN}✅ Configuration loaded from $CONFIG_FILE${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Configuration file $CONFIG_FILE not found, using environment variables and defaults${NC}"
+    fi
+}
+
+# Function to validate required configuration
+validate_config() {
+    local missing_vars=()
+    
+    # Check required variables
+    if [[ -z "$PROJECT_ID" ]]; then
+        missing_vars+=("PROJECT_ID")
+    fi
+    
+    if [[ -z "$REGION" ]]; then
+        missing_vars+=("REGION")
+    fi
+    
+    if [[ -z "$SERVICE_NAME" ]]; then
+        missing_vars+=("SERVICE_NAME")
+    fi
+    
+    if [[ ${#missing_vars[@]} -gt 0 ]]; then
+        echo -e "${RED}❌ Missing required configuration variables:${NC}"
+        for var in "${missing_vars[@]}"; do
+            echo -e "${RED}   - $var${NC}"
+        done
+        echo ""
+        echo -e "${YELLOW}💡 Set these variables in your environment or create a $CONFIG_FILE file${NC}"
+        echo -e "${YELLOW}   Example $CONFIG_FILE content:${NC}"
+        echo -e "${BLUE}   PROJECT_ID=your-project-id${NC}"
+        echo -e "${BLUE}   REGION=your-region${NC}"
+        echo -e "${BLUE}   SERVICE_NAME=your-service-name${NC}"
+        exit 1
+    fi
+}
+
+# Load configuration
+load_config_from_file
+
+# Set configuration with environment variables and defaults
+PROJECT_ID="${PROJECT_ID:-ew-agents-v02}"
+REGION="${REGION:-europe-west1}"
+SERVICE_NAME="${SERVICE_NAME:-electionwatch-misinformation-api}"
+MEMORY="${MEMORY:-2Gi}"
+CPU="${CPU:-1}"
+MAX_INSTANCES="${MAX_INSTANCES:-10}"
+MIN_INSTANCES="${MIN_INSTANCES:-1}"
+
+# Validate configuration
+validate_config
+
+# Derived configuration
 IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}"
-MEMORY="2Gi"        # 2GiB to fix memory issues
-CPU="1"
-MAX_INSTANCES="10"
-MIN_INSTANCES="1"
 
 echo -e "${BLUE}🛡️  ElectionWatch Misinformation Detection API - Cloud Deployment${NC}"
 echo -e "${BLUE}=========================================================${NC}"
+echo ""
+
+# Display configuration
+echo -e "${BLUE}📋 Configuration:${NC}"
+echo -e "   Project ID: $PROJECT_ID"
+echo -e "   Region: $REGION"
+echo -e "   Service Name: $SERVICE_NAME"
+echo -e "   Image Name: $IMAGE_NAME"
+echo -e "   Memory: $MEMORY"
+echo -e "   CPU: $CPU"
+echo -e "   Min Instances: $MIN_INSTANCES"
+echo -e "   Max Instances: $MAX_INSTANCES"
 echo ""
 
 # Step 1: Verify prerequisites
@@ -64,9 +133,25 @@ gcloud services enable \
     containerregistry.googleapis.com \
     aiplatform.googleapis.com \
     vertex-ai.googleapis.com \
-    ml.googleapis.com
+    ml.googleapis.com \
+    secretmanager.googleapis.com
 
 echo -e "${GREEN}✅ gcloud configuration complete${NC}"
+echo ""
+
+# Step 2.5: Set up Secret Manager (if needed)
+echo -e "${BLUE}🔐 Step 2.5: Setting up Secret Manager...${NC}"
+
+# Check if MongoDB secret exists
+if gcloud secrets describe mongodb-atlas-uri --project=$PROJECT_ID >/dev/null 2>&1; then
+    echo -e "${GREEN}✅ MongoDB secret already exists in Secret Manager${NC}"
+else
+    echo -e "${YELLOW}⚠️ MongoDB secret not found in Secret Manager${NC}"
+    echo -e "${YELLOW}💡 You can create it manually using:${NC}"
+    echo -e "${BLUE}   gcloud secrets create mongodb-atlas-uri --project=$PROJECT_ID${NC}"
+    echo -e "${BLUE}   echo 'your-mongodb-connection-string' | gcloud secrets versions add mongodb-atlas-uri --data-file=- --project=$PROJECT_ID${NC}"
+    echo -e "${YELLOW}   Or set MONGODB_ATLAS_URI environment variable for local development${NC}"
+fi
 echo ""
 
 # Step 3: Build the container image
@@ -115,7 +200,6 @@ gcloud run deploy $SERVICE_NAME \
     --set-env-vars="GOOGLE_CLOUD_LOCATION=${REGION}" \
     --set-env-vars="VERTEX_AI_ENABLED=true" \
     --set-env-vars="ADK_VERTEX_INTEGRATION=enabled" \
-    --set-env-vars="MONGODB_ATLAS_URI=mongodb+srv://ew_ml:moHsc5i6gYFrLsvL@ewcluster1.fpkzpxg.mongodb.net/knowledge?retryWrites=true&w=majority" \
     --set-env-vars="ADK_AGENTS_ENABLED=true" \
     --set-env-vars="ENHANCED_COORDINATOR_ENABLED=true" \
     --service-account="ew-agent-service@${PROJECT_ID}.iam.gserviceaccount.com"

@@ -42,7 +42,11 @@ The system is built around a `CoordinatorAgent` that intelligently delegates tas
     *   `MONGODB_ATLAS_URI`: MongoDB connection string
 *   Required Python packages (see `ml/requirements.txt`). Install using:
     ```bash
+    # For development (flexible versions)
     pip install -r ml/requirements.txt
+    
+    # For production (exact versions)
+    pip install -r ml/requirements.lock
     ```
 
 ### Running the System
@@ -122,6 +126,146 @@ The system provides comprehensive REST API endpoints:
 - **Real-time Preview**: View formatted reports instantly
 - **Download Options**: One-click PDF download
 - **Responsive Design**: Works on desktop and mobile devices
+
+## 🚀 Deployment
+
+### Google Cloud Run Deployment
+
+The system can be deployed to Google Cloud Run using the provided deployment script.
+
+#### Prerequisites
+- Google Cloud SDK installed and authenticated
+- Service account key file (`ew-agent-service-key.json`)
+- Required environment variables or configuration file
+- MongoDB connection string stored in Google Secret Manager (or environment variable for local development)
+
+#### Configuration Options
+
+The deployment script supports multiple configuration methods:
+
+**1. Environment Variables (Recommended for CI/CD)**
+```bash
+export PROJECT_ID=your-project-id
+export REGION=europe-west1
+export SERVICE_NAME=your-service-name
+export MEMORY=2Gi
+export CPU=1
+export MAX_INSTANCES=10
+export MIN_INSTANCES=1
+```
+
+**2. Configuration File (Recommended for local development)**
+```bash
+# Copy the example configuration
+cp deploy_config.env.example deploy_config.env
+
+# Edit the configuration file
+nano deploy_config.env
+```
+
+Example `deploy_config.env`:
+```bash
+# Required Configuration
+PROJECT_ID=ew-agents-v02
+REGION=europe-west1
+SERVICE_NAME=electionwatch-misinformation-api
+
+# Optional Configuration (with defaults)
+MEMORY=2Gi
+CPU=1
+MAX_INSTANCES=10
+MIN_INSTANCES=1
+```
+
+#### Setting up MongoDB Secret Manager
+
+Before deploying, you need to store your MongoDB connection string securely in Google Secret Manager:
+
+```bash
+# Make the setup script executable
+chmod +x setup_mongodb_secret.sh
+
+# Run the MongoDB secret setup
+./setup_mongodb_secret.sh
+```
+
+This script will:
+1. Enable the Secret Manager API
+2. Create a secret named `mongodb-atlas-uri`
+3. Store your MongoDB connection string securely
+4. Provide instructions for local development
+
+#### Running the Deployment
+
+```bash
+# Make the script executable
+chmod +x deploy_gcloud.sh
+
+# Run the deployment
+./deploy_gcloud.sh
+```
+
+The script will:
+1. Validate configuration and prerequisites
+2. Set up Google Cloud project and APIs
+3. Build and push the Docker image
+4. Deploy to Cloud Run with the specified configuration
+5. Display service URLs and test commands
+
+#### Configuration Validation
+
+The script validates required configuration variables:
+- `PROJECT_ID`: Google Cloud project ID
+- `REGION`: Google Cloud region
+- `SERVICE_NAME`: Cloud Run service name
+
+Optional variables with defaults:
+- `MEMORY`: Container memory (default: 2Gi)
+- `CPU`: CPU allocation (default: 1)
+- `MAX_INSTANCES`: Maximum instances (default: 10)
+- `MIN_INSTANCES`: Minimum instances (default: 1)
+
+#### Security Features
+
+The deployment now includes enhanced security measures:
+
+**Secret Manager Integration**
+- MongoDB connection strings are stored securely in Google Secret Manager
+- No sensitive credentials in deployment scripts or environment variables
+- Automatic fallback to environment variables for local development
+- Service account permissions managed through IAM
+
+**Secure Configuration**
+- Configuration values read from environment variables or config files
+- Validation of required configuration before deployment
+- Clear error messages for missing configuration
+- Support for different deployment environments (dev, staging, prod)
+
+## 📦 Dependency Management
+
+### Version Strategy
+
+The project uses a dual-approach dependency management strategy:
+
+**Development (`requirements.txt`)**
+- Uses minimum version requirements (`>=`) for flexibility
+- Allows for automatic security updates and bug fixes
+- Recommended for development and testing environments
+
+**Production (`requirements.lock`)**
+- Uses exact version pins (`==`) for reproducibility
+- Ensures consistent deployments across environments
+- Recommended for production deployments
+
+### Updating Dependencies
+
+```bash
+# Update development requirements
+pip install --upgrade -r requirements.txt
+
+# Generate new lock file for production
+pip freeze > requirements.lock
+```
 
 ## 🔧 Configuration
 

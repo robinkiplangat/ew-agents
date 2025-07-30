@@ -12,7 +12,13 @@ logger = logging.getLogger(__name__)
 def get_mongo_connection():
     """Get MongoDB Atlas connection"""
     try:
-        mongo_uri = os.getenv('MONGODB_ATLAS_URI', 'mongodb+srv://ew_ml:moHsc5i6gYFrLsvL@ewcluster1.fpkzpxg.mongodb.net/')
+        # Try to get MongoDB URI from Secret Manager first, then fallback to environment
+        try:
+            from .secret_manager import get_mongodb_uri
+            mongo_uri = get_mongodb_uri() or os.getenv('MONGODB_ATLAS_URI')
+        except ImportError:
+            mongo_uri = os.getenv('MONGODB_ATLAS_URI')
+        
         # Enhanced SSL configuration for MongoDB Atlas
         client = MongoClient(
             mongo_uri,

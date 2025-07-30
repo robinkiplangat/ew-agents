@@ -22,6 +22,14 @@ except ImportError:
     PYMONGO_AVAILABLE = False
     print("Warning: pymongo not available. Install with: pip install pymongo")
 
+# Import Secret Manager utilities
+try:
+    from .secret_manager import get_mongodb_uri
+    SECRET_MANAGER_AVAILABLE = True
+except ImportError:
+    SECRET_MANAGER_AVAILABLE = False
+    get_mongodb_uri = None
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -34,11 +42,18 @@ class ElectionWatchStorage:
         self.analysis_collection = "analysis_results"
         self.reports_collection = "report_submissions"
         
-        # Get MongoDB URI from environment (.env file) - prefer MONGODB_ATLAS_URI
-        self.mongo_uri = mongo_uri or os.getenv(
-            "MONGODB_ATLAS_URI", 
-            os.getenv("MONGODB_URI", "mongodb+srv://ew_ml:moHsc5i6gYFrLsvL@ewcluster1.fpkzpxg.mongodb.net/")
-        )
+        # Get MongoDB URI from Secret Manager or environment variables
+        if mongo_uri:
+            self.mongo_uri = mongo_uri
+        elif SECRET_MANAGER_AVAILABLE and get_mongodb_uri:
+            # Try to get from Secret Manager first
+            self.mongo_uri = get_mongodb_uri()
+            if not self.mongo_uri:
+                # Fallback to environment variables
+                self.mongo_uri = os.getenv("MONGODB_ATLAS_URI") or os.getenv("MONGODB_URI")
+        else:
+            # Fallback to environment variables only
+            self.mongo_uri = os.getenv("MONGODB_ATLAS_URI") or os.getenv("MONGODB_URI")
         
         # Check if we're in development mode (for SSL certificate handling)
         self.development_mode = os.getenv("MONGODB_DEVELOPMENT_MODE", "false").lower() == "true"
@@ -383,12 +398,14 @@ class ElectionWatchStorage:
                 collection_ops = "working"
             except Exception as coll_error:
                 collection_ops = f"failed: {str(coll_error)}"
+                test_count = None
             
             return {
                 "status": "connected" if connection_status == "connected" else "partial",
                 "connection": connection_status,
                 "database_access": db_access,
                 "collection_operations": collection_ops,
+                "test_document_count": test_count,
                 "database": self.database_name,
                 "collections": collections if db_access == "accessible" else [],
                 "uri_configured": bool(self.mongo_uri and "<username>" not in self.mongo_uri),
