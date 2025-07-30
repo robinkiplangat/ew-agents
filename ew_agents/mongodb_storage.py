@@ -82,77 +82,47 @@ class ElectionWatchStorage:
                         return
                     
                     logger.info("🔗 Creating MongoDB Atlas client...")
-                    # Connect to MongoDB Atlas with Cloud Run compatible SSL settings
+                    # Connect to MongoDB Atlas with proper SSL settings
                     try:
-                        # Use Cloud Run compatible SSL settings
+                        # First try with strict SSL settings
                         self.client = MongoClient(
                             self.mongo_uri,
                             tls=True,  # Enable TLS for Atlas
                             tlsAllowInvalidCertificates=False,
-                            tlsInsecure=False,
-                            serverSelectionTimeoutMS=30000,  # 30 second timeout
-                            connectTimeoutMS=30000,  # 30 second connection timeout
+                            serverSelectionTimeoutMS=5000,  # 5 second timeout
+                            connectTimeoutMS=10000,  # 10 second connection timeout
                             socketTimeoutMS=30000,   # 30 second socket timeout
                             maxPoolSize=10,          # Connection pool size
-                            retryWrites=True,        # Enable retryable writes
-                            # Cloud Run specific SSL settings
-                            ssl=True,
-                            ssl_cert_reqs='CERT_NONE',  # Don't verify certificates in Cloud Run
-                            ssl_ca_certs=None,          # Don't use CA certs
-                            directConnection=False      # Use replica set discovery
+                            retryWrites=True         # Enable retryable writes
                         )
                         
                         # Test the connection immediately
                         self.client.admin.command('ping')
-                        logger.info("✅ MongoDB Atlas connected with Cloud Run compatible settings")
+                        logger.info("✅ MongoDB Atlas connected with strict SSL settings")
                         
                     except Exception as ssl_error:
-                        logger.warning(f"⚠️ Cloud Run SSL connection failed: {ssl_error}")
-                        logger.info("🔄 Trying with minimal SSL settings...")
+                        logger.warning(f"⚠️ Strict SSL connection failed: {ssl_error}")
+                        logger.info("🔄 Trying with relaxed SSL settings...")
                         
-                        # Fallback with minimal SSL settings for Cloud Run
+                        # Fallback with relaxed SSL settings for development
                         self.client = MongoClient(
                             self.mongo_uri,
                             tls=True,  # Enable TLS for Atlas
-                            tlsAllowInvalidCertificates=True,  # Allow invalid certificates
-                            tlsInsecure=True,  # Insecure mode for Cloud Run
-                            serverSelectionTimeoutMS=30000,  # Longer timeout
-                            connectTimeoutMS=30000,  # Longer connection timeout
+                            tlsAllowInvalidCertificates=True,  # Allow invalid certificates for dev
+                            serverSelectionTimeoutMS=10000,  # Longer timeout
+                            connectTimeoutMS=15000,  # Longer connection timeout
                             socketTimeoutMS=30000,   # 30 second socket timeout
                             maxPoolSize=10,          # Connection pool size
-                            retryWrites=True,        # Enable retryable writes
-                            # Minimal SSL settings
-                            ssl=True,
-                            ssl_cert_reqs='CERT_NONE',
-                            ssl_ca_certs=None,
-                            directConnection=False
+                            retryWrites=True         # Enable retryable writes
                         )
                         
                         # Test the fallback connection
                         try:
                             self.client.admin.command('ping')
-                            logger.info("✅ MongoDB Atlas connected with minimal SSL settings")
+                            logger.info("✅ MongoDB Atlas connected with relaxed SSL settings")
                         except Exception as fallback_error:
-                            logger.error(f"❌ Minimal SSL connection also failed: {fallback_error}")
-                            # Try one more time with completely disabled SSL verification
-                            try:
-                                logger.info("🔄 Trying with SSL verification completely disabled...")
-                                self.client = MongoClient(
-                                    self.mongo_uri,
-                                    tls=False,  # Disable TLS completely
-                                    ssl=False,  # Disable SSL completely
-                                    serverSelectionTimeoutMS=30000,
-                                    connectTimeoutMS=30000,
-                                    socketTimeoutMS=30000,
-                                    maxPoolSize=10,
-                                    retryWrites=True,
-                                    directConnection=False
-                                )
-                                self.client.admin.command('ping')
-                                logger.info("✅ MongoDB Atlas connected with SSL disabled")
-                            except Exception as final_error:
-                                logger.error(f"❌ All connection attempts failed: {final_error}")
-                                raise final_error
+                            logger.error(f"❌ Fallback SSL connection also failed: {fallback_error}")
+                            raise fallback_error
                 else:
                     logger.info("🔗 Creating MongoDB client (local/custom)...")
                     # Fallback for local MongoDB (if someone overrides the URI)
