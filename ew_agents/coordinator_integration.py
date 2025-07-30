@@ -39,6 +39,12 @@ class EnhancedCoordinator:
     """
     
     def __init__(self, base_coordinator_agent=None):
+        """
+        Initialize the EnhancedCoordinator with a base coordinator agent and predefined workflow templates for task assignment.
+        
+        Parameters:
+            base_coordinator_agent: Optional coordinator agent to use as the base for delegation. If not provided, the default coordinator agent is used.
+        """
         self.base_coordinator = base_coordinator_agent or coordinator_agent
         self.active_workflows = {}
         
@@ -71,16 +77,19 @@ class EnhancedCoordinator:
                             workflow_template: str = "comprehensive_analysis",
                             progress_callback: Optional[Callable] = None) -> Dict[str, Any]:
         """
-        Process a request using the enhanced coordinator as a complementary layer
-        
-        Args:
-            user_request: The user's request
-            workflow_template: Template to use for the workflow
-            progress_callback: Optional progress callback function
-            
-        Returns:
-            Comprehensive analysis results with enhanced orchestration
-        """
+                            Orchestrates the processing of a user request by managing workflow initialization, task assignment, delegation to the base coordinator, and synthesis of enhanced analysis results.
+                            
+                            Parameters:
+                                user_request (str): The user's request content to be analyzed.
+                                workflow_template (str, optional): The workflow template to guide task assignment and processing. Defaults to "comprehensive_analysis".
+                                progress_callback (Callable, optional): A callback function to report workflow progress updates.
+                            
+                            Returns:
+                                Dict[str, Any]: A comprehensive analysis result enriched with orchestration metadata, task assignments, and synthesized insights.
+                            
+                            Raises:
+                                Exception: Propagates any exception encountered during processing after updating workflow status.
+                            """
         
         workflow_id = str(uuid.uuid4())
         logger.info(f"Starting enhanced workflow {workflow_id} with template: {workflow_template}")
@@ -147,7 +156,16 @@ class EnhancedCoordinator:
             raise e
     
     def _analyze_and_assign_tasks(self, user_request: str, workflow_template: str) -> Dict[str, Any]:
-        """Analyze the request and assign specific tasks to agents"""
+        """
+        Analyzes the user request and assigns tasks, priorities, and agents based on the selected workflow template and content characteristics.
+        
+        Parameters:
+            user_request (str): The user-provided content or request to be analyzed.
+            workflow_template (str): The name of the workflow template to use for task assignment.
+        
+        Returns:
+            Dict[str, Any]: A dictionary containing content analysis, required and optional agents, task priorities, and specific tasks for each agent.
+        """
         
         template = self.workflow_templates.get(workflow_template, self.workflow_templates["comprehensive_analysis"])
         
@@ -188,7 +206,19 @@ class EnhancedCoordinator:
     
     async def _delegate_to_coordinator(self, user_request: str, workflow_id: str, 
                                      progress_callback: Optional[Callable] = None) -> Dict[str, Any]:
-        """Delegate the core processing to the main coordinator agent"""
+        """
+                                     Delegates processing of a user request to the main coordinator agent if available, otherwise uses fallback processing.
+                                     
+                                     If the coordinator agent with sub-agents is present, routes the request through optimized specialist agent processing. If not, or if an error occurs, falls back to a simplified processing workflow.
+                                     
+                                     Parameters:
+                                         user_request (str): The user-provided content or analysis request.
+                                         workflow_id (str): Unique identifier for the current workflow.
+                                         progress_callback (Optional[Callable]): Optional callback for progress updates.
+                                     
+                                     Returns:
+                                         Dict[str, Any]: The result of the analysis workflow, including agent outputs and orchestration metadata.
+                                     """
         
         try:
             # Check if we have a working coordinator agent with sub-agents
@@ -215,7 +245,17 @@ class EnhancedCoordinator:
     def _synthesize_and_enhance_results(self, coordinator_result: Dict[str, Any], 
                                        task_assignments: Dict[str, Any], 
                                        workflow_id: str) -> Dict[str, Any]:
-        """Synthesize coordinator results with enhanced orchestration insights"""
+        """
+                                       Combines coordinator results with orchestration metadata, including task assignments, workflow insights, efficiency assessments, and optimization recommendations.
+                                       
+                                       Parameters:
+                                           coordinator_result (Dict[str, Any]): The result produced by the coordinator agent.
+                                           task_assignments (Dict[str, Any]): Details of agent task assignments for the workflow.
+                                           workflow_id (str): Unique identifier for the workflow.
+                                       
+                                       Returns:
+                                           Dict[str, Any]: The enhanced result containing original coordinator output and additional orchestration context.
+                                       """
         
         # Start with the coordinator's result
         enhanced_result = coordinator_result.copy()
@@ -242,7 +282,16 @@ class EnhancedCoordinator:
     
     def _generate_orchestration_insights(self, coordinator_result: Dict[str, Any], 
                                        task_assignments: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate insights about the orchestration process"""
+        """
+                                       Generate a summary of orchestration insights, including workflow type, content characteristics, agent utilization, task distribution, and processing mode.
+                                       
+                                       Parameters:
+                                       	coordinator_result (Dict[str, Any]): The result returned by the coordinator after processing.
+                                       	task_assignments (Dict[str, Any]): Task assignment details generated during workflow orchestration.
+                                       
+                                       Returns:
+                                       	Dict[str, Any]: A dictionary containing orchestration insights such as workflow type, content analysis, agent utilization metrics, task distribution, and processing mode.
+                                       """
         
         insights = {
             "workflow_type": task_assignments.get("workflow_template", "unknown"),
@@ -260,7 +309,16 @@ class EnhancedCoordinator:
     
     def _assess_workflow_efficiency(self, coordinator_result: Dict[str, Any], 
                                   task_assignments: Dict[str, Any]) -> Dict[str, Any]:
-        """Assess the efficiency of the workflow execution"""
+        """
+                                  Evaluates workflow execution efficiency based on agent utilization, completion status, complexity, and resource usage.
+                                  
+                                  Parameters:
+                                  	coordinator_result (Dict[str, Any]): The result dictionary from the coordinator, containing workflow status.
+                                  	task_assignments (Dict[str, Any]): Task assignment details, including required agents.
+                                  
+                                  Returns:
+                                  	Dict[str, Any]: Dictionary with efficiency metrics such as agent utilization score, completion success, workflow complexity, and resource efficiency.
+                                  """
         
         # Calculate efficiency metrics
         required_agents = len(task_assignments.get("required_agents", []))
@@ -277,7 +335,16 @@ class EnhancedCoordinator:
     
     def _generate_optimization_recommendations(self, coordinator_result: Dict[str, Any], 
                                              task_assignments: Dict[str, Any]) -> List[str]:
-        """Generate recommendations for workflow optimization"""
+        """
+                                             Generate workflow optimization recommendations based on agent utilization, content characteristics, multimedia presence, and completion status.
+                                             
+                                             Parameters:
+                                             	coordinator_result (Dict[str, Any]): The result dictionary from the coordinator, including workflow status.
+                                             	task_assignments (Dict[str, Any]): Task assignment details, including required agents and content analysis.
+                                             
+                                             Returns:
+                                             	List[str]: A list of recommendations for optimizing workflow efficiency and effectiveness.
+                                             """
         
         recommendations = []
         
@@ -302,7 +369,15 @@ class EnhancedCoordinator:
         return recommendations
     
     def _calculate_task_completion_rate(self, coordinator_result: Dict[str, Any]) -> float:
-        """Calculate the task completion rate based on coordinator results"""
+        """
+        Calculate the proportion of successfully completed agent tasks from coordinator results.
+        
+        Parameters:
+        	coordinator_result (dict): The result dictionary containing agent task statuses.
+        
+        Returns:
+        	float: The ratio of agent tasks with status "success" to the total number of tasks, or 0.0 if no tasks are present.
+        """
         
         agent_results = coordinator_result.get("agent_results", {})
         if not agent_results:
@@ -319,7 +394,15 @@ class EnhancedCoordinator:
         return completed_tasks / total_tasks if total_tasks > 0 else 0.0
     
     def _assess_workflow_complexity(self, task_assignments: Dict[str, Any]) -> str:
-        """Assess the complexity of the workflow"""
+        """
+        Determines the complexity level of a workflow based on the number of required agents and assigned tasks.
+        
+        Parameters:
+            task_assignments (Dict[str, Any]): Task assignment details, including required agents and specific tasks.
+        
+        Returns:
+            str: The workflow complexity level—'low', 'medium', or 'high'.
+        """
         
         required_agents = len(task_assignments.get("required_agents", []))
         specific_tasks = task_assignments.get("specific_tasks", {})
@@ -335,7 +418,19 @@ class EnhancedCoordinator:
     
     async def _process_with_adk_agent(self, user_request: str, workflow_id: str, 
                                      progress_callback: Optional[Callable] = None) -> Dict[str, Any]:
-        """Process request using Google ADK coordinator agent or fallback to specialist agents"""
+        """
+                                     Attempts to process the user request using the Google ADK coordinator agent, falling back to specialist agents or basic processing if unavailable or errors occur.
+                                     
+                                     If the ADK coordinator agent is not configured or fails, the method delegates processing to specialist agents. If that also fails, it uses a basic fallback processing method.
+                                     
+                                     Parameters:
+                                         user_request (str): The user request to be analyzed.
+                                         workflow_id (str): Unique identifier for the workflow.
+                                         progress_callback (Optional[Callable]): Optional callback for reporting progress.
+                                     
+                                     Returns:
+                                         Dict[str, Any]: The analysis results from the ADK coordinator, specialist agents, or fallback processing.
+                                     """
         
         try:
             logger.info(f"Processing with ADK agent: {user_request[:50]}...")
@@ -367,7 +462,20 @@ class EnhancedCoordinator:
     
     async def _process_with_specialist_agents(self, user_request: str, workflow_id: str,
                                              progress_callback: Optional[Callable] = None) -> Dict[str, Any]:
-        """Process request using specialist agents directly"""
+        """
+                                             Processes a user request by sequentially running specialist agents for data engineering, OSINT narrative classification, and lexicon coded language detection, then generates a unified summary.
+                                             
+                                             Parameters:
+                                                 user_request (str): The user-provided content or query to analyze.
+                                                 workflow_id (str): Unique identifier for the workflow instance.
+                                                 progress_callback (Optional[Callable]): Optional callback to report progress updates.
+                                             
+                                             Returns:
+                                                 Dict[str, Any]: A dictionary containing agent results, summary, workflow metadata, and processing status.
+                                             
+                                             Raises:
+                                                 Exception: Propagates any errors encountered during specialist agent processing.
+                                             """
         
         logger.info(f"Processing with specialist agents: {user_request[:50]}...")
         
@@ -430,7 +538,19 @@ class EnhancedCoordinator:
     
     async def _process_with_fallback(self, user_request: str, workflow_id: str,
                                     progress_callback: Optional[Callable] = None) -> Dict[str, Any]:
-        """Fallback processing when ADK is not available - optimized for efficiency"""
+        """
+                                    Processes a user request using an optimized fallback workflow when ADK is unavailable.
+                                    
+                                    This method extracts the main content from the user request and sequentially applies data engineering (if the content is substantial), OSINT narrative classification, and lexicon analysis (only if suspicious keywords are present). It then delegates summary generation to the coordinator agent. Progress updates are provided via the optional callback.
+                                    
+                                    Parameters:
+                                        user_request (str): The user's input to be analyzed.
+                                        workflow_id (str): Unique identifier for the workflow.
+                                        progress_callback (Optional[Callable]): Optional callback for progress updates.
+                                    
+                                    Returns:
+                                        Dict[str, Any]: A dictionary containing agent results, summary, and workflow metadata.
+                                    """
         
         logger.info(f"Processing with optimized fallback mode: {user_request[:50]}...")
         
@@ -502,7 +622,19 @@ class EnhancedCoordinator:
     async def _delegate_summary_to_coordinator(self, user_request: str, 
                                               agent_results: Dict[str, Any], 
                                               workflow_id: str) -> Dict[str, Any]:
-        """Delegate summary generation to the coordinator agent using unified ElectionWatchReportTemplate"""
+        """
+                                              Generates a unified analysis summary by delegating to the coordinator agent and populating the ElectionWatchReportTemplate with agent results.
+                                              
+                                              If summary generation fails, returns a standardized fallback analysis report.
+                                                  
+                                              Parameters:
+                                                  user_request (str): The original user request content.
+                                                  agent_results (Dict[str, Any]): Results from specialist agents.
+                                                  workflow_id (str): Unique identifier for the workflow.
+                                              
+                                              Returns:
+                                                  Dict[str, Any]: A populated analysis report or a fallback report on failure.
+                                              """
         
         try:
             logger.info(f"Delegating summary generation to coordinator for workflow {workflow_id}")
@@ -527,7 +659,20 @@ class EnhancedCoordinator:
                                    user_request: str, 
                                    agent_results: Dict[str, Any], 
                                    workflow_id: str) -> Dict[str, Any]:
-        """Populate the unified analysis template with agent results"""
+        """
+                                   Populates a unified analysis report template with agent results, metadata, and enhanced insights.
+                                   
+                                   This method fills the provided analysis template with structured information derived from agent outputs and the user request, including report metadata, narrative classification, actors, lexicon terms, risk level, recommendations, and technical analysis insights.
+                                   
+                                   Parameters:
+                                       template (Dict[str, Any]): The base report template to populate.
+                                       user_request (str): The original user request containing content to analyze.
+                                       agent_results (Dict[str, Any]): Results from various analysis agents.
+                                       workflow_id (str): Unique identifier for the current workflow.
+                                   
+                                   Returns:
+                                       Dict[str, Any]: The populated analysis report containing all synthesized findings and metadata.
+                                   """
         
         # Create a copy of the template to populate
         report = template.copy()
@@ -577,7 +722,16 @@ class EnhancedCoordinator:
         return report
     
     def _determine_content_type(self, user_request: str, agent_results: Dict[str, Any]) -> str:
-        """Determine the content type being analyzed"""
+        """
+        Determines the type of content in the user request, such as image, video, CSV, multimedia, or text.
+        
+        Parameters:
+            user_request (str): The user-provided request or content to analyze.
+            agent_results (Dict[str, Any]): Results from previous agent analyses (not used in current logic).
+        
+        Returns:
+            str: The detected content type ('image', 'video', 'csv', 'multimedia', or 'text').
+        """
         
         # Check for file uploads or multimedia indicators
         if "image" in user_request.lower() or "photo" in user_request.lower():
@@ -592,7 +746,12 @@ class EnhancedCoordinator:
             return "text"
     
     def _determine_analysis_depth(self, agent_results: Dict[str, Any]) -> str:
-        """Determine the depth of analysis performed"""
+        """
+        Determines the analysis depth based on the number of agent results.
+        
+        Returns:
+            str: "comprehensive" if four or more agent results are present, "standard" if two or three, or "quick" if fewer.
+        """
         
         if len(agent_results) >= 4:
             return "comprehensive"
@@ -604,7 +763,17 @@ class EnhancedCoordinator:
     def _generate_analysis_insights(self, agent_results: Dict[str, Any], 
                                    actual_content: str, 
                                    workflow_id: str) -> Dict[str, Any]:
-        """Generate detailed analysis insights"""
+        """
+                                   Generates a comprehensive set of analysis insights, including content statistics, threat assessment, and processing metadata.
+                                   
+                                   Parameters:
+                                       agent_results (Dict[str, Any]): Results from the various analysis agents.
+                                       actual_content (str): The core content extracted from the user request.
+                                       workflow_id (str): The unique identifier for the current workflow.
+                                   
+                                   Returns:
+                                       Dict[str, Any]: A dictionary containing content statistics, threat assessment metrics, and processing metadata for the analysis.
+                                   """
         
         insights = {
             "content_statistics": {
@@ -631,7 +800,18 @@ class EnhancedCoordinator:
     
     def _generate_comprehensive_recommendations(self, agent_results: Dict[str, Any], 
                                               narrative_classification: Dict[str, str]) -> List[str]:
-        """Generate comprehensive recommendations based on all agent analysis"""
+        """
+                                              Generate a comprehensive list of recommendations based on agent analysis results and narrative threat level.
+                                              
+                                              Recommendations are tailored according to the assessed threat level and further refined using findings from lexicon, OSINT, and NLP agent outputs. Duplicate recommendations are removed while preserving order.
+                                              
+                                              Parameters:
+                                                  agent_results (Dict[str, Any]): Results from various analysis agents.
+                                                  narrative_classification (Dict[str, str]): Narrative classification details, including threat level.
+                                              
+                                              Returns:
+                                                  List[str]: Ordered list of unique recommendations for response and monitoring.
+                                              """
         
         recommendations = []
         threat_level = narrative_classification.get("threat_level", "Medium")
@@ -696,7 +876,16 @@ class EnhancedCoordinator:
         return unique_recommendations
     
     def _extract_enhanced_narrative_classification(self, agent_results: Dict[str, Any], actual_content: str) -> Dict[str, Any]:
-        """Extract and format narrative classification from OSINT agent results"""
+        """
+        Extracts and formats a narrative classification summary from agent results, prioritizing OSINT analysis, with enhancements from lexicon analysis and fallback to keyword-based detection if necessary.
+        
+        Parameters:
+            agent_results (Dict[str, Any]): Results from various analysis agents, including OSINT and lexicon agents.
+            actual_content (str): The raw content to analyze, used for fallback classification if agent results are insufficient.
+        
+        Returns:
+            Dict[str, Any]: A structured narrative classification containing theme, threat level, details, confidence score, alternative themes, and threat indicators.
+        """
         
         # Default structure
         classification = {
@@ -800,7 +989,12 @@ class EnhancedCoordinator:
         return classification
     
     def _extract_enhanced_actors(self, agent_results: Dict[str, Any], actual_content: str) -> List[Dict[str, Any]]:
-        """Extract and format actors from OSINT agent results"""
+        """
+        Extracts and formats a list of actors involved in the analyzed content, prioritizing OSINT agent results and falling back to content-based detection if necessary.
+        
+        Returns:
+            A list of up to five actor dictionaries, each containing name, affiliation, role, influence level, verification status, and social metrics.
+        """
         
         actors = []
         
@@ -863,7 +1057,15 @@ class EnhancedCoordinator:
         return actors[:5]  # Limit to 5 actors
     
     def _map_actor_type_to_affiliation(self, actor_type: str) -> str:
-        """Map OSINT agent actor types to affiliation categories"""
+        """
+        Maps an OSINT agent's actor type to a standardized affiliation category.
+        
+        Parameters:
+        	actor_type (str): The type of actor identified by the OSINT agent.
+        
+        Returns:
+        	str: The corresponding affiliation category, or "Unknown" if the type is unrecognized.
+        """
         mapping = {
             "politician": "Government/Political",
             "political_party": "Political Party",
@@ -874,7 +1076,15 @@ class EnhancedCoordinator:
         return mapping.get(actor_type.lower(), "Unknown")
     
     def _map_confidence_to_influence(self, confidence: float) -> str:
-        """Map OSINT agent confidence scores to influence levels"""
+        """
+        Maps a confidence score to an influence level category.
+        
+        Parameters:
+            confidence (float): Confidence score from an OSINT agent, typically between 0.0 and 1.0.
+        
+        Returns:
+            str: Influence level as "High", "Medium", or "Low" based on the confidence score.
+        """
         if confidence >= 0.8:
             return "High"
         elif confidence >= 0.5:
@@ -883,7 +1093,18 @@ class EnhancedCoordinator:
             return "Low"
     
     def _extract_enhanced_lexicon_terms(self, agent_results: Dict[str, Any], actual_content: str) -> List[Dict[str, Any]]:
-        """Extract and format lexicon terms from lexicon agent results"""
+        """
+        Extracts and formats up to six unique lexicon terms relevant to coded language or misinformation from agent analysis results.
+        
+        The method prioritizes terms identified by the lexicon agent, supplements with OSINT-detected misinformation indicators if available, and falls back to generic election-related terminology when no agent results are present. Duplicate terms are removed and results are sorted by confidence score.
+        
+        Parameters:
+            agent_results (Dict[str, Any]): Aggregated results from analysis agents.
+            actual_content (str): The core content being analyzed.
+        
+        Returns:
+            List[Dict[str, Any]]: A list of up to six unique lexicon term dictionaries, each containing term details, context, confidence, and severity.
+        """
         
         lexicon_terms = []
         
@@ -957,7 +1178,17 @@ class EnhancedCoordinator:
         return unique_terms[:6]  # Limit to 6 most relevant terms
     
     def _calculate_comprehensive_risk_score(self, agent_results: Dict[str, Any]) -> float:
-        """Calculate detailed risk score from all agent results"""
+        """
+        Calculates a comprehensive risk score (0.0 to 10.0) by aggregating risk indicators from lexicon, OSINT, and NLP agent results.
+        
+        The score incorporates the presence and confidence of coded terms, narrative classification indicators (fraud, violence, division), and NLP-derived risk assessments, with each component weighted and the total capped at 10.0.
+        
+        Parameters:
+            agent_results (Dict[str, Any]): Aggregated results from lexicon, OSINT, and NLP agents.
+        
+        Returns:
+            float: The computed risk score, ranging from 0.0 (no risk) to 10.0 (maximum risk).
+        """
         risk_score = 0.0
         
         # Risk from lexicon analysis
@@ -995,7 +1226,13 @@ class EnhancedCoordinator:
         return min(risk_score, 10.0)  # Cap at 10.0
     
     def _assess_violence_potential_detailed(self, agent_results: Dict[str, Any]) -> str:
-        """Detailed violence potential assessment"""
+        """
+        Assesses the potential for violence in the analyzed content as High, Medium, or Low.
+        
+        The assessment is based on a comprehensive risk score and the presence of explicit violence indicators in the agent results.
+        Returns:
+            str: Violence potential level ("High", "Medium", or "Low").
+        """
         risk_score = self._calculate_comprehensive_risk_score(agent_results)
         
         # Check for specific violence indicators
@@ -1016,7 +1253,15 @@ class EnhancedCoordinator:
             return "Low"
     
     def _assess_electoral_impact_detailed(self, agent_results: Dict[str, Any]) -> str:
-        """Detailed electoral impact assessment"""
+        """
+        Assesses the potential electoral impact of analyzed content as High, Medium, or Low based on a comprehensive risk score.
+        
+        Parameters:
+            agent_results (Dict[str, Any]): Results from specialist agents used to calculate the risk score.
+        
+        Returns:
+            str: Electoral impact level ("High", "Medium", or "Low") determined by the risk score.
+        """
         risk_score = self._calculate_comprehensive_risk_score(agent_results)
         
         # Check for electoral process indicators
@@ -1030,7 +1275,12 @@ class EnhancedCoordinator:
             return "Low"
     
     def _assess_social_cohesion_detailed(self, agent_results: Dict[str, Any]) -> str:
-        """Detailed social cohesion threat assessment"""
+        """
+        Assesses the threat level to social cohesion based on comprehensive risk score and division indicators.
+        
+        Returns:
+            str: "High", "Medium", or "Low" indicating the assessed threat to social cohesion.
+        """
         risk_score = self._calculate_comprehensive_risk_score(agent_results)
         
         # Check for ethnic/religious division indicators
@@ -1046,7 +1296,12 @@ class EnhancedCoordinator:
         return "Low"
     
     def _determine_urgency_level_detailed(self, agent_results: Dict[str, Any]) -> str:
-        """Detailed urgency level determination"""
+        """
+        Determines the urgency level for response based on a comprehensive risk score derived from agent results.
+        
+        Returns:
+            str: The recommended urgency level, which can be "Immediate", "Within 24h", "Within Week", or "Monitoring", depending on the calculated risk score.
+        """
         risk_score = self._calculate_comprehensive_risk_score(agent_results)
         
         if risk_score >= 8.0:
@@ -1059,7 +1314,15 @@ class EnhancedCoordinator:
             return "Monitoring"
     
     def _calculate_overall_confidence_level(self, agent_results: Dict[str, Any]) -> str:
-        """Calculate overall confidence in the analysis"""
+        """
+        Calculates the overall confidence level of the analysis based on confidence scores from OSINT, lexicon, and NLP agent results.
+        
+        Parameters:
+            agent_results (Dict[str, Any]): Results from various analysis agents.
+        
+        Returns:
+            str: Overall confidence level as 'high', 'medium', or 'low'.
+        """
         confidence_scores = []
         
         # Confidence from OSINT
@@ -1096,7 +1359,16 @@ class EnhancedCoordinator:
             return "low"
     
     def _get_fallback_analysis_report(self, workflow_id: str, error_message: str) -> Dict[str, Any]:
-        """Get fallback report in unified analysis format when processing fails"""
+        """
+        Return a standardized fallback analysis report in unified format when processing fails.
+        
+        Parameters:
+            workflow_id (str): Unique identifier for the workflow.
+            error_message (str): Description of the processing error encountered.
+        
+        Returns:
+            Dict[str, Any]: A report dictionary indicating analysis failure, including error details, default metadata, and recommendations for remediation.
+        """
         
         return {
             "report_metadata": {
@@ -1165,7 +1437,16 @@ class EnhancedCoordinator:
         }
     
     def _generate_quick_recommendations(self, agent_results: Dict[str, Any], narrative_classification: Dict[str, str]) -> List[str]:
-        """Generate recommendations in target format"""
+        """
+        Generate a list of quick recommendations based on the assessed threat level in the narrative classification.
+        
+        Parameters:
+            agent_results (Dict[str, Any]): Results from analysis agents.
+            narrative_classification (Dict[str, str]): Narrative classification containing at least a 'threat_level' key.
+        
+        Returns:
+            List[str]: Recommendations tailored to the threat level (High, Medium, or Low).
+        """
         
         recommendations = []
         
@@ -1194,7 +1475,16 @@ class EnhancedCoordinator:
         return recommendations
     
     def _get_fallback_quick_analysis(self, workflow_id: str, error_message: str) -> Dict[str, Any]:
-        """Get fallback report in exact target format when processing fails"""
+        """
+        Return a standardized quick analysis report when processing fails, including error details and fallback recommendations.
+        
+        Parameters:
+            workflow_id (str): Unique identifier for the workflow.
+            error_message (str): Description of the processing error.
+        
+        Returns:
+            Dict[str, Any]: Fallback quick analysis report in the expected format, containing error context and suggested actions.
+        """
         
         return {
             "report_metadata": {
@@ -1234,7 +1524,20 @@ class EnhancedCoordinator:
                                  user_request: str, 
                                  agent_results: Dict[str, Any], 
                                  workflow_id: str) -> Dict[str, Any]:
-        """Populate the ElectionWatchReportTemplate with agent results"""
+        """
+                                 Populates an ElectionWatch analysis report template with agent results, risk assessments, and recommendations.
+                                 
+                                 This method fills the provided report template with extracted content, narrative classification, lexicon analysis, risk metrics, recommended actions, and technical metadata based on the results from various analysis agents and the original user request.
+                                 
+                                 Parameters:
+                                     template (Dict[str, Any]): The base report template to populate.
+                                     user_request (str): The original user request, potentially containing metadata.
+                                     agent_results (Dict[str, Any]): Results from analysis agents used to inform report fields.
+                                     workflow_id (str): Unique identifier for the workflow, used for report tracking.
+                                 
+                                 Returns:
+                                     Dict[str, Any]: The fully populated analysis report.
+                                 """
         
         # Create a copy of the template to populate
         report = template.copy()
@@ -1356,7 +1659,12 @@ class EnhancedCoordinator:
         return report
     
     def _extract_actual_content(self, user_request: str) -> str:
-        """Extract the actual content from the user request, removing metadata"""
+        """
+        Extracts the core content from a user request string by removing metadata, file markers, wrapper text, and extraneous sections.
+        
+        Returns:
+            str: The main content intended for analysis, with metadata and common prompt instructions removed.
+        """
         
         # First, try to find file content markers
         if "File '" in user_request:
@@ -1425,7 +1733,15 @@ class EnhancedCoordinator:
         return '\n'.join(lines)
     
     def _calculate_overall_confidence(self, agent_results: Dict[str, Any]) -> str:
-        """Calculate overall confidence level from agent results"""
+        """
+        Calculates the overall confidence level (LOW, MEDIUM, HIGH) based on confidence scores from OSINT agent classifications.
+        
+        Parameters:
+            agent_results (dict): Dictionary containing agent analysis results, including OSINT classification data.
+        
+        Returns:
+            str: The overall confidence level as 'HIGH', 'MEDIUM', or 'LOW'.
+        """
         confidence_scores = []
         
         if "osint_classification" in agent_results:
@@ -1448,7 +1764,17 @@ class EnhancedCoordinator:
             return "LOW"
     
     def _calculate_risk_score(self, agent_results: Dict[str, Any]) -> float:
-        """Calculate overall risk score (0.0 to 10.0)"""
+        """
+        Calculates an overall risk score (0.0 to 10.0) for the analyzed content based on lexicon analysis, OSINT classification, and the presence of high-risk election-related keywords.
+        
+        The score increases with the detection of coded language terms, higher confidence in those terms, elevated threat levels from OSINT classifications, and the presence of specific risk keywords. The final score is capped at 10.0.
+        
+        Parameters:
+            agent_results (Dict[str, Any]): Aggregated results from lexicon and OSINT analyses.
+        
+        Returns:
+            float: The computed risk score between 0.0 and 10.0.
+        """
         risk_score = 0.0
         
         # Base risk from lexicon analysis
@@ -1494,7 +1820,15 @@ class EnhancedCoordinator:
         return min(risk_score, 10.0)  # Cap at 10.0
     
     def _assess_violence_potential(self, risk_score: float) -> str:
-        """Assess violence potential based on risk score"""
+        """
+        Determines the potential for violence based on the provided risk score.
+        
+        Parameters:
+            risk_score (float): The calculated risk score for the analyzed content.
+        
+        Returns:
+            str: "HIGH" if the risk score is 8.0 or above, "MEDIUM" if between 5.0 and 7.99, or "LOW" if below 5.0.
+        """
         if risk_score >= 8.0:
             return "HIGH"
         elif risk_score >= 5.0:
@@ -1503,7 +1837,15 @@ class EnhancedCoordinator:
             return "LOW"
     
     def _assess_electoral_impact(self, risk_score: float) -> str:
-        """Assess electoral impact based on risk score"""
+        """
+        Determines the level of electoral impact based on the provided risk score.
+        
+        Parameters:
+            risk_score (float): The calculated risk score for the analyzed content.
+        
+        Returns:
+            str: "HIGH" if the risk score is 7.0 or above, "MEDIUM" if between 4.0 and 6.99, or "LOW" if below 4.0.
+        """
         if risk_score >= 7.0:
             return "HIGH"
         elif risk_score >= 4.0:
@@ -1512,7 +1854,15 @@ class EnhancedCoordinator:
             return "LOW"
     
     def _assess_social_cohesion_threat(self, risk_score: float) -> str:
-        """Assess social cohesion threat based on risk score"""
+        """
+        Assesses the threat to social cohesion based on the provided risk score.
+        
+        Parameters:
+            risk_score (float): The calculated risk score for the analyzed content.
+        
+        Returns:
+            str: "HIGH" if the risk score is 6.0 or above, "MEDIUM" if between 3.0 and 5.99, or "LOW" if below 3.0.
+        """
         if risk_score >= 6.0:
             return "HIGH"
         elif risk_score >= 3.0:
@@ -1521,7 +1871,15 @@ class EnhancedCoordinator:
             return "LOW"
     
     def _determine_urgency_level(self, risk_score: float) -> str:
-        """Determine urgency level based on risk score"""
+        """
+        Determines the urgency level for response actions based on the provided risk score.
+        
+        Parameters:
+            risk_score (float): The calculated risk score for the analyzed content.
+        
+        Returns:
+            str: The urgency level, which can be "IMMEDIATE", "WITHIN_24H", "WITHIN_WEEK", or "MONITORING" depending on the risk score threshold.
+        """
         if risk_score >= 8.0:
             return "IMMEDIATE"
         elif risk_score >= 6.0:
@@ -1532,7 +1890,16 @@ class EnhancedCoordinator:
             return "MONITORING"
     
     def _generate_recommended_actions(self, agent_results: Dict[str, Any], risk_score: float) -> List[str]:
-        """Generate recommended actions based on analysis"""
+        """
+        Generate a list of recommended actions based on the provided risk score from content analysis.
+        
+        Parameters:
+            agent_results (Dict[str, Any]): Results from specialist agents used for context (currently not directly utilized).
+            risk_score (float): The calculated risk score indicating the severity of the analyzed content.
+        
+        Returns:
+            List[str]: A list of recommended actions tailored to the assessed risk level.
+        """
         actions = []
         
         if risk_score >= 8.0:
@@ -1559,7 +1926,15 @@ class EnhancedCoordinator:
         return actions
     
     def _get_immediate_actions(self, risk_score: float) -> List[str]:
-        """Get immediate actions based on risk score"""
+        """
+        Return a list of immediate recommended actions based on the provided risk score.
+        
+        Parameters:
+            risk_score (float): The assessed risk score for the analyzed content.
+        
+        Returns:
+            List[str]: Recommended actions to take immediately, tailored to the severity of the risk score.
+        """
         if risk_score >= 8.0:
             return ["Alert security team", "Initiate emergency protocols", "Contact authorities"]
         elif risk_score >= 6.0:
@@ -1568,7 +1943,12 @@ class EnhancedCoordinator:
             return ["Continue monitoring", "Document findings"]
     
     def _get_monitoring_suggestions(self, agent_results: Dict[str, Any]) -> List[str]:
-        """Get monitoring suggestions based on agent results"""
+        """
+        Generate monitoring suggestions based on the presence of coded language and multiple narrative themes in agent results.
+        
+        Returns:
+            List of suggested monitoring actions tailored to detected coded language and narrative diversity.
+        """
         suggestions = ["Continue standard monitoring protocols"]
         
         if "lexicon_analysis" in agent_results:
@@ -1584,7 +1964,15 @@ class EnhancedCoordinator:
         return suggestions
     
     def _get_stakeholder_notifications(self, risk_score: float) -> List[str]:
-        """Get stakeholder notification recommendations"""
+        """
+        Return a list of recommended stakeholders to notify based on the provided risk score.
+        
+        Parameters:
+            risk_score (float): The calculated risk score for the analyzed content.
+        
+        Returns:
+            List[str]: Stakeholder groups that should be notified according to the risk level.
+        """
         if risk_score >= 8.0:
             return ["Security authorities", "Election commission", "Law enforcement"]
         elif risk_score >= 6.0:
@@ -1595,14 +1983,27 @@ class EnhancedCoordinator:
             return ["Internal monitoring team"]
     
     def get_workflow_status(self, workflow_id: str) -> Dict[str, Any]:
-        """Get workflow status by ID"""
+        """
+        Retrieve the status of a workflow by its unique ID.
+        
+        Parameters:
+            workflow_id (str): The unique identifier of the workflow.
+        
+        Returns:
+            Dict[str, Any]: The workflow status if found; otherwise, an error message.
+        """
         if workflow_id in self.active_workflows:
             return self.active_workflows[workflow_id]
         else:
             return {"error": f"Workflow {workflow_id} not found"}
     
     def list_active_workflows(self) -> List[Dict[str, Any]]:
-        """List all active workflows"""
+        """
+        Returns a list of all currently active workflows managed by the coordinator.
+        
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries representing the status and metadata of each active workflow.
+        """
         return list(self.active_workflows.values())
 
 # Create global enhanced coordinator instance
@@ -1685,7 +2086,12 @@ class CoordinatorBridge:
             return await self._process_traditional_mode(user_request)
     
     async def _process_traditional_mode(self, user_request: str) -> Dict[str, Any]:
-        """Process request using traditional sequential approach"""
+        """
+        Processes a user request using a traditional sequential workflow with data engineering, OSINT, and lexicon analysis agents, then generates a summary via the coordinator agent if available.
+        
+        Returns:
+            Dict containing the status, mode, agent results, and summary of the analysis. If an error occurs, returns a failure status with error details.
+        """
         
         logger.info(f"Processing in traditional mode: {user_request[:100]}...")
         
@@ -1745,7 +2151,9 @@ class CoordinatorBridge:
 
     
     def get_workflow_status(self, workflow_id: str) -> Dict[str, Any]:
-        """Get workflow status (enhanced mode only)"""
+        """
+        Returns the status of a workflow by its ID if enhanced mode is enabled; otherwise, indicates that workflow tracking is unavailable.
+        """
         if self.use_enhanced:
             return self.enhanced_coordinator.get_workflow_status(workflow_id)
         else:

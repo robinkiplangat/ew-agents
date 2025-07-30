@@ -42,8 +42,15 @@ except ImportError:
 # === DRY TOOL WRAPPING UTILITY ===
 def wrap_module_functions_with_functiontool(module, include=None, exclude=None):
     """
-    Wraps all public functions in a module with FunctionTool, optionally filtering by include/exclude lists.
-    Returns a dict: {function_name: FunctionTool}
+    Wrap all public functions from a module as FunctionTool instances, with optional inclusion or exclusion filters.
+    
+    Parameters:
+        module: The module whose public functions will be wrapped.
+        include (list, optional): List of function names to include. If provided, only these functions are wrapped.
+        exclude (list, optional): List of function names to exclude from wrapping.
+    
+    Returns:
+        dict: A dictionary mapping function names to their corresponding FunctionTool-wrapped functions.
     """
     tools = {}
     for name, func in inspect.getmembers(module, inspect.isfunction):
@@ -214,6 +221,15 @@ AGENT_CONFIGS = [
 
 # === AGENT FACTORY ===
 def create_agent(config):
+    """
+    Create and return an LlmAgent instance based on the provided configuration dictionary.
+    
+    Parameters:
+        config (dict): Configuration containing agent properties such as name, model, description, instruction, tools, and optionally output_key.
+    
+    Returns:
+        LlmAgent: An agent instance initialized with the specified configuration.
+    """
     return LlmAgent(
         name=config["name"],
         model=config["model"],

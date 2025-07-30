@@ -72,13 +72,13 @@ class KnowledgeRetriever:
                  database_name: str = "knowledge",
                  embedding_model: str = "BAAI/bge-small-en-v1.5"):
         """
-        Initialize the knowledge retrieval system.
-        
-        Args:
-            mongodb_uri: MongoDB connection string (Atlas URI recommended)
-            database_name: Name of the knowledge database
-            embedding_model: HuggingFace embedding model to use
-        """
+                 Initialize a KnowledgeRetriever instance with MongoDB connection parameters, database name, and embedding model.
+                 
+                 Parameters:
+                     mongodb_uri (str, optional): MongoDB connection string. If not provided, environment variables are used.
+                     database_name (str, optional): Name of the MongoDB database containing knowledge collections.
+                     embedding_model (str, optional): Name of the HuggingFace embedding model for vectorization.
+                 """
         # Use MONGODB_ATLAS_URI as primary, MONGODB_URI as fallback for consistency
         self.mongodb_uri = mongodb_uri or os.getenv(
             "MONGODB_ATLAS_URI", 
@@ -108,7 +108,11 @@ class KnowledgeRetriever:
         logger.info(f"Initialized KnowledgeRetriever with model: {embedding_model}")
     
     async def initialize(self):
-        """Initialize MongoDB connection, embeddings, and build indexes"""
+        """
+        Initializes the MongoDB connection, embedding model, and builds vector indexes for all knowledge collections.
+        
+        Establishes a secure connection to MongoDB (with special handling for Atlas URIs), sets up the HuggingFace embedding model, configures LlamaIndex settings, and asynchronously builds vector indexes for semantic search across all configured collections. Raises an exception if initialization fails.
+        """
         try:
             # Connect to MongoDB with enhanced SSL configuration
             import ssl
@@ -156,7 +160,11 @@ class KnowledgeRetriever:
             raise
     
     async def _build_indexes(self):
-        """Build vector indexes for all knowledge collections"""
+        """
+        Asynchronously builds vector indexes and query engines for all configured knowledge collections using documents loaded from MongoDB.
+        
+        Indexes and query engines are stored internally for semantic search operations. Collections without documents are skipped.
+        """
         for collection_name in self.collections:
             try:
                 logger.info(f"Building index for collection: {collection_name}")
@@ -189,7 +197,15 @@ class KnowledgeRetriever:
                 logger.error(f"Failed to build index for {collection_name}: {e}")
     
     async def _load_documents_from_collection(self, collection_name: str) -> List[Document]:
-        """Load documents from a MongoDB collection and convert to LlamaIndex format"""
+        """
+        Retrieve all documents from the specified MongoDB collection and convert them into LlamaIndex Document objects.
+        
+        Parameters:
+            collection_name (str): Name of the MongoDB collection to load documents from.
+        
+        Returns:
+            List[Document]: A list of LlamaIndex Document objects constructed from the collection's documents. Returns an empty list if loading fails.
+        """
         try:
             collection = self.db[collection_name]
             cursor = collection.find({})
@@ -226,7 +242,16 @@ class KnowledgeRetriever:
             return []
     
     def _create_text_content(self, doc: Dict[str, Any], collection_name: str) -> str:
-        """Create searchable text content from MongoDB document based on collection type"""
+        """
+        Generate a searchable text string from a MongoDB document, formatted according to the specified collection type.
+        
+        Parameters:
+            doc (Dict[str, Any]): The MongoDB document to convert.
+            collection_name (str): The name of the collection the document belongs to.
+        
+        Returns:
+            str: A formatted string containing the document's key information for semantic indexing and retrieval.
+        """
         
         if collection_name == "narratives":
             return f"""
@@ -291,13 +316,13 @@ class KnowledgeRetriever:
     
     async def semantic_search(self, query: KnowledgeQuery) -> Dict[str, Any]:
         """
-        Perform semantic search across knowledge collections
+        Performs a semantic search using the provided query across specified or all knowledge collections.
         
-        Args:
-            query: KnowledgeQuery object with search parameters
-            
+        Parameters:
+            query (KnowledgeQuery): Structured query specifying the search text, target collections, maximum results, similarity threshold, and context type.
+        
         Returns:
-            Dictionary with search results from relevant collections
+            Dict[str, Any]: A dictionary mapping each searched collection to its results, including the response text and top source nodes with metadata and similarity scores. Returns an empty dictionary if the search fails.
         """
         try:
             results = {}
@@ -336,13 +361,13 @@ class KnowledgeRetriever:
     
     async def get_narrative_recommendations(self, content_text: str) -> List[Dict[str, Any]]:
         """
-        Get narrative detection and countermeasure recommendations
+        Detects relevant narratives in the provided text and recommends countermeasures based on matched disarm techniques.
         
-        Args:
-            content_text: Text content to analyze
-            
+        Parameters:
+            content_text (str): The text content to analyze for narrative detection.
+        
         Returns:
-            List of recommendations with matched narratives and countermeasures
+            List[Dict[str, Any]]: A list of recommendations, each containing matched narrative details, associated disarm technique information, confidence score, key indicators, and recommended platforms.
         """
         try:
             # Search for matching narratives
@@ -395,14 +420,14 @@ class KnowledgeRetriever:
     
     async def get_contextual_analysis(self, content_text: str, analysis_type: str = "comprehensive") -> Dict[str, Any]:
         """
-        Get comprehensive contextual analysis using knowledge base
+        Perform a contextual analysis of the provided content using the knowledge base, returning relevant insights, risk indicators, and actionable recommendations.
         
-        Args:
-            content_text: Content to analyze
-            analysis_type: Type of analysis (comprehensive, threat_assessment, mitigation_focused)
-            
+        Parameters:
+            content_text (str): The text content to analyze.
+            analysis_type (str): The type of analysis to perform. Options are "comprehensive", "threat_assessment", or "mitigation_focused".
+        
         Returns:
-            Comprehensive analysis with recommendations
+            Dict[str, Any]: A dictionary containing a summary of the content, analysis type, matched narratives, knowledge insights, extracted risk indicators, and recommended actions. If an error occurs, returns a dictionary with an "error" key.
         """
         try:
             # Determine collections to search based on analysis type
@@ -441,7 +466,17 @@ class KnowledgeRetriever:
             return {"error": str(e)}
     
     def _extract_risk_indicators(self, search_results: Dict[str, Any]) -> List[str]:
-        """Extract risk indicators from search results"""
+        """
+        Extracts and deduplicates risk indicators from semantic search results.
+        
+        Analyzes the provided search results to collect key AI indicators from narrative matches and potential activity patterns from threat actor matches.
+        
+        Parameters:
+            search_results (Dict[str, Any]): Semantic search results organized by collection.
+        
+        Returns:
+            List[str]: A list of unique risk indicators identified from the search results.
+        """
         indicators = []
         
         # Extract from narratives
@@ -460,7 +495,16 @@ class KnowledgeRetriever:
         return list(set(indicators))  # Remove duplicates
     
     def _generate_action_recommendations(self, search_results: Dict[str, Any], narrative_recs: List[Dict[str, Any]]) -> List[str]:
-        """Generate actionable recommendations based on analysis"""
+        """
+        Generate a list of actionable recommendations based on mitigation strategies and narrative matches.
+        
+        Parameters:
+            search_results (Dict[str, Any]): Semantic search results containing knowledge insights.
+            narrative_recs (List[Dict[str, Any]]): Narrative recommendations with associated disarm techniques.
+        
+        Returns:
+            List[str]: Actionable recommendations derived from mitigations, disarm techniques, or default suggestions if none are found.
+        """
         recommendations = []
         
         # From mitigations
@@ -488,7 +532,9 @@ class KnowledgeRetriever:
         return recommendations
     
     async def close(self):
-        """Close MongoDB connection"""
+        """
+        Closes the MongoDB client connection if it is open.
+        """
         if self.client:
             self.client.close()
             logger.info("MongoDB connection closed")
@@ -498,7 +544,12 @@ class KnowledgeRetriever:
 knowledge_retriever = None
 
 async def get_knowledge_retriever() -> KnowledgeRetriever:
-    """Get or initialize the global knowledge retriever instance"""
+    """
+    Retrieve the global KnowledgeRetriever instance, initializing it if necessary.
+    
+    Returns:
+        KnowledgeRetriever: The initialized global knowledge retriever.
+    """
     global knowledge_retriever
     
     if knowledge_retriever is None:
@@ -508,12 +559,30 @@ async def get_knowledge_retriever() -> KnowledgeRetriever:
     return knowledge_retriever
 
 async def search_knowledge(query_text: str, collections: Optional[List[str]] = None) -> Dict[str, Any]:
-    """Convenience function for knowledge search"""
+    """
+    Performs a semantic search across specified knowledge collections using the provided query text.
+    
+    Parameters:
+        query_text (str): The search query to retrieve relevant knowledge.
+        collections (Optional[List[str]]): List of collection names to search. If None, searches all available collections.
+    
+    Returns:
+        Dict[str, Any]: A dictionary mapping collection names to their respective search results.
+    """
     retriever = await get_knowledge_retriever()
     query = KnowledgeQuery(query_text=query_text, collections=collections)
     return await retriever.semantic_search(query)
 
 async def analyze_content(content_text: str, analysis_type: str = "comprehensive") -> Dict[str, Any]:
-    """Convenience function for content analysis"""
+    """
+    Performs contextual analysis on the provided content using the knowledge retrieval system.
+    
+    Parameters:
+        content_text (str): The text content to analyze.
+        analysis_type (str): The type of analysis to perform ("comprehensive", "threat_assessment", or "mitigation_focused").
+    
+    Returns:
+        Dict[str, Any]: A dictionary containing the analysis results, including narrative matches, knowledge insights, risk indicators, and recommended actions.
+    """
     retriever = await get_knowledge_retriever()
     return await retriever.get_contextual_analysis(content_text, analysis_type) 

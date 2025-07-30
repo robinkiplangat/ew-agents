@@ -53,15 +53,15 @@ _whisper_model = None
 
 def process_social_media_data(content: str, source_type: str = "user_input", metadata: Optional[dict] = None) -> Dict[str, Any]:
     """
-    Process user-provided social media content (from CSV, text file, or direct input).
+    Processes raw social media content provided by the user, splitting it into individual posts and attaching metadata.
     
-    Args:
-        content: User-provided social media content
-        source_type: Type of source (csv_file, text_file, direct_input, etc.)
-        metadata: Additional metadata about the content
+    Parameters:
+        content (str): The raw social media content as a single string.
+        source_type (str, optional): The origin of the content (e.g., 'csv_file', 'text_file', 'direct_input'). Defaults to 'user_input'.
+        metadata (dict, optional): Additional metadata to associate with the processed content.
     
     Returns:
-        Dict with processed data and analysis metadata
+        Dict[str, Any]: A dictionary containing the processing status, list of processed posts with IDs and timestamps, metadata, and a message. On failure, returns error details and status.
     """
     logger.info(f"Processing user-provided social media content from {source_type}")
     
@@ -107,14 +107,14 @@ def process_social_media_data(content: str, source_type: str = "user_input", met
 
 def process_csv_data(csv_content: str, expected_columns: list = []) -> dict:
     """
-    Process user-uploaded CSV data for analysis.
+    Parse and analyze CSV content, extracting rows, columns, and tweet-related text for further processing.
     
-    Args:
-        csv_content: Raw CSV content as string
-        expected_columns: Expected column names for validation
+    Parameters:
+        csv_content (str): Raw CSV data as a string.
+        expected_columns (list, optional): List of column names to validate against the CSV header.
     
     Returns:
-        Dict with processed CSV data and statistics
+        dict: Dictionary containing processing success status, row and column statistics, missing columns, sample data, extracted tweet content, and timestamps. On failure, returns error details.
     """
     logger.info(f"Processing user-uploaded CSV data")
     
@@ -181,14 +181,14 @@ def process_csv_data(csv_content: str, expected_columns: list = []) -> dict:
 
 def run_nlp_pipeline(text: str, language: str = "en") -> Dict[str, Any]:
     """
-    Run comprehensive NLP analysis on user-provided text content.
+    Performs comprehensive NLP analysis on user-provided text, including sentiment scoring, entity extraction, risk indicator detection, and basic text statistics.
     
-    Args:
-        text: User-provided text content to analyze
-        language: Language code (default: en)
+    Parameters:
+        text (str): The text content to analyze.
+        language (str, optional): Language code for the input text (default is "en").
     
     Returns:
-        Dict with NLP analysis results
+        Dict[str, Any]: A dictionary containing NLP analysis results, including sentiment, entities, risk assessment, text statistics, and processing metadata. On failure, returns a dictionary with error details.
     """
     logger.info(f"Running NLP pipeline on user-provided text ({len(text)} characters, language: {language})")
     
@@ -246,14 +246,12 @@ def run_nlp_pipeline(text: str, language: str = "en") -> Dict[str, Any]:
 
 def extract_text_from_image(image_data: str, language_hint: str = "en") -> Dict[str, Any]:
     """
-    Extract text and analyze content from user-uploaded image using multimodal models.
+    Extracts text and analyzes political content from a user-uploaded image using a multimodal vision-language model.
     
-    Args:
-        image_data: Base64 image data or file path from user upload
-        language_hint: Expected language in image
+    Accepts image data as a base64 string or file path, processes the image to extract visible text, generate a detailed content description, and analyze for political or election-related information. If a multimodal model is unavailable, returns placeholder analysis. Includes image metadata, confidence score, and processing details in the result.
     
     Returns:
-        Dict with extracted text, content analysis, and metadata
+        Dictionary containing extracted text, content analysis, political analysis, image metadata, confidence score, and processing status.
     """
     logger.info(f"Extracting text and analyzing content from user-uploaded image (language: {language_hint})")
     
@@ -388,14 +386,16 @@ def extract_text_from_image(image_data: str, language_hint: str = "en") -> Dict[
 
 def extract_audio_transcript_from_video(video_data: str, language_hint: str = "en") -> Dict[str, Any]:
     """
-    Extract audio transcript and analyze video content using multimodal models.
+    Extracts an audio transcript from a video file or base64 data and analyzes its political content.
     
-    Args:
-        video_data: Video file data or path from user upload
-        language_hint: Expected language in audio
+    If a speech recognition model is available, transcribes the video's audio and detects the spoken language, confidence, and segments. Analyzes the transcript for political content and returns metadata about the video. If the model is unavailable or processing fails, returns placeholder transcript and analysis.
+    
+    Parameters:
+        video_data (str): Path to a video file or base64-encoded video data.
+        language_hint (str): Expected language of the audio for transcription.
     
     Returns:
-        Dict with transcript, video analysis, and metadata
+        Dict[str, Any]: Dictionary containing the transcript, political analysis, detected language, confidence score, video metadata, and processing status.
     """
     logger.info(f"Extracting transcript and analyzing video content (language: {language_hint})")
     
@@ -483,14 +483,10 @@ def extract_audio_transcript_from_video(video_data: str, language_hint: str = "e
 
 def store_analysis_results(analysis_data: Dict[str, Any], collection: str = "analysis_results") -> Dict[str, Any]:
     """
-    Store analysis results in database for persistence.
-    
-    Args:
-        analysis_data: Analysis results to store
-        collection: Database collection name
+    Simulate storing analysis results in a database collection and return storage metadata.
     
     Returns:
-        Dict with storage operation results
+        Dictionary containing the status of the storage operation, including collection name, record ID, operation type, timestamp, and a message.
     """
     logger.info(f"Storing analysis results in collection '{collection}'")
     
@@ -527,14 +523,14 @@ def store_analysis_results(analysis_data: Dict[str, Any], collection: str = "ana
 
 def query_stored_results(query_params: Optional[dict] = None, collection: str = "analysis_results") -> Dict[str, Any]:
     """
-    Query previously stored analysis results.
+    Simulate querying stored analysis results and return mock results.
     
-    Args:
-        query_params: Query parameters (date range, record_id, etc.)
-        collection: Database collection to query
+    Parameters:
+        query_params (dict, optional): Parameters to filter the query, such as date range or record ID.
+        collection (str): Name of the collection to query.
     
     Returns:
-        Dict with query results
+        dict: Dictionary containing the query status, parameters, results, and metadata.
     """
     logger.info(f"Querying stored results in collection '{collection}'")
     
@@ -586,14 +582,16 @@ def query_stored_results(query_params: Optional[dict] = None, collection: str = 
 
 def analyze_multimodal_content(content_data: Dict[str, Any], content_type: str = "mixed") -> Dict[str, Any]:
     """
-    Comprehensive multimodal content analysis combining text, image, and video analysis.
+    Performs a comprehensive analysis of multimodal content by integrating text, image, and video analyses.
     
-    Args:
-        content_data: Dictionary containing different types of content
-        content_type: Type of content (text, image, video, mixed)
+    Analyzes each available modality in the input, synthesizes results across modalities, assesses overall risk, extracts political entities, and detects misinformation indicators. Returns a structured dictionary with detailed analysis results, synthesis, risk assessment, and metadata.
+    
+    Parameters:
+        content_data (Dict[str, Any]): Dictionary containing content to analyze, with possible keys 'text', 'image', and 'video'.
+        content_type (str): Descriptor for the type of content provided (e.g., 'text', 'image', 'video', or 'mixed').
     
     Returns:
-        Dict with comprehensive multimodal analysis results
+        Dict[str, Any]: Dictionary containing analysis results, synthesis, risk assessment, political entities, misinformation indicators, and timestamps. On failure, returns error details.
     """
     logger.info(f"Running comprehensive multimodal analysis for {content_type} content")
     
@@ -654,14 +652,14 @@ def analyze_multimodal_content(content_data: Dict[str, Any], content_type: str =
 
 def process_document_with_multimodal(document_data: str, document_type: str = "pdf") -> Dict[str, Any]:
     """
-    Process documents (PDFs, images, etc.) using multimodal analysis.
+    Processes a document (PDF, image, etc.) using multimodal analysis and returns extracted content and analysis results.
     
-    Args:
-        document_data: Document data (base64, file path, etc.)
-        document_type: Type of document (pdf, image, docx, etc.)
+    Parameters:
+        document_data (str): The document data, which can be a base64 string or file path.
+        document_type (str): The type of the document (e.g., 'pdf', 'image', 'jpg', 'png').
     
     Returns:
-        Dict with document analysis results
+        Dict[str, Any]: A dictionary containing analysis results, extracted text, or error information depending on the document type and processing outcome.
     """
     logger.info(f"Processing {document_type} document with multimodal analysis")
     
@@ -703,7 +701,14 @@ def process_document_with_multimodal(document_data: str, document_type: str = "p
 # =============================================================================
 
 def analyze_sentiment_simple(text: str) -> float:
-    """Simple sentiment analysis returning score between -1 and 1."""
+    """
+    Performs a basic sentiment analysis on the input text and returns a score between -1 and 1.
+    
+    The score is calculated based on the presence of predefined positive and negative words, scaled by text length. Positive values indicate positive sentiment, negative values indicate negative sentiment, and zero indicates neutral or no sentiment detected.
+    
+    Returns:
+        float: Sentiment score in the range [-1, 1].
+    """
     positive_words = ["good", "great", "excellent", "amazing", "wonderful", "fantastic", "love", "like", "happy", "successful"]
     negative_words = ["bad", "terrible", "awful", "hate", "horrible", "disgusting", "angry", "sad", "failed", "corrupt"]
     
@@ -721,7 +726,12 @@ def analyze_sentiment_simple(text: str) -> float:
     return max(-1.0, min(1.0, sentiment_score * 10))  # Scale and clamp
 
 def extract_entities_simple(text: str) -> List[Dict[str, Any]]:
-    """Simple entity extraction using patterns."""
+    """
+    Extracts simple entities from text, including mentions, hashtags, Nigerian political parties, and locations.
+    
+    Returns:
+        List of detected entities, each with text, type, and confidence score.
+    """
     import re
     entities = []
     
@@ -748,7 +758,15 @@ def extract_entities_simple(text: str) -> List[Dict[str, Any]]:
     return entities
 
 def detect_risk_patterns_simple(text: str) -> List[str]:
-    """Simple risk pattern detection."""
+    """
+    Detects and returns a list of risk indicators present in the input text based on predefined keywords related to election fraud, violence, voter suppression, misinformation, and hate speech.
+    
+    Parameters:
+        text (str): The input text to analyze for risk patterns.
+    
+    Returns:
+        List[str]: A list of detected risk indicator strings.
+    """
     risk_indicators = []
     text_lower = text.lower()
     
@@ -775,7 +793,12 @@ def detect_risk_patterns_simple(text: str) -> List[str]:
     return risk_indicators
 
 def analyze_transcript_for_political_content(transcript: str) -> str:
-    """Analyze transcript for political content and election-related information."""
+    """
+    Detects the presence of political or election-related keywords in a transcript.
+    
+    Returns:
+        str: A summary indicating whether political content was found in the transcript.
+    """
     political_keywords = [
         'election', 'vote', 'candidate', 'party', 'campaign', 'polling', 'ballot',
         'democracy', 'government', 'political', 'president', 'minister', 'parliament'
@@ -794,7 +817,15 @@ def analyze_transcript_for_political_content(transcript: str) -> str:
         return "No significant political content detected in transcript."
 
 def synthesize_multimodal_results(components: Dict[str, Any]) -> Dict[str, Any]:
-    """Synthesize results from different modalities into coherent analysis."""
+    """
+    Aggregate and synthesize analysis results from multiple content modalities into a unified summary.
+    
+    Parameters:
+        components (Dict[str, Any]): A dictionary containing analysis outputs from different modalities (e.g., text, image, video).
+    
+    Returns:
+        Dict[str, Any]: A dictionary summarizing overall sentiment, confidence score, key themes, and placeholders for contradictions and reinforcing elements.
+    """
     synthesis = {
         "overall_sentiment": "neutral",
         "confidence_score": 0.0,
@@ -833,7 +864,17 @@ def synthesize_multimodal_results(components: Dict[str, Any]) -> Dict[str, Any]:
     return synthesis
 
 def assess_multimodal_risk(components: Dict[str, Any]) -> Dict[str, Any]:
-    """Assess risk across multiple modalities."""
+    """
+    Aggregates and assesses risk indicators from multiple content modalities to determine an overall risk level.
+    
+    Analyzes risk assessments from each component, computes an average risk score, and assigns an overall risk level (low, medium, high). Identifies unique risk factors and provides recommendations based on detected risks.
+    
+    Parameters:
+        components (Dict[str, Any]): Dictionary of analysis results from different modalities, each potentially containing a risk assessment.
+    
+    Returns:
+        Dict[str, Any]: Dictionary containing the overall risk level, identified risk factors, confidence score, and actionable recommendations.
+    """
     risk_assessment = {
         "overall_risk_level": "low",
         "risk_factors": [],
@@ -879,7 +920,17 @@ def assess_multimodal_risk(components: Dict[str, Any]) -> Dict[str, Any]:
     return risk_assessment
 
 def extract_political_entities_multimodal(components: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Extract political entities across multiple modalities."""
+    """
+    Extracts unique political entities from multimodal analysis components.
+    
+    This function scans the provided analysis components for entities related to political parties, persons, and locations, as well as markers of political content. It aggregates these entities across modalities, removes duplicates, and returns a list of unique political entities with their type, confidence, and source.
+     
+    Parameters:
+        components (Dict[str, Any]): A dictionary of analysis results from different modalities.
+    
+    Returns:
+        List[Dict[str, Any]]: A list of unique political entities detected, each with text, type, confidence, and source.
+    """
     political_entities = []
     
     for component_name, component_data in components.items():
@@ -915,7 +966,15 @@ def extract_political_entities_multimodal(components: Dict[str, Any]) -> List[Di
     return unique_entities
 
 def detect_multimodal_misinformation(components: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Detect misinformation indicators across multiple modalities."""
+    """
+    Detects potential misinformation indicators by aggregating risk assessments and contradictions from multiple content modalities.
+    
+    Parameters:
+        components (Dict[str, Any]): Analysis results from different modalities (e.g., text, image, video).
+    
+    Returns:
+        List[Dict[str, Any]]: A list of detected misinformation indicators, each with type, source, confidence, and description.
+    """
     misinformation_indicators = []
     
     for component_name, component_data in components.items():

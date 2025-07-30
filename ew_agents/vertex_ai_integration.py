@@ -34,6 +34,15 @@ class VertexAIAgentEngine:
     """
     
     def __init__(self, project_id: str = None, location: str = "europe-west1"):
+        """
+        Initialize the VertexAIAgentEngine with Google Cloud project and location settings, and attempt to initialize Vertex AI SDK.
+        
+        Parameters:
+            project_id (str, optional): Google Cloud project ID. Defaults to environment variable 'GOOGLE_CLOUD_PROJECT' or 'ew-agents-v02'.
+            location (str, optional): Google Cloud region. Defaults to 'europe-west1'.
+        
+        If the Vertex AI SDK is available, attempts to initialize it and sets the engine's initialization status accordingly.
+        """
         self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT", "ew-agents-v02")
         self.location = location
         self.initialized = False
@@ -60,16 +69,16 @@ class VertexAIAgentEngine:
                                       agent_type: str = "comprehensive",
                                       use_vertex_ai: bool = True) -> Dict[str, Any]:
         """
-        Enhanced agent processing with Vertex AI capabilities
-        
-        Args:
-            user_request: The user's analysis request
-            agent_type: Type of agent processing (comprehensive, quick, specialized)
-            use_vertex_ai: Whether to use Vertex AI for enhanced processing
-            
-        Returns:
-            Enhanced analysis results with Vertex AI insights
-        """
+                                      Processes a user analysis request using the coordinator bridge and optionally enhances the results with Vertex AI models.
+                                      
+                                      Parameters:
+                                          user_request (str): The user's analysis request.
+                                          agent_type (str, optional): The type of agent processing to perform (e.g., "comprehensive", "quick", "specialized").
+                                          use_vertex_ai (bool, optional): Whether to apply Vertex AI enhancements to the analysis.
+                                      
+                                      Returns:
+                                          Dict[str, Any]: The analysis results, including Vertex AI enhancements if enabled and available.
+                                      """
         
         logger.info(f"Processing request with agent_type: {agent_type}, vertex_ai: {use_vertex_ai}")
         
@@ -99,7 +108,17 @@ class VertexAIAgentEngine:
     async def _enhance_with_vertex_ai(self, user_request: str, 
                                     base_results: Dict[str, Any],
                                     agent_type: str) -> Dict[str, Any]:
-        """Enhance results using Vertex AI models"""
+        """
+                                    Enhances base agent results by applying multiple Vertex AI models for narrative analysis, risk assessment, and actionable recommendations.
+                                    
+                                    Parameters:
+                                        user_request (str): The original user request or query.
+                                        base_results (Dict[str, Any]): The initial results from the base agent processing.
+                                        agent_type (str): The type of agent or analysis being performed.
+                                    
+                                    Returns:
+                                        Dict[str, Any]: A dictionary containing the enhancement timestamp, agent type, models used, and enhanced outputs for narrative analysis, risk assessment, and recommendations. Includes error information if enhancement fails.
+                                    """
         
         enhancement = {
             "timestamp": datetime.now().isoformat(),
@@ -140,7 +159,18 @@ class VertexAIAgentEngine:
     
     async def _enhance_narrative_analysis(self, user_request: str, 
                                         summary: Dict[str, Any]) -> Dict[str, Any]:
-        """Enhance narrative analysis using Vertex AI text generation"""
+        """
+                                        Enhances the narrative analysis of an election-related user request using a Vertex AI text generation model.
+                                        
+                                        This method generates expert-level insights tailored to African electoral contexts, focusing on hidden narrative patterns, cultural and linguistic nuances, historical parallels, and potential escalation pathways. Returns the enhanced analysis, a confidence score, and the model used. If Vertex AI is not initialized or an error occurs, returns an error message.
+                                        
+                                        Parameters:
+                                            user_request (str): The original user request or content to analyze.
+                                            summary (Dict[str, Any]): The current narrative analysis summary.
+                                        
+                                        Returns:
+                                            Dict[str, Any]: A dictionary containing the enhanced analysis, confidence score, and model used, or an error message if enhancement fails.
+                                        """
         
         if not self.initialized:
             return {"error": "Vertex AI not initialized"}
@@ -178,7 +208,18 @@ class VertexAIAgentEngine:
     
     async def _enhance_risk_assessment(self, user_request: str,
                                      risk_assessment: Dict[str, Any]) -> Dict[str, Any]:
-        """Enhance risk assessment using Vertex AI Gemini Pro"""
+        """
+                                     Enhances the provided risk assessment using the Vertex AI Gemini Pro model.
+                                     
+                                     Analyzes the user request and current risk score to generate a detailed risk assessment, including immediate threats, cascade effects, geographic spread, escalation timelines, and mitigation priorities. Extracts and returns identified risk factors from the model's response.
+                                     
+                                     Parameters:
+                                         user_request (str): The original election-related user request content.
+                                         risk_assessment (Dict[str, Any]): The current risk assessment data, including overall risk score.
+                                     
+                                     Returns:
+                                         Dict[str, Any]: A dictionary containing the enhanced risk analysis, identified risk factors, and the model used. If Vertex AI is not initialized or an error occurs, returns an error message.
+                                     """
         
         if not self.initialized:
             return {"error": "Vertex AI not initialized"}
@@ -216,7 +257,18 @@ class VertexAIAgentEngine:
     
     async def _generate_enhanced_recommendations(self, user_request: str,
                                                base_results: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate enhanced recommendations using Vertex AI chat model"""
+        """
+                                               Generate actionable election security recommendations using the Vertex AI chat model.
+                                               
+                                               Uses the chat model to provide tailored recommendations for immediate response, short-term strategy, medium-term monitoring, stakeholder communication, and documentation, with a focus on African electoral contexts.
+                                               
+                                               Parameters:
+                                                   user_request (str): The original user request or incident description.
+                                                   base_results (Dict[str, Any]): The base analysis results to inform recommendations.
+                                               
+                                               Returns:
+                                                   Dict[str, Any]: A dictionary containing enhanced recommendations, assessed priority level, and the model used. If Vertex AI is not initialized or an error occurs, returns an error message.
+                                               """
         
         if not self.initialized:
             return {"error": "Vertex AI not initialized"}
@@ -258,7 +310,15 @@ class VertexAIAgentEngine:
             return {"error": str(e)}
     
     def _extract_risk_factors(self, risk_text: str) -> List[str]:
-        """Extract specific risk factors from enhanced analysis"""
+        """
+        Extracts predefined risk factor keywords from the provided risk analysis text.
+        
+        Parameters:
+            risk_text (str): The text to analyze for risk factor keywords.
+        
+        Returns:
+            List[str]: A list of matched risk factor keywords found in the input text.
+        """
         
         # Simple extraction based on common patterns
         risk_indicators = []
@@ -275,7 +335,12 @@ class VertexAIAgentEngine:
         return risk_indicators
     
     def _assess_priority_level(self, results: Dict[str, Any]) -> str:
-        """Assess priority level for enhanced recommendations"""
+        """
+        Determine the priority level based on the overall risk score in the results.
+        
+        Returns:
+            str: One of "CRITICAL", "HIGH", "MEDIUM", or "LOW" according to the risk score thresholds.
+        """
         
         risk_score = results.get("summary", {}).get("risk_assessment", {}).get("overall_risk_score", 0)
         
@@ -289,7 +354,9 @@ class VertexAIAgentEngine:
             return "LOW"
     
     def get_deployment_config(self) -> Dict[str, Any]:
-        """Get deployment configuration for Vertex AI integration"""
+        """
+        Return deployment configuration details for the Vertex AI integration, including project settings, environment variables, required permissions, and monitoring endpoints.
+        """
         
         return {
             "vertex_ai_config": {
@@ -325,7 +392,12 @@ class VertexAIAgentEngine:
         }
     
     def health_check(self) -> Dict[str, Any]:
-        """Health check for Vertex AI integration"""
+        """
+        Return the current health status of the Vertex AI integration, including initialization state, project details, model configuration, and a basic model availability check.
+        
+        Returns:
+            A dictionary containing health indicators such as timestamp, Vertex AI availability, initialization status, project and location info, number of configured models, overall status, and the result of a test loading the text generation model if initialized.
+        """
         
         health = {
             "timestamp": datetime.now().isoformat(),
@@ -356,8 +428,15 @@ vertex_ai_engine = VertexAIAgentEngine()
 async def process_with_vertex_ai(user_request: str, 
                                agent_type: str = "comprehensive") -> Dict[str, Any]:
     """
-    Main entry point for Vertex AI enhanced processing
-    """
+                               Processes a user request using the ElectionWatch agent system with Vertex AI enhancements enabled.
+                               
+                               Parameters:
+                                   user_request (str): The user's election analysis request.
+                                   agent_type (str): The type of agent to use for processing (default is "comprehensive").
+                               
+                               Returns:
+                                   Dict[str, Any]: Combined results from the base agent processing and Vertex AI model enhancements.
+                               """
     return await vertex_ai_engine.enhanced_agent_processing(
         user_request=user_request,
         agent_type=agent_type,
@@ -365,11 +444,18 @@ async def process_with_vertex_ai(user_request: str,
     )
 
 def get_vertex_deployment_config() -> Dict[str, Any]:
-    """Get Vertex AI deployment configuration"""
+    """
+    Retrieve the current deployment configuration for the Vertex AI integration.
+    
+    Returns:
+        Dict[str, Any]: Deployment configuration details including project, location, model information, environment variables, permissions, and monitoring metrics.
+    """
     return vertex_ai_engine.get_deployment_config()
 
 def vertex_health_check() -> Dict[str, Any]:
-    """Vertex AI health check"""
+    """
+    Return the current health status of the Vertex AI integration, including initialization state, model availability, and configuration details.
+    """
     return vertex_ai_engine.health_check()
 
 # Export main components

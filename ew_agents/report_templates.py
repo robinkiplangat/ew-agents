@@ -17,8 +17,11 @@ class ElectionWatchReportTemplate:
     @staticmethod
     def get_analysis_template() -> dict:
         """
-        Returns the unified analysis template for all types of election monitoring reports.
-        This single template handles comprehensive, quick, multimedia, and trend analysis.
+        Return a unified JSON template for structuring election monitoring analysis reports.
+        
+        The template supports various report types and analysis depths, providing standardized fields for metadata, narrative classification, actors, lexicon terms, risk assessment, recommendations, and analysis insights.
+        Returns:
+            dict: The unified analysis template with default values for all required fields.
         """
         return {
             "report_metadata": {
@@ -88,16 +91,16 @@ class ElectionWatchReportTemplate:
                              analysis_depth: str = "standard", 
                              **kwargs) -> dict:
         """
-        Creates an analysis report using the unified template with provided data
-        
-        Args:
-            content_type: Type of content analyzed (text, image, video, csv, multimedia)
-            analysis_depth: Depth of analysis (quick, standard, comprehensive)
-            **kwargs: Data to populate in the template
-        
-        Returns:
-            Dict containing the populated report structure
-        """
+                             Generate a populated election analysis report based on the unified template.
+                             
+                             Parameters:
+                                 content_type (str): The type of content analyzed (e.g., text, image, video, csv, multimedia).
+                                 analysis_depth (str): The depth of analysis to perform (quick, standard, or comprehensive).
+                                 **kwargs: Additional data to populate specific fields within the report template.
+                             
+                             Returns:
+                                 dict: The completed analysis report with metadata, classification, actors, lexicon terms, risk assessment, recommendations, and insights.
+                             """
         template = ElectionWatchReportTemplate.get_analysis_template()
         
         # Set content type and analysis depth
@@ -106,6 +109,13 @@ class ElectionWatchReportTemplate:
         
         # Update template with provided data
         def update_nested_dict(d: Dict, updates: Dict):
+            """
+            Recursively updates a nested dictionary with values from another dictionary.
+            
+            Parameters:
+                d (dict): The dictionary to be updated.
+                updates (dict): The dictionary containing updates to apply to `d`.
+            """
             for key, value in updates.items():
                 if key in d:
                     if isinstance(d[key], dict) and isinstance(value, dict):
@@ -119,13 +129,13 @@ class ElectionWatchReportTemplate:
     @staticmethod
     def validate_analysis_report(report: dict) -> dict:
         """
-        Validates if a report follows the expected structure
+        Validate whether a report dictionary matches the unified analysis template structure.
         
-        Args:
-            report: The report to validate
+        Parameters:
+            report (dict): The report data to validate.
         
         Returns:
-            Dict with validation results
+            dict: Validation results including validity, missing and extra keys, and a compliance score. If validation fails, returns error details and a compliance score of 0.0.
         """
         try:
             template = ElectionWatchReportTemplate.get_analysis_template()
@@ -151,7 +161,10 @@ class ElectionWatchReportTemplate:
     @staticmethod
     def export_analysis_report(report_data: dict) -> dict:
         """
-        Exports an analysis report as a JSON file
+        Prepares an analysis report for export by generating a JSON-compatible dictionary with metadata.
+        
+        Returns:
+            dict: Contains export status, generated filename, report data, export timestamp, and a message. If an error occurs, includes error details and a failure status.
         """
         try:
             # Generate filename automatically
@@ -175,15 +188,42 @@ class ElectionWatchReportTemplate:
 
 # Utility functions for backwards compatibility and easy access
 def get_analysis_template(content_type: str = "text", analysis_depth: str = "comprehensive") -> dict:
-    """Get the unified analysis template with optional parameters"""
+    """
+    Retrieve the unified election analysis report template.
+    
+    Parameters:
+        content_type (str): Type of content to be analyzed (e.g., "text", "image", "video", "csv", "multimedia").
+        analysis_depth (str): Level of analysis detail ("quick", "standard", or "comprehensive").
+    
+    Returns:
+        dict: A dictionary representing the standardized analysis report template.
+    """
     return ElectionWatchReportTemplate.get_analysis_template()
 
 def create_analysis_report(content_type: str = "text", analysis_depth: str = "standard", **kwargs) -> dict:
-    """Create analysis report with provided data"""
+    """
+    Generate a populated election analysis report using the unified template.
+    
+    Parameters:
+        content_type (str): The type of content analyzed (e.g., "text", "image", "video", "csv", "multimedia").
+        analysis_depth (str): The depth of analysis ("quick", "standard", or "comprehensive").
+        **kwargs: Additional fields to populate or override in the report.
+    
+    Returns:
+        dict: The completed analysis report structured according to the unified template.
+    """
     return ElectionWatchReportTemplate.create_analysis_report(content_type, analysis_depth, **kwargs)
 
 def export_analysis_report(report_data: dict) -> dict:
-    """Export analysis report as JSON file"""
+    """
+    Prepares the analysis report data for export as a JSON-compatible dictionary.
+    
+    Parameters:
+        report_data (dict): The populated analysis report to be exported.
+    
+    Returns:
+        dict: Contains export status, generated filename, report data, export timestamp, and a message. If export fails, includes error details.
+    """
     return ElectionWatchReportTemplate.export_analysis_report(report_data)
 
 # Template instruction for agents

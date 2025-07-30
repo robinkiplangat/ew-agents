@@ -30,6 +30,11 @@ class ElectionWatchStorage:
     """MongoDB storage handler with seamless MCP integration."""
     
     def __init__(self, database_name: str = "election_watch", mongo_uri: str = None):
+        """
+        Initialize the ElectionWatchStorage instance and establish a MongoDB connection.
+        
+        Attempts to connect to MongoDB using the provided URI or environment variables, supporting both MongoDB Atlas and local instances. Handles SSL/TLS configuration, development mode, and connection diagnostics. If pymongo is unavailable or the connection fails, disables storage functionality.
+        """
         self.database_name = database_name
         self.analysis_collection = "analysis_results"
         self.reports_collection = "report_submissions"
@@ -165,7 +170,16 @@ class ElectionWatchStorage:
             logger.info("💡 Install with: pip install pymongo")
 
     async def store_analysis_result(self, analysis_id: str, analysis_data: Dict[str, Any]) -> bool:
-        """Store analysis result in MongoDB seamlessly."""
+        """
+        Stores an analysis result document in the MongoDB `analysis_results` collection.
+        
+        Parameters:
+            analysis_id (str): Unique identifier for the analysis result.
+            analysis_data (Dict[str, Any]): The analysis result data to be stored.
+        
+        Returns:
+            bool: True if the analysis result was successfully stored, False otherwise.
+        """
         if self.db is None:
             logger.warning("⚠️ MongoDB not available - skipping storage")
             return False
@@ -199,7 +213,15 @@ class ElectionWatchStorage:
             return False
 
     async def get_analysis_result(self, analysis_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieve analysis result from MongoDB seamlessly."""
+        """
+        Retrieve an analysis result by its ID from the MongoDB analysis_results collection.
+        
+        Parameters:
+            analysis_id (str): The unique identifier of the analysis result to retrieve.
+        
+        Returns:
+            Optional[Dict[str, Any]]: The analysis data if found, or None if not found or on error.
+        """
         if self.db is None:
             logger.warning("⚠️ MongoDB not available - cannot retrieve")
             return None
@@ -223,7 +245,16 @@ class ElectionWatchStorage:
             return None
 
     async def store_report_submission(self, submission_id: str, report_data: Dict[str, Any]) -> bool:
-        """Store report submission in MongoDB seamlessly."""
+        """
+        Store a report submission document in the MongoDB `report_submissions` collection.
+        
+        Parameters:
+            submission_id (str): Unique identifier for the report submission.
+            report_data (Dict[str, Any]): The report submission data to be stored.
+        
+        Returns:
+            bool: True if the report submission was successfully stored, False otherwise.
+        """
         if self.db is None:
             logger.warning("⚠️ MongoDB not available - skipping storage")
             return False
@@ -255,7 +286,15 @@ class ElectionWatchStorage:
             return False
 
     async def get_report_submission(self, submission_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieve report submission from MongoDB seamlessly."""
+        """
+        Retrieve a report submission by its ID from the MongoDB collection.
+        
+        Parameters:
+            submission_id (str): The unique identifier of the report submission.
+        
+        Returns:
+            Optional[Dict[str, Any]]: The report submission data if found, otherwise None.
+        """
         if self.db is None:
             logger.warning("⚠️ MongoDB not available - cannot retrieve")
             return None
@@ -278,7 +317,15 @@ class ElectionWatchStorage:
             return None
 
     async def list_recent_analyses(self, limit: int = 10) -> List[Dict[str, Any]]:
-        """List recent analysis results."""
+        """
+        Retrieve a list of the most recent analysis results, sorted by creation time in descending order.
+        
+        Parameters:
+            limit (int): Maximum number of analysis results to return. Defaults to 10.
+        
+        Returns:
+            List[Dict[str, Any]]: A list of analysis result documents, or an empty list if unavailable.
+        """
         if self.db is None:
             return []
             
@@ -298,7 +345,12 @@ class ElectionWatchStorage:
             return []
 
     async def get_collection_stats(self) -> Dict[str, Any]:
-        """Get statistics about stored data."""
+        """
+        Return statistics about the stored analysis results and report submissions.
+        
+        Returns:
+            A dictionary containing the database name, document counts for each collection, total document count, and connection status. If MongoDB is unavailable or an error occurs, returns a dictionary with an error message.
+        """
         if self.db is None:
             return {"error": "MongoDB not available"}
             
@@ -324,7 +376,12 @@ class ElectionWatchStorage:
             return {"error": str(e)}
 
     async def test_connection(self) -> Dict[str, Any]:
-        """Test MongoDB Atlas connection and provide diagnostics."""
+        """
+        Test the MongoDB connection and return diagnostic information about connectivity, database access, and collection operations.
+        
+        Returns:
+            A dictionary summarizing the connection status, database accessibility, collection operation status, available collections, URI configuration, and pymongo availability.
+        """
         try:
             if self.db is None:
                 return {
@@ -375,7 +432,16 @@ class ElectionWatchStorage:
             }
 
     async def _mcp_insert_document(self, collection: str, document: Dict[str, Any]) -> bool:
-        """Insert document using pymongo with seamless error handling."""
+        """
+        Insert or update a document in the specified MongoDB collection using upsert.
+        
+        Parameters:
+            collection (str): Name of the MongoDB collection.
+            document (Dict[str, Any]): Document to insert or update, which must include an '_id' field.
+        
+        Returns:
+            bool: True if the operation succeeds, False if the database is unavailable or an error occurs.
+        """
         if self.db is None:
             return False
             
@@ -399,7 +465,16 @@ class ElectionWatchStorage:
             return False
 
     async def _mcp_find_document(self, collection: str, filter: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Find single document using pymongo."""
+        """
+        Retrieve a single document from the specified MongoDB collection matching the given filter.
+        
+        Parameters:
+            collection (str): Name of the MongoDB collection to query.
+            filter (Dict[str, Any]): Query filter to match the document.
+        
+        Returns:
+            Optional[Dict[str, Any]]: The matched document as a dictionary with the `_id` field converted to a string, or None if not found or on error.
+        """
         if self.db is None:
             return None
             
@@ -419,7 +494,18 @@ class ElectionWatchStorage:
             return None
 
     async def _mcp_find_documents(self, collection: str, filter: Dict[str, Any], sort: Dict[str, Any] = None, limit: int = 10) -> List[Dict[str, Any]]:
-        """Find multiple documents using pymongo."""
+        """
+        Retrieve multiple documents from a specified MongoDB collection matching the given filter, with optional sorting and limit.
+        
+        Parameters:
+            collection (str): Name of the MongoDB collection to query.
+            filter (Dict[str, Any]): Query filter to select documents.
+            sort (Dict[str, Any], optional): Dictionary specifying sort order. Defaults to None.
+            limit (int, optional): Maximum number of documents to return. Defaults to 10.
+        
+        Returns:
+            List[Dict[str, Any]]: List of documents matching the filter, with '_id' fields converted to strings. Returns an empty list if the database is unavailable or an error occurs.
+        """
         if self.db is None:
             return []
             
@@ -448,7 +534,16 @@ class ElectionWatchStorage:
             return []
 
     async def _mcp_count_documents(self, collection: str, query: Dict[str, Any] = None) -> int:
-        """Count documents using pymongo."""
+        """
+        Count the number of documents in the specified MongoDB collection matching the given query.
+        
+        Parameters:
+            collection (str): Name of the MongoDB collection.
+            query (Dict[str, Any], optional): Query filter to match documents. Counts all documents if not provided.
+        
+        Returns:
+            int: The number of matching documents, or 0 if the database is unavailable or an error occurs.
+        """
         if self.db is None:
             return 0
             
@@ -468,25 +563,65 @@ storage = ElectionWatchStorage()
 
 # Convenience functions for direct usage
 async def store_analysis(analysis_id: str, analysis_data: Dict[str, Any]) -> bool:
-    """Store analysis result (convenience function)."""
+    """
+    Store an analysis result in the database using the provided analysis ID and data.
+    
+    Returns:
+        bool: True if the operation succeeds, False otherwise.
+    """
     return await storage.store_analysis_result(analysis_id, analysis_data)
 
 async def get_analysis(analysis_id: str) -> Optional[Dict[str, Any]]:
-    """Get analysis result (convenience function)."""
+    """
+    Retrieve the analysis result data for a given analysis ID.
+    
+    Parameters:
+        analysis_id (str): Unique identifier of the analysis result to retrieve.
+    
+    Returns:
+        Optional[Dict[str, Any]]: The analysis result data if found, otherwise None.
+    """
     return await storage.get_analysis_result(analysis_id)
 
 async def store_report(submission_id: str, report_data: Dict[str, Any]) -> bool:
-    """Store report submission (convenience function)."""
+    """
+    Store a report submission in the MongoDB storage.
+    
+    Parameters:
+        submission_id (str): Unique identifier for the report submission.
+        report_data (Dict[str, Any]): The report data to be stored.
+    
+    Returns:
+        bool: True if the report was stored successfully, False otherwise.
+    """
     return await storage.store_report_submission(submission_id, report_data)
 
 async def get_report(submission_id: str) -> Optional[Dict[str, Any]]:
-    """Get report submission (convenience function)."""
+    """
+    Retrieve a report submission by its submission ID.
+    
+    Parameters:
+        submission_id (str): The unique identifier of the report submission.
+    
+    Returns:
+        Optional[Dict[str, Any]]: The report submission data if found, otherwise None.
+    """
     return await storage.get_report_submission(submission_id)
 
 async def get_stats() -> Dict[str, Any]:
-    """Get storage statistics (convenience function)."""
+    """
+    Retrieve statistics about the MongoDB storage collections.
+    
+    Returns:
+        A dictionary containing counts of documents in the analysis and report collections, total document count, database name, and status information.
+    """
     return await storage.get_collection_stats()
 
 async def test_mongodb_connection() -> Dict[str, Any]:
-    """Test MongoDB Atlas connection (convenience function)."""
+    """
+    Tests the MongoDB connection and returns diagnostic information.
+    
+    Returns:
+        A dictionary containing the connection status, database access, collection operations, available collections, URI configuration status, and pymongo availability.
+    """
     return await storage.test_connection() 

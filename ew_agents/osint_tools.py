@@ -9,11 +9,16 @@ logger = logging.getLogger(__name__)
 
 def classify_narrative(text: str, source_platform: str = "unknown") -> dict:
     """
-    Uses an ML model to classify text into misinformation themes.
-    Returns a list of identified themes and their confidence scores.
+    Classifies input text into misinformation narrative themes using pattern-matching heuristics.
     
-    TODO: Implement real ML model integration for narrative classification.
-    This should use trained models to identify misinformation patterns.
+    Analyzes the provided text to identify primary misinformation themes, relevant political actors, and misinformation indicators. Returns a structured classification result with confidence score and analysis method. If the input is empty or an error occurs during analysis, returns an error status with details.
+    
+    Parameters:
+        text (str): The text to be analyzed for misinformation themes.
+        source_platform (str): The platform from which the text originated (default: "unknown").
+    
+    Returns:
+        dict: A dictionary containing the classification status, identified narrative theme, political actors, misinformation indicators, input text snippet, source platform, confidence score, and analysis method.
     """
     print(f"[OsintTool] Classifying narrative for text from {source_platform}: '{text[:50]}...'")
     
@@ -57,9 +62,14 @@ def classify_narrative(text: str, source_platform: str = "unknown") -> dict:
 
 def track_keywords(keywords: list, platforms = None) -> dict:
     """
-    Monitors for specific keywords and hashtags across specified platforms.
+    Returns a placeholder response for monitoring specified keywords or hashtags across social media platforms.
     
-    TODO: Implement real social media API integrations for keyword tracking.
+    Parameters:
+        keywords (list): List of keywords or hashtags to track.
+        platforms (list, optional): Social media platforms to monitor. Defaults to ["twitter", "facebook"] if not provided.
+    
+    Returns:
+        dict: Status message indicating that real keyword tracking is not implemented, along with the input keywords and platforms.
     """
     if platforms is None:
         platforms = ["twitter", "facebook"]
@@ -88,13 +98,14 @@ def track_keywords(keywords: list, platforms = None) -> dict:
 
 def calculate_influence_metrics(actor_id: str, platform: str) -> dict:
     """
-    Analyzes graph data and other metrics to calculate influence scores for actors.
+    Returns a placeholder response indicating that influence metrics calculation for a given actor and platform is not yet implemented.
     
-    TODO: Implement real influence calculation using:
-    - Social network analysis
-    - Engagement rate calculations  
-    - Reach and virality metrics
-    - Historical influence tracking
+    Parameters:
+        actor_id (str): Unique identifier of the actor to analyze.
+        platform (str): Name of the social media or online platform.
+    
+    Returns:
+        dict: A dictionary with error status, message, actor ID, and platform.
     """
     print(f"[OsintTool] Calculating influence metrics for actor: {actor_id} on {platform}")
 
@@ -115,13 +126,15 @@ def calculate_influence_metrics(actor_id: str, platform: str) -> dict:
 
 def detect_coordinated_behavior(account_ids: list, platform: str, time_window_hours: int = 24) -> dict:
     """
-    Implements algorithms to identify inauthentic network activity among a list of accounts.
+    Detects potential coordinated or inauthentic behavior among a list of social media accounts on a specified platform within a given time window.
     
-    TODO: Implement real coordinated behavior detection using:
-    - Temporal analysis of posting patterns
-    - Content similarity analysis
-    - Network analysis for unusual connections
-    - Behavioral anomaly detection
+    Parameters:
+        account_ids (list): List of account identifiers to analyze.
+        platform (str): Name of the social media platform.
+        time_window_hours (int): Time window in hours for activity analysis (default is 24).
+    
+    Returns:
+        dict: Result indicating error status and details, as real detection is not yet implemented.
     """
     print(f"[OsintTool] Detecting coordinated behavior for accounts: {account_ids} on {platform} within {time_window_hours}h.")
     
@@ -145,13 +158,14 @@ def detect_coordinated_behavior(account_ids: list, platform: str, time_window_ho
 
 def generate_actor_profile(actor_id: str, platform: str) -> dict:
     """
-    Creates detailed profiles of actors including their activity history, known associations, and narrative involvement.
+    Generate a detailed profile for a specified actor on a given platform.
     
-    TODO: Implement real actor profiling using:
-    - Platform API data collection
-    - Historical activity analysis
-    - Network relationship mapping
-    - Risk assessment scoring
+    Parameters:
+    	actor_id (str): Unique identifier of the actor to profile.
+    	platform (str): Name of the platform where the actor is active.
+    
+    Returns:
+    	dict: Status message indicating that real actor profiling is not yet implemented, along with the provided actor ID and platform.
     """
     print(f"[OsintTool] Generating profile for actor: {actor_id} on {platform}")
 
@@ -172,13 +186,14 @@ def generate_actor_profile(actor_id: str, platform: str) -> dict:
 
 def classify_image_content_theme(image_url: str, associated_text = None) -> dict:
     """
-    Classifies an image's content theme, potentially aided by associated text.
+    Classifies the thematic content of an image, optionally using associated text for context.
     
-    TODO: Implement real image classification using:
-    - Computer vision models for object detection
-    - OCR for text extraction from images
-    - Visual similarity matching against known misinformation imagery
-    - Multi-modal analysis combining image and text
+    Parameters:
+        image_url (str): URL of the image to analyze.
+        associated_text (optional): Text related to the image that may aid classification.
+    
+    Returns:
+        dict: Result containing status, message, image URL, and associated text. Real classification is not yet implemented.
     """
     print(f"[OsintTool-Multimedia] Image Classification: Analyzing image: {image_url}. Associated text: '{associated_text[:50] if associated_text else 'None'}...'")
 
@@ -201,7 +216,17 @@ def classify_image_content_theme(image_url: str, associated_text = None) -> dict
 # =============================================================================
 
 def analyze_narrative_patterns_fallback(text: str) -> dict:
-    """Fallback narrative pattern analysis using keyword matching"""
+    """
+    Analyze text for misinformation narrative themes using keyword-based heuristics.
+    
+    The function scans the input text for keywords associated with election fraud, violence or intimidation, and ethnic or religious division. It assigns a primary narrative theme based on the highest keyword match count and provides a confidence score proportional to the number of detected indicators.
+    
+    Parameters:
+        text (str): The text to analyze for narrative patterns.
+    
+    Returns:
+        dict: A dictionary containing the primary theme, confidence score, and counts of detected indicators for each narrative category.
+    """
     import re
     
     text_lower = text.lower()
@@ -241,7 +266,15 @@ def analyze_narrative_patterns_fallback(text: str) -> dict:
     }
 
 def extract_political_actors_fallback(text: str) -> list:
-    """Extract political actors using pattern matching"""
+    """
+    Identify Nigerian political figures, political parties, and institutions mentioned in the input text using keyword matching.
+    
+    Parameters:
+        text (str): The text to analyze for mentions of political actors.
+    
+    Returns:
+        list: A list of dictionaries, each representing a detected actor with name, type, context, and confidence score.
+    """
     import re
     
     actors = []
@@ -282,7 +315,14 @@ def extract_political_actors_fallback(text: str) -> list:
     return actors
 
 def detect_misinformation_patterns_fallback(text: str) -> list:
-    """Detect misinformation patterns using heuristics"""
+    """
+    Detects potential misinformation patterns in text using heuristic keyword and phrase matching.
+    
+    Analyzes the input for unverified statistical claims, emotional manipulation, and conspiracy-style language, returning a list of detected pattern descriptors with type, confidence, and description.
+     
+    Returns:
+        patterns (list): List of detected misinformation pattern dictionaries, each containing type, confidence, and description.
+    """
     patterns = []
     text_lower = text.lower()
     

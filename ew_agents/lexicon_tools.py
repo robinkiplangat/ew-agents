@@ -10,7 +10,12 @@ logger = logging.getLogger(__name__)
 
 # Direct MongoDB Atlas connection
 def get_mongo_connection():
-    """Get MongoDB Atlas connection"""
+    """
+    Establish a connection to the MongoDB Atlas database and return the client and database objects.
+    
+    Returns:
+        tuple: A tuple containing the MongoDB client and the "election_watch" database object. Returns (None, None) if the connection fails.
+    """
     try:
         mongo_uri = os.getenv('MONGODB_ATLAS_URI', 'mongodb+srv://ew_ml:moHsc5i6gYFrLsvL@ewcluster1.fpkzpxg.mongodb.net/')
         # Enhanced SSL configuration for MongoDB Atlas
@@ -38,8 +43,22 @@ def update_lexicon_term(
     source: str = "manual input"
 ) -> dict:
     """
-    Adds or updates a term in the multilingual lexicon using MongoDB Atlas.
-    If the term exists, it updates its details. Otherwise, it adds a new term.
+    Add a new term or update an existing term in the multilingual lexicon stored in MongoDB Atlas.
+    
+    If the term already exists for the specified language, its details are updated; otherwise, a new entry is created. Ensures tags and related terms are unique lists. Returns a status dictionary indicating the operation performed and the updated or added entry details.
+    
+    Parameters:
+        term (str): The lexicon term to add or update.
+        definition (str): The definition of the term.
+        category (str): The category to which the term belongs.
+        language_code (str): The language code for the term.
+        severity_level (str): The severity level associated with the term.
+        tags (list): List of tags associated with the term.
+        related_terms (list, optional): List of related terms.
+        source (str, optional): Source of the term entry.
+    
+    Returns:
+        dict: Status and details of the operation, or error information if the operation fails.
     """
     print(f"[LexiconTool] Updating lexicon for term '{term}' in language '{language_code}'")
     
@@ -114,7 +133,10 @@ def update_lexicon_term(
 
 def get_lexicon_term(term: str, language_code: str) -> dict:
     """
-    Retrieves a term from the lexicon for a specific language using MongoDB Atlas.
+    Retrieve a lexicon term and its details for a specified language from the database.
+    
+    Returns:
+        dict: A dictionary containing the status, term, language code, and entry details if found. If the term is not found or an error occurs, returns a status with an appropriate message.
     """
     print(f"[LexiconTool] Getting lexicon term '{term}' in language '{language_code}'")
     
@@ -179,7 +201,15 @@ def detect_coded_language(
     context_keywords = None
 ) -> dict:
     """
-    Detects new or coded language within a text sample using NLP analysis and existing lexicon.
+    Attempts to identify coded or novel language within a text by matching words against an existing lexicon for the specified language.
+    
+    Parameters:
+        text (str): The text to analyze for coded language.
+        language_code (str, optional): The language code to use for lexicon lookup. Defaults to "en".
+        context_keywords (list, optional): Additional context keywords to consider during detection.
+    
+    Returns:
+        dict: A result containing the detection status, the original text, language code, and any potential coded terms found with confidence scores and context.
     """
     if context_keywords is None:
         context_keywords = []
@@ -258,10 +288,17 @@ def detect_coded_language(
 
 def translate_term(term: str, source_lang: str, target_lang: str) -> dict:
     """
-    Translates a term between languages using the lexicon database.
+    Translate a term from a source language to a target language using the lexicon database.
     
-    TODO: Implement real translation service integration (Google Translate, Azure Translator, etc.)
-    For now, this searches the lexicon for equivalent terms in different languages.
+    Searches for an equivalent term in the target language by matching the source term's definition and tags. Returns the best match found with translation details and confidence score. If no match is found or the source term does not exist, returns an appropriate status message.
+     
+    Parameters:
+        term (str): The term to translate.
+        source_lang (str): The language code of the source term.
+        target_lang (str): The language code to translate the term into.
+    
+    Returns:
+        dict: A dictionary containing the translation result, including status, translated term (if found), and related metadata.
     """
     print(f"[LexiconTool] Translating '{term}' from {source_lang} to {target_lang}")
     

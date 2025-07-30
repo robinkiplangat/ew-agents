@@ -9,14 +9,16 @@ def analyze_narrative_trends(
     origin_country = None
 ) -> dict:
     """
-    Analyzes trends for specified narrative themes over a time window.
+    Analyze trends for specified narrative themes over a given number of days.
     
-    TODO: Implement real analytical database connection (Elasticsearch, ClickHouse, etc.)
-    This should query time-series data for:
-    - Volume metrics per theme
-    - Sentiment analysis results
-    - Geographic distribution
-    - Platform-specific metrics
+    Parameters:
+        narrative_themes (list): List of narrative themes to analyze.
+        time_period_days (int, optional): Number of days to include in the analysis window. Defaults to 7.
+        platform (optional): Platform to filter results by (e.g., Twitter, Facebook).
+        origin_country (optional): Country to filter results by.
+    
+    Returns:
+        dict: Status message and input parameters. Actual analysis is not yet implemented.
     """
     print(f"[TrendTool] Analyzing trends for themes: {narrative_themes} in last {time_period_days}d. Platform: {platform}, Origin: {origin_country}")
 
@@ -59,10 +61,16 @@ def generate_timeline_data(
     granularity: str = "hourly"
 ) -> dict:
     """
-    Creates structured data suitable for interactive timeline visualizations.
-    Shows narrative evolution (volume, sentiment) over a specified period.
+    Generate structured timeline data for a narrative theme over a specified date range and granularity.
     
-    TODO: Implement real time-series database queries for timeline generation.
+    Parameters:
+        narrative_theme (str): The narrative theme to analyze.
+        start_date_iso (str): Start date in ISO 8601 format.
+        end_date_iso (str): End date in ISO 8601 format.
+        granularity (str): Time bucket size for aggregation (e.g., "hourly", "daily").
+    
+    Returns:
+        dict: Structured data for timeline visualization, or an error message if input is invalid or functionality is not implemented.
     """
     print(f"[TrendTool] Generating timeline for theme '{narrative_theme}' from {start_date_iso} to {end_date_iso}, granularity: {granularity}")
 
@@ -95,13 +103,16 @@ def generate_early_warning_alert(
     sentiment_shift_threshold: float = -0.2
 ) -> dict:
     """
-    Identifies emerging narratives or significant changes that require real-time alerts.
+    Detects emerging narratives or significant changes in a narrative theme that may require real-time alerts.
     
-    TODO: Implement real-time alerting system with:
-    - Threshold-based monitoring
-    - Anomaly detection algorithms
-    - Alert escalation logic
-    - Integration with notification systems
+    Parameters:
+        narrative_theme (str): The narrative theme to monitor for early warning signals.
+        current_volume (int): The current observed volume for the narrative theme.
+        volume_threshold (int): The volume threshold that may trigger an alert.
+        sentiment_shift_threshold (float, optional): The minimum sentiment shift to consider significant. Defaults to -0.2.
+    
+    Returns:
+        dict: A status dictionary indicating whether the early warning system is implemented, along with input parameters.
     """
     print(f"[TrendTool] Checking early warning for theme '{narrative_theme}'. Current volume: {current_volume}, Threshold: {volume_threshold}")
 
