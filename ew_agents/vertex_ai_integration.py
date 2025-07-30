@@ -10,14 +10,13 @@ and Google Vertex AI services for enhanced AI capabilities and cloud deployment.
 import os
 import json
 import logging
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from datetime import datetime
 
 try:
     import vertexai
-    from vertexai.language_models import TextGenerationModel, ChatModel, CodeChatModel
+    from vertexai.language_models import TextGenerationModel, ChatModel
     from vertexai.generative_models import GenerativeModel
-    from google.cloud import aiplatform
     VERTEX_AI_AVAILABLE = True
 except ImportError:
     VERTEX_AI_AVAILABLE = False
@@ -341,7 +340,7 @@ class VertexAIAgentEngine:
         if self.initialized:
             try:
                 # Quick test of text generation model
-                model = TextGenerationModel.from_pretrained(self.models["text_generation"])
+                TextGenerationModel.from_pretrained(self.models["text_generation"])
                 health["model_test"] = "passed"
             except Exception as e:
                 health["model_test"] = f"failed: {e}"
