@@ -1,15 +1,32 @@
 from google.adk.tools import FunctionTool
-from typing import Dict, List, Any, Optional, Union
 import datetime
 import os
+import logging
 from pymongo import MongoClient
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Direct MongoDB Atlas connection
 def get_mongo_connection():
     """Get MongoDB Atlas connection"""
     try:
-        mongo_uri = os.getenv('MONGODB_ATLAS_URI', 'mongodb+srv://ew_ml:moHsc5i6gYFrLsvL@ewcluster1.fpkzpxg.mongodb.net/')
-        client = MongoClient(mongo_uri, tlsAllowInvalidCertificates=True)
+        # Try to get MongoDB URI from Secret Manager first, then fallback to environment
+        try:
+            from .secret_manager import get_mongodb_uri
+            mongo_uri = get_mongodb_uri() or os.getenv('MONGODB_ATLAS_URI')
+        except ImportError:
+            mongo_uri = os.getenv('MONGODB_ATLAS_URI')
+        
+        # Enhanced SSL configuration for MongoDB Atlas
+        client = MongoClient(
+            mongo_uri,
+            tlsAllowInvalidCertificates=True,
+            tls=True,
+            ssl_cert_reqs='CERT_NONE',
+            serverSelectionTimeoutMS=5000  # 5 second timeout
+        )
         db = client["election_watch"]
         return client, db
     except Exception as e:
@@ -18,12 +35,14 @@ def get_mongo_connection():
 
 def update_lexicon_term(
     term: str,
-    language_code: str,
     definition: str,
-    tags: List[str],
-    related_terms: Optional[List[str]] = None,
-    source: Optional[str] = "manual input"
-) -> Dict[str, Any]:
+    category: str,
+    language_code: str,
+    severity_level: str,
+    tags: list,
+    related_terms: list = None,
+    source: str = "manual input"
+) -> dict:
     """
     Adds or updates a term in the multilingual lexicon using MongoDB Atlas.
     If the term exists, it updates its details. Otherwise, it adds a new term.
@@ -99,7 +118,7 @@ def update_lexicon_term(
             "language_code": language_code
         }
 
-def get_lexicon_term(term: str, language_code: str) -> Dict[str, Any]:
+def get_lexicon_term(term: str, language_code: str) -> dict:
     """
     Retrieves a term from the lexicon for a specific language using MongoDB Atlas.
     """
@@ -161,31 +180,31 @@ def get_lexicon_term(term: str, language_code: str) -> Dict[str, Any]:
         }
 
 def detect_coded_language(
-    text_sample: str,
-    language_code: str,
-    context_keywords: Optional[List[str]] = None
-) -> Dict[str, Any]:
+    text: str,
+    language_code: str = "en",
+    context_keywords = None
+) -> dict:
     """
     Detects new or coded language within a text sample using NLP analysis and existing lexicon.
     """
     if context_keywords is None:
         context_keywords = []
     
-    print(f"[LexiconTool] Detecting coded language in sample (lang: {language_code}): '{text_sample[:50]}...' with context: {context_keywords}")
+    print(f"[LexiconTool] Detecting coded language in sample (lang: {language_code}): '{text[:50]}...' with context: {context_keywords}")
 
     client, db = get_mongo_connection()
     if db is None:
         return {
             "status": "error",
             "message": "Unable to connect to MongoDB Atlas for coded language detection",
-            "text_sample": text_sample,
+            "text_sample": text,
             "language_code": language_code
         }
 
     try:
         # Search existing lexicon for potential matches
         potential_terms = []
-        words = text_sample.lower().split()
+        words = text.lower().split()
         
         for word in words:
             if len(word) > 3:  # Only check words longer than 3 characters
@@ -206,7 +225,7 @@ def detect_coded_language(
                         "definition": match.get("definition", ""),
                         "confidence": 0.7,  # Basic string matching confidence
                         "language_code": language_code,
-                        "context_phrase": text_sample,
+                        "context_phrase": text,
                         "match_type": "lexicon_match"
                     })
         
@@ -220,7 +239,7 @@ def detect_coded_language(
         if potential_terms:
             return {
                 "status": "success",
-                "text_sample": text_sample,
+                "text_sample": text,
                 "language_code": language_code,
                 "potential_coded_terms": potential_terms,
                 "message": f"Found {len(potential_terms)} potential coded language matches in lexicon."
@@ -228,7 +247,7 @@ def detect_coded_language(
         else:
             return {
                 "status": "no_coded_language_detected",
-                "text_sample": text_sample,
+                "text_sample": text,
                 "language_code": language_code,
                 "message": "No coded language patterns detected with current lexicon."
             }
@@ -239,11 +258,11 @@ def detect_coded_language(
         return {
             "status": "error",
             "message": f"Error in coded language detection: {str(e)}",
-            "text_sample": text_sample,
+            "text_sample": text,
             "language_code": language_code
         }
 
-def translate_term(term: str, source_lang: str, target_lang: str) -> Dict[str, Any]:
+def translate_term(term: str, source_lang: str, target_lang: str) -> dict:
     """
     Translates a term between languages using the lexicon database.
     

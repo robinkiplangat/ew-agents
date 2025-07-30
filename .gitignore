@@ -1,7 +1,7 @@
 .venv/
 __pycache__/
 .DS_Store
-.env
+.env*
 .env.local
 .env.development.local
 .env.test.local
@@ -15,3 +15,11 @@ __pycache__/
 .gcloudignore
 
 ew-agent-service-key.json
+deploy_config.env
+/data/
+# Keep setup script but ignore any generated configs
+# setup_mongodb_secret.sh
+
+# Keep requirements.lock for production reproducibility
+# requirements.lock
+# /docs/

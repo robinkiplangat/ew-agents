@@ -1,9 +1,13 @@
 from google.adk.tools import FunctionTool
-from typing import List, Dict, Any, Optional, Union
 import datetime
 import os
+import logging
 
-def classify_narrative(text: str, source_platform: str = "unknown") -> Dict[str, Any]:
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def classify_narrative(text: str, source_platform: str = "unknown") -> dict:
     """
     Uses an ML model to classify text into misinformation themes.
     Returns a list of identified themes and their confidence scores.
@@ -27,14 +31,31 @@ def classify_narrative(text: str, source_platform: str = "unknown") -> Dict[str,
     # response = requests.post("YOUR_ML_API_ENDPOINT", json={"text": text})
     # predictions = response.json()
 
-    return {
-        "status": "error",
-        "message": "Real narrative classification model not yet implemented",
-        "text": text,
-        "source_platform": source_platform
-    }
+    # Enhanced fallback classification using pattern matching
+    try:
+        narrative_result = analyze_narrative_patterns_fallback(text)
+        actors = extract_political_actors_fallback(text)
+        misinfo_indicators = detect_misinformation_patterns_fallback(text)
+        
+        return {
+            "status": "success",
+            "narrative_classification": narrative_result,
+            "actors_identified": actors,
+            "misinformation_indicators": misinfo_indicators,
+            "text": text[:200],
+            "source_platform": source_platform,
+            "confidence": 0.7 if actors or misinfo_indicators else 0.3,
+            "analysis_method": "pattern_matching_fallback"
+        }
+    except Exception as e:
+        return {
+            "status": "error", 
+            "message": f"Narrative classification failed: {str(e)}",
+            "text": text,
+            "source_platform": source_platform
+        }
 
-def track_keywords(keywords: List[str], platforms: Optional[List[str]] = None) -> Dict[str, Any]:
+def track_keywords(keywords: list, platforms = None) -> dict:
     """
     Monitors for specific keywords and hashtags across specified platforms.
     
@@ -65,7 +86,7 @@ def track_keywords(keywords: List[str], platforms: Optional[List[str]] = None) -
         "platforms": platforms
     }
 
-def calculate_influence_metrics(actor_id: str, platform: str) -> Dict[str, Any]:
+def calculate_influence_metrics(actor_id: str, platform: str) -> dict:
     """
     Analyzes graph data and other metrics to calculate influence scores for actors.
     
@@ -92,7 +113,7 @@ def calculate_influence_metrics(actor_id: str, platform: str) -> Dict[str, Any]:
         "platform": platform
     }
 
-def detect_coordinated_behavior(account_ids: List[str], platform: str, time_window_hours: int = 24) -> Dict[str, Any]:
+def detect_coordinated_behavior(account_ids: list, platform: str, time_window_hours: int = 24) -> dict:
     """
     Implements algorithms to identify inauthentic network activity among a list of accounts.
     
@@ -122,7 +143,7 @@ def detect_coordinated_behavior(account_ids: List[str], platform: str, time_wind
         "time_window_hours": time_window_hours
     }
 
-def generate_actor_profile(actor_id: str, platform: str) -> Dict[str, Any]:
+def generate_actor_profile(actor_id: str, platform: str) -> dict:
     """
     Creates detailed profiles of actors including their activity history, known associations, and narrative involvement.
     
@@ -149,7 +170,7 @@ def generate_actor_profile(actor_id: str, platform: str) -> Dict[str, Any]:
         "platform": platform
     }
 
-def classify_image_content_theme(image_url: str, associated_text: Optional[str] = None) -> Dict[str, Any]:
+def classify_image_content_theme(image_url: str, associated_text = None) -> dict:
     """
     Classifies an image's content theme, potentially aided by associated text.
     
@@ -174,6 +195,126 @@ def classify_image_content_theme(image_url: str, associated_text: Optional[str] 
         "image_url": image_url,
         "associated_text": associated_text
     }
+
+# =============================================================================
+# Fallback Analysis Functions
+# =============================================================================
+
+def analyze_narrative_patterns_fallback(text: str) -> dict:
+    """Fallback narrative pattern analysis using keyword matching"""
+    import re
+    
+    text_lower = text.lower()
+    
+    # Election fraud narratives
+    fraud_keywords = ['rigged', 'fraud', 'manipulation', 'fake', 'ghost', 'stolen', 'cheating']
+    fraud_score = sum(1 for keyword in fraud_keywords if keyword in text_lower)
+    
+    # Violence/intimidation narratives  
+    violence_keywords = ['violence', 'fight', 'war', 'attack', 'threat', 'intimidation', 'clash']
+    violence_score = sum(1 for keyword in violence_keywords if keyword in text_lower)
+    
+    # Ethnic/religious division narratives
+    division_keywords = ['ethnic', 'religious', 'tribal', 'christian', 'muslim', 'yoruba', 'igbo', 'hausa']
+    division_score = sum(1 for keyword in division_keywords if keyword in text_lower)
+    
+    # Determine primary narrative
+    if fraud_score > violence_score and fraud_score > division_score:
+        primary_theme = "election_fraud"
+        confidence = min(fraud_score * 0.2, 1.0)
+    elif violence_score > division_score:
+        primary_theme = "violence_incitement"
+        confidence = min(violence_score * 0.2, 1.0)
+    elif division_score > 0:
+        primary_theme = "ethnic_religious_division"
+        confidence = min(division_score * 0.2, 1.0)
+    else:
+        primary_theme = "general_political"
+        confidence = 0.1
+    
+    return {
+        "primary_theme": primary_theme,
+        "confidence": confidence,
+        "fraud_indicators": fraud_score,
+        "violence_indicators": violence_score,
+        "division_indicators": division_score
+    }
+
+def extract_political_actors_fallback(text: str) -> list:
+    """Extract political actors using pattern matching"""
+    import re
+    
+    actors = []
+    
+    # Nigerian political figures (2023 election context)
+    politicians = ['peter obi', 'tinubu', 'atiku', 'kwankwaso', 'buhari', 'osinbajo']
+    for politician in politicians:
+        if politician.lower() in text.lower():
+            actors.append({
+                "name": politician.title(),
+                "type": "politician",
+                "context": "mentioned",
+                "confidence": 0.9
+            })
+    
+    # Political parties
+    parties = ['apc', 'pdp', 'labour', 'nnpp', 'sdp']
+    for party in parties:
+        if party.lower() in text.lower():
+            actors.append({
+                "name": party.upper(),
+                "type": "political_party", 
+                "context": "mentioned",
+                "confidence": 0.8
+            })
+    
+    # Institutions
+    institutions = ['inec', 'bvas', 'nnpc', 'cbn', 'efcc', 'icpc']
+    for inst in institutions:
+        if inst.lower() in text.lower():
+            actors.append({
+                "name": inst.upper(),
+                "type": "institution",
+                "context": "mentioned",
+                "confidence": 0.7
+            })
+    
+    return actors
+
+def detect_misinformation_patterns_fallback(text: str) -> list:
+    """Detect misinformation patterns using heuristics"""
+    patterns = []
+    text_lower = text.lower()
+    
+    # Unverified claims patterns
+    if any(phrase in text_lower for phrase in ['breaking:', 'confirmed:', 'reports confirm']):
+        if any(word in text_lower for word in ['million', 'thousand', 'massive', 'widespread']):
+            patterns.append({
+                "type": "unverified_statistics",
+                "confidence": 0.6,
+                "description": "Unverified numerical claims"
+            })
+    
+    # Emotional manipulation
+    emotion_words = ['shocking', 'devastating', 'outrageous', 'betrayal', 'disaster']
+    emotion_count = sum(1 for word in emotion_words if word in text_lower)
+    if emotion_count >= 2:
+        patterns.append({
+            "type": "emotional_manipulation",
+            "confidence": min(emotion_count * 0.2, 0.8),
+            "description": "High emotional language"
+        })
+    
+    # Conspiracy patterns
+    conspiracy_phrases = ['they don\'t want you to know', 'hidden truth', 'cover up', 'exposed']
+    if any(phrase in text_lower for phrase in conspiracy_phrases):
+        patterns.append({
+            "type": "conspiracy_narrative",
+            "confidence": 0.7,
+            "description": "Conspiracy-style language"
+        })
+    
+    return patterns
 
 # Create FunctionTool instances
 classify_narrative_tool = FunctionTool(

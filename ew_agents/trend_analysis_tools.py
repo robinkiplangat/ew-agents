@@ -1,14 +1,13 @@
 from google.adk.tools import FunctionTool
-from typing import Dict, List, Any, Optional, Union
 import datetime
 import os
 
 def analyze_narrative_trends(
-    narrative_themes: List[str],
-    time_window_hours: int = 24,
-    platform: Optional[str] = None,
-    origin_country: Optional[str] = None
-) -> Dict[str, Any]:
+    narrative_themes: list,
+    time_period_days: int = 7,
+    platform = None,
+    origin_country = None
+) -> dict:
     """
     Analyzes trends for specified narrative themes over a time window.
     
@@ -19,7 +18,7 @@ def analyze_narrative_trends(
     - Geographic distribution
     - Platform-specific metrics
     """
-    print(f"[TrendTool] Analyzing trends for themes: {narrative_themes} in last {time_window_hours}h. Platform: {platform}, Origin: {origin_country}")
+    print(f"[TrendTool] Analyzing trends for themes: {narrative_themes} in last {time_period_days}d. Platform: {platform}, Origin: {origin_country}")
 
     # TODO: Implement real analytical database queries
     # Example with Elasticsearch:
@@ -50,7 +49,7 @@ def analyze_narrative_trends(
         "status": "error",
         "message": "Real analytical database not yet implemented",
         "narrative_themes": narrative_themes,
-        "time_window_hours": time_window_hours
+        "time_period_days": time_period_days
     }
 
 def generate_timeline_data(
@@ -58,7 +57,7 @@ def generate_timeline_data(
     start_date_iso: str,
     end_date_iso: str,
     granularity: str = "hourly"
-) -> Dict[str, Any]:
+) -> dict:
     """
     Creates structured data suitable for interactive timeline visualizations.
     Shows narrative evolution (volume, sentiment) over a specified period.
@@ -94,7 +93,7 @@ def generate_early_warning_alert(
     current_volume: int,
     volume_threshold: int,
     sentiment_shift_threshold: float = -0.2
-) -> Dict[str, Any]:
+) -> dict:
     """
     Identifies emerging narratives or significant changes that require real-time alerts.
     
