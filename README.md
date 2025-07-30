@@ -79,9 +79,9 @@ python -m ml.agents
 The system provides comprehensive REST API endpoints:
 
 ### Core Analysis
-- `POST /AnalysePosts` - Main misinformation analysis
+- `POST /run_analysis` - **Main misinformation analysis endpoint**
+- `POST /AnalysePosts` - Legacy endpoint (deprecated)
 - `POST /get_raw_json` - Raw analysis results
-- `POST /run_analysis` - Detailed analysis output
 - `POST /submitReport` - Submit manual reports
 
 ### Reports System
@@ -212,4 +212,4 @@ For issues and questions:
 
 ---
 
-**ElectionWatch** - Protecting Democratic Processes Through AI-Powered Intelligence
+**Election Watch** 

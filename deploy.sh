@@ -135,7 +135,7 @@ ENV PYTHONPATH=/app \
 
 EXPOSE 8080
 
-CMD ["python", "-u", "main.py"]
+CMD ["python3", "-u", "main.py"]
 EOF
 
 echo -e "${YELLOW}📦 Building with optimized Dockerfile...${NC}"
@@ -177,6 +177,7 @@ gcloud run deploy $SERVICE_NAME \
     --set-env-vars="REASONING_ENGINE_COMPATIBLE=true" \
     --set-env-vars="REPORTS_SYSTEM_ENABLED=true" \
     --set-env-vars="QWEN_LLM_ENABLED=true" \
+    --set-env-vars="CLOUD_RUN_MODE=true" \
     --service-account="ew-agent-service@${PROJECT_ID}.iam.gserviceaccount.com" \
     --execution-environment gen2 \
     --cpu-boost

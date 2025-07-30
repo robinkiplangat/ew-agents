@@ -43,6 +43,16 @@ class ElectionWatchStorage:
         # Check if we're in development mode (for SSL certificate handling)
         self.development_mode = os.getenv("MONGODB_DEVELOPMENT_MODE", "false").lower() == "true"
         
+        # Check if we're running on Cloud Run
+        self.cloud_run_mode = os.getenv("K_SERVICE") is not None or os.getenv("CLOUD_RUN_MODE", "false").lower() == "true"
+        
+        if self.cloud_run_mode:
+            logger.info("☁️ Cloud Run environment detected - using optimized settings")
+        elif self.development_mode:
+            logger.info("🔧 Development mode detected - using relaxed SSL settings")
+        else:
+            logger.info("🏠 Local environment detected - using standard settings")
+        
         # Debug logging (without exposing credentials)
         if self.mongo_uri:
             if "<username>" in self.mongo_uri:
@@ -84,24 +94,43 @@ class ElectionWatchStorage:
                     logger.info("🔗 Creating MongoDB Atlas client...")
                     # Connect to MongoDB Atlas with proper SSL settings
                     try:
-                        # First try with strict SSL settings
-                        self.client = MongoClient(
-                            self.mongo_uri,
-                            tls=True,  # Enable TLS for Atlas
-                            tlsAllowInvalidCertificates=False,
-                            serverSelectionTimeoutMS=5000,  # 5 second timeout
-                            connectTimeoutMS=10000,  # 10 second connection timeout
-                            socketTimeoutMS=30000,   # 30 second socket timeout
-                            maxPoolSize=10,          # Connection pool size
-                            retryWrites=True         # Enable retryable writes
-                        )
-                        
-                        # Test the connection immediately
-                        self.client.admin.command('ping')
-                        logger.info("✅ MongoDB Atlas connected with strict SSL settings")
+                        # First try with strict SSL settings (local development)
+                        if not self.cloud_run_mode:
+                            self.client = MongoClient(
+                                self.mongo_uri,
+                                tls=True,  # Enable TLS for Atlas
+                                tlsAllowInvalidCertificates=False,
+                                serverSelectionTimeoutMS=5000,  # 5 second timeout
+                                connectTimeoutMS=10000,  # 10 second connection timeout
+                                socketTimeoutMS=30000,   # 30 second socket timeout
+                                maxPoolSize=10,          # Connection pool size
+                                retryWrites=True         # Enable retryable writes
+                            )
+                            
+                            # Test the connection immediately
+                            self.client.admin.command('ping')
+                            logger.info("✅ MongoDB Atlas connected with strict SSL settings")
+                        else:
+                            # Cloud Run optimized settings
+                            self.client = MongoClient(
+                                self.mongo_uri,
+                                tls=True,  # Enable TLS for Atlas
+                                tlsAllowInvalidCertificates=True,  # Allow invalid certificates for Cloud Run
+                                serverSelectionTimeoutMS=10000,  # Longer timeout for Cloud Run
+                                connectTimeoutMS=15000,  # Longer connection timeout
+                                socketTimeoutMS=30000,   # 30 second socket timeout
+                                maxPoolSize=5,           # Smaller pool for serverless
+                                retryWrites=True,        # Enable retryable writes
+                                maxIdleTimeMS=60000,     # Close idle connections after 1 minute
+                                maxConnecting=1          # Single connection attempt for serverless
+                            )
+                            
+                            # Test the connection immediately
+                            self.client.admin.command('ping')
+                            logger.info("✅ MongoDB Atlas connected with Cloud Run optimized settings")
                         
                     except Exception as ssl_error:
-                        logger.warning(f"⚠️ Strict SSL connection failed: {ssl_error}")
+                        logger.warning(f"⚠️ Primary connection failed: {ssl_error}")
                         logger.info("🔄 Trying with relaxed SSL settings...")
                         
                         # Fallback with relaxed SSL settings for development

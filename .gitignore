@@ -16,4 +16,4 @@ __pycache__/
 
 ew-agent-service-key.json
 /data/
-/docs/
+# /docs/
