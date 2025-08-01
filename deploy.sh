@@ -61,10 +61,49 @@ gcloud services enable \
 
 echo -e "${GREEN}✅ APIs enabled${NC}"
 
-# Step 3: Setup Secrets Manager for OPEN_ROUTER_API_KEY
+# Step 3: Setup Secrets Manager
 echo -e "${BLUE}🔐 Step 3: Setting up Secrets Manager...${NC}"
 
-# Check if OPEN_ROUTER_API_KEY exists in .env file
+# Setup MongoDB URI secret
+echo -e "${YELLOW}📝 Setting up MongoDB URI secret...${NC}"
+if [[ -f ".env" ]]; then
+    MONGODB_ATLAS_URI=$(grep "MONGODB_ATLAS_URI" .env | cut -d '=' -f2)
+    if [[ -n "$MONGODB_ATLAS_URI" ]]; then
+        echo -e "${YELLOW}📝 Found MONGODB_ATLAS_URI in .env file${NC}"
+        
+        # Create secret if it doesn't exist
+        if ! gcloud secrets describe "mongodb-atlas-uri" --project=$PROJECT_ID >/dev/null 2>&1; then
+            echo -e "${YELLOW}🔐 Creating mongodb-atlas-uri secret...${NC}"
+            echo "$MONGODB_ATLAS_URI" | gcloud secrets create "mongodb-atlas-uri" \
+                --data-file=- \
+                --project=$PROJECT_ID \
+                --replication-policy="automatic"
+        else
+            echo -e "${YELLOW}🔄 Updating existing mongodb-atlas-uri secret...${NC}"
+            echo "$MONGODB_ATLAS_URI" | gcloud secrets versions add "mongodb-atlas-uri" \
+                --data-file=- \
+                --project=$PROJECT_ID
+        fi
+        
+        # Grant access to the Cloud Run service account
+        SERVICE_ACCOUNT="ew-agent-service@${PROJECT_ID}.iam.gserviceaccount.com"
+        gcloud secrets add-iam-policy-binding "mongodb-atlas-uri" \
+            --member="serviceAccount:${SERVICE_ACCOUNT}" \
+            --role="roles/secretmanager.secretAccessor" \
+            --project=$PROJECT_ID
+        
+        echo -e "${GREEN}✅ MongoDB URI secret configured${NC}"
+    else
+        echo -e "${YELLOW}⚠️  MONGODB_ATLAS_URI not found in .env file${NC}"
+        echo -e "${YELLOW}   You can set it manually in Secret Manager later${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠️  .env file not found${NC}"
+    echo -e "${YELLOW}   You can set MONGODB_ATLAS_URI manually in Secret Manager later${NC}"
+fi
+
+# Setup OPEN_ROUTER_API_KEY secret
+echo -e "${YELLOW}📝 Setting up OPEN_ROUTER_API_KEY secret...${NC}"
 if [[ -f ".env" ]]; then
     OPEN_ROUTER_API_KEY=$(grep "OPEN_ROUTER_API_KEY" .env | cut -d '=' -f2)
     if [[ -n "$OPEN_ROUTER_API_KEY" ]]; then
@@ -171,12 +210,12 @@ gcloud run deploy $SERVICE_NAME \
     --set-env-vars="GOOGLE_GENAI_USE_VERTEXAI=TRUE" \
     --set-env-vars="VERTEX_AI_ENABLED=true" \
     --set-env-vars="ADK_VERTEX_INTEGRATION=enabled" \
-    --set-env-vars="MONGODB_ATLAS_URI=mongodb+srv://ew_ml:moHsc5i6gYFrLsvL@ewcluster1.fpkzpxg.mongodb.net/knowledge?retryWrites=true&w=majority" \
+
     --set-env-vars="ADK_AGENTS_ENABLED=true" \
     --set-env-vars="ENHANCED_COORDINATOR_ENABLED=true" \
     --set-env-vars="REASONING_ENGINE_COMPATIBLE=true" \
     --set-env-vars="REPORTS_SYSTEM_ENABLED=true" \
-    --set-env-vars="QWEN_LLM_ENABLED=true" \
+    --set-env-vars="AI_REPORT_GENERATION_ENABLED=true" \
     --set-env-vars="CLOUD_RUN_MODE=true" \
     --service-account="ew-agent-service@${PROJECT_ID}.iam.gserviceaccount.com" \
     --execution-environment gen2 \
@@ -184,17 +223,22 @@ gcloud run deploy $SERVICE_NAME \
 
 echo -e "${GREEN}✅ Service deployed successfully${NC}"
 
-# Step 6: Configure secret access for OPEN_ROUTER_API_KEY
+# Step 6: Configure secret access
+echo -e "${BLUE}🔐 Step 6: Configuring secret access...${NC}"
+
+# Configure MongoDB URI secret access
+gcloud run services update $SERVICE_NAME \
+    --region $REGION \
+    --update-secrets="MONGODB_ATLAS_URI=mongodb-atlas-uri:latest"
+
+# Configure OpenRouter API key secret access (if available)
 if [[ -n "$OPEN_ROUTER_API_KEY" ]]; then
-    echo -e "${BLUE}🔐 Step 6: Configuring secret access...${NC}"
-    
-    # Update the service to use the secret
     gcloud run services update $SERVICE_NAME \
         --region $REGION \
         --update-secrets="OPEN_ROUTER_API_KEY=open-router-api-key:latest"
-    
-    echo -e "${GREEN}✅ Secret access configured${NC}"
 fi
+
+echo -e "${GREEN}✅ Secret access configured${NC}"
 
 # Step 7: Get service information and test
 echo -e "${BLUE}ℹ️  Step 7: Service validation...${NC}"
