@@ -217,7 +217,7 @@ Raw analysis data in JSON format with all intermediate processing steps.
 
 ### 3. Generate Formatted Report
 **Endpoint**: `GET /api/reports/generate/{analysis_id}`  
-**Description**: Generate a professionally formatted HTML report from analysis data using Qwen LLM.
+**Description**: Generate a professionally formatted HTML report from analysis data using AI.
 
 #### Path Parameters
 - `analysis_id`: The ID of the analysis to format

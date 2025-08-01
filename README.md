@@ -18,7 +18,7 @@ The system is built around a `CoordinatorAgent` that intelligently delegates tas
 ### 🆕 New Features
 
 #### Reports System
-- **Report Generation**: Transform raw analysis data into clean, professional reports using Qwen LLM
+- **Report Generation**: Transform raw analysis data into clean, professional reports using AI
 - **PDF Export**: Download reports as professionally formatted PDF documents
 - **Web Interface**: User-friendly interface for viewing and managing reports
 
@@ -38,7 +38,7 @@ The system is built around a `CoordinatorAgent` that intelligently delegates tas
 *   Environment variables for GCP:
     *   `GOOGLE_CLOUD_PROJECT`: Your GCP project ID.
     *   `GOOGLE_CLOUD_LOCATION`: Your GCP region (e.g., `europe-west1`).
-    *   `OPEN_ROUTER_API_KEY`: For Qwen LLM report formatting
+    *   `OPEN_ROUTER_API_KEY`: For AI report formatting
     *   `MONGODB_ATLAS_URI`: MongoDB connection string
 *   Required Python packages (see `ml/requirements.txt`). Install using:
     ```bash
@@ -110,7 +110,7 @@ The system provides comprehensive REST API endpoints:
 ## 🎨 Reports Features
 
 ### Professional Report Generation
-- **LLM-Powered Formatting**: Uses Qwen LLM to transform raw data into reports
+- **AI-Powered Formatting**: Uses AI to transform raw data into reports
 - **Structured Content**: Executive Summary, Key Findings, Risk Assessment, Recommendations
 - **Visual Design**: Professional styling with icons, gradients, and clean typography
 - **Risk Level Indicators**: Color-coded risk levels (High/Medium/Low)
@@ -277,7 +277,7 @@ GOOGLE_CLOUD_LOCATION=europe-west1
 MONGODB_ATLAS_URI=mongodb+srv://...
 
 # Optional (for enhanced features)
-OPEN_ROUTER_API_KEY=your-openrouter-key  # For Qwen LLM report formatting
+OPEN_ROUTER_API_KEY=your-openrouter-key  # For AI report formatting
 ```
 
 ### MongoDB Setup
@@ -321,7 +321,7 @@ ml/
 3. Test with the ADK runner
 
 ### Customizing Reports
-1. Modify the LLM prompt in `format_report_with_qwen()`
+1. Modify the AI prompt in `format_report_with_ai()`
 2. Update PDF styling in `generate_pdf_report()`
 3. Customize HTML template in `create_html_template()`
 
