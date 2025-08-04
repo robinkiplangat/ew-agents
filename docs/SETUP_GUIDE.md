@@ -5,7 +5,7 @@
 ### Prerequisites
 - Python 3.12+
 - MongoDB Atlas account (or local MongoDB)
-- OpenRouter API key (for Qwen LLM)
+- OpenRouter API key (for AI report generation)
 - Google Cloud account (for production deployment)
 
 ### 1. Clone and Setup
@@ -37,7 +37,7 @@ nano .env  # or use your preferred editor
 
 **For Basic Functionality:**
 - `MONGODB_ATLAS_URI` - Your MongoDB Atlas connection string
-- `OPEN_ROUTER_API_KEY` - OpenRouter API key for Qwen LLM
+- `OPEN_ROUTER_API_KEY` - OpenRouter API key for AI report generation
 - `GOOGLE_CLOUD_PROJECT` - Your Google Cloud project ID
 
 **For Full Features:**
@@ -141,8 +141,8 @@ Control which features are enabled:
 # Enable/disable reports system
 REPORTS_SYSTEM_ENABLED=true
 
-# Enable/disable Qwen LLM
-QWEN_LLM_ENABLED=true
+# Enable/disable AI report generation
+AI_REPORT_GENERATION_ENABLED=true
 
 # Enable/disable Cloud Run optimizations
 CLOUD_RUN_MODE=false

@@ -42,9 +42,9 @@ AGENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ===== REPORT GENERATION FUNCTIONS =====
 
-async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, Any]) -> str:
+async def format_report_with_ai(llm_response: str, analysis_data: Dict[str, Any]) -> str:
     """
-    Format the LLM response into a clean, professional report using Qwen via OpenRouter.
+    Format the LLM response into a clean, professional report using AI via OpenRouter.
     """
     try:
         # Try to get API key from environment variable first
@@ -78,6 +78,7 @@ async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, An
         
         Transform the following raw analysis data into a clean, aesthetically appealing, and insightful report.
         
+        
         **REPORT REQUIREMENTS:**
         1. Create a professional executive summary
         2. Extract and highlight key insights and findings
@@ -99,6 +100,9 @@ async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, An
                     Return the report in clean HTML format with the following structure:
                     
                     <div class="report-container">
+                        <div class="ai-notice">
+                            🤖 AI-GENERATED REPORT - This report was generated using artificial intelligence
+                        </div>
                         <div class="header">
                             <h1>ElectionWatch Security Analysis Report</h1>
                             <div class="metadata">
@@ -159,6 +163,13 @@ async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, An
         ssl_context.check_hostname = False
         ssl_context.verify_mode = ssl.CERT_NONE
         
+        # Additional SSL configuration for macOS
+        try:
+            import certifi
+            ssl_context.load_verify_locations(certifi.where())
+        except ImportError:
+            pass
+        
         connector = aiohttp.TCPConnector(ssl=ssl_context)
         
         async with aiohttp.ClientSession(connector=connector) as session:
@@ -168,7 +179,7 @@ async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, An
             }
             
             payload = {
-                "model": "qwen/qwen3-235b-a22b-2507:free",
+                "model": "google/gemini-2.5-flash",
                 "messages": [
                     {
                         "role": "system", 
@@ -182,6 +193,7 @@ async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, An
             
             async with session.post("https://openrouter.ai/api/v1/chat/completions", 
                                   headers=headers, json=payload) as response:
+                
                 if response.status == 200:
                     result = await response.json()
                     formatted_report = result["choices"][0]["message"]["content"]
@@ -189,6 +201,16 @@ async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, An
                     # Add CSS styling to make the report more visually appealing
                     css_styles = """
                     <style>
+                    .ai-notice {
+                        background: #e3f2fd;
+                        border: 1px solid #2196f3;
+                        border-radius: 5px;
+                        padding: 10px;
+                        margin-bottom: 20px;
+                        text-align: center;
+                        color: #1976d2;
+                        font-weight: bold;
+                    }
                     .report-container {
                         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                         max-width: 1200px;
@@ -289,7 +311,7 @@ async def format_report_with_qwen(llm_response: str, analysis_data: Dict[str, An
                     return llm_response
                     
     except Exception as e:
-        logger.error(f"Error formatting report with Qwen: {e}")
+        logger.error(f"Error formatting report with AI: {e}")
         return llm_response
 
 def generate_pdf_report(report_content: str, analysis_id: str) -> BytesIO:
@@ -2641,7 +2663,7 @@ def create_app():
     @app.get("/api/reports/generate/{analysis_id}")
     async def generate_formatted_report(analysis_id: str):
         """
-        Generate a formatted report using Qwen LLM for the specified analysis.
+        Generate a formatted report using AI for the specified analysis.
         """
         try:
             # Get the analysis data from MongoDB storage
@@ -2675,8 +2697,8 @@ def create_app():
                     "error": "No LLM response found in analysis data"
                 }
             
-            # Format the report using Qwen
-            formatted_report = await format_report_with_qwen(llm_response, analysis_data)
+            # Format the report using AI
+            formatted_report = await format_report_with_ai(llm_response, analysis_data)
             
             return {
                 "success": True,
@@ -2723,8 +2745,8 @@ def create_app():
             if not llm_response:
                 raise HTTPException(status_code=400, detail="No LLM response found in analysis data")
             
-            # Format the report using Qwen
-            formatted_report = await format_report_with_qwen(llm_response, analysis_data)
+            # Format the report using AI
+            formatted_report = await format_report_with_ai(llm_response, analysis_data)
             
             # Generate PDF
             pdf_buffer = generate_pdf_report(formatted_report, analysis_id)
