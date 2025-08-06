@@ -868,11 +868,12 @@ def create_app():
                     end_time = datetime.now()
                     processing_time = (end_time - start_time).total_seconds()
                     
-                    # Check if LLM response is already valid JSON and return it directly
+                    # Check if LLM response is already valid JSON and store it
+                    agent_json_response = None
                     try:
                         parsed_json = json.loads(llm_response)
-                        logger.info("✅ Agent returned valid JSON, returning directly")
-                        return parsed_json
+                        logger.info("✅ Agent returned valid JSON, will store and return")
+                        agent_json_response = parsed_json
                     except json.JSONDecodeError:
                         logger.info("Agent response not in JSON format, extracting data dynamically")
                         
@@ -883,7 +884,7 @@ def create_app():
                             try:
                                 extracted_json = json.loads(json_match.group())
                                 logger.info("✅ Extracted JSON from response")
-                                return extracted_json
+                                agent_json_response = extracted_json
                             except json.JSONDecodeError:
                                 logger.info("Failed to parse extracted JSON")
                     
@@ -1108,6 +1109,18 @@ def create_app():
                     
                     # Return the final report
                     return report
+                    
+                    # Handle agent JSON responses
+                    if agent_json_response:
+                        # Store the agent JSON response
+                        try:
+                            await store_analysis_result(analysis_id, agent_json_response)
+                            logger.info(f'✅ Agent JSON analysis stored with ID: {analysis_id}')
+                        except Exception as store_error:
+                            logger.warning(f'⚠️ Failed to store agent JSON analysis: {store_error}')
+                        
+                        # Return the agent JSON response
+                        return agent_json_response
                     
                 except Exception as e:
                     raise HTTPException(
