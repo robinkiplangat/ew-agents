@@ -174,12 +174,14 @@ class ElectionWatchReportTemplate:
             }
 
 # Utility functions for backwards compatibility and easy access
-def get_analysis_template(content_type: str = "text", analysis_depth: str = "comprehensive") -> dict:
+def get_analysis_template(content_type: Optional[str] = None, analysis_depth: Optional[str] = None) -> dict:
     """Get the unified analysis template with optional parameters"""
     return ElectionWatchReportTemplate.get_analysis_template()
 
-def create_analysis_report(content_type: str = "text", analysis_depth: str = "standard", **kwargs) -> dict:
+def create_analysis_report(content_type: Optional[str] = None, analysis_depth: Optional[str] = None, **kwargs) -> dict:
     """Create analysis report with provided data"""
+    content_type = content_type or "text"
+    analysis_depth = analysis_depth or "standard"
     return ElectionWatchReportTemplate.create_analysis_report(content_type, analysis_depth, **kwargs)
 
 def export_analysis_report(report_data: dict) -> dict:

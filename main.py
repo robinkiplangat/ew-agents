@@ -157,22 +157,7 @@ async def format_report_with_ai(llm_response: str, analysis_data: Dict[str, Any]
         Create a report that would be suitable for presentation to election officials, security teams, and government stakeholders.
         """
         
-        # Create SSL context to handle certificate issues
-        import ssl
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
-        
-        # Additional SSL configuration for macOS
-        try:
-            import certifi
-            ssl_context.load_verify_locations(certifi.where())
-        except ImportError:
-            pass
-        
-        connector = aiohttp.TCPConnector(ssl=ssl_context)
-        
-        async with aiohttp.ClientSession(connector=connector) as session:
+        async with aiohttp.ClientSession() as session:
             headers = {
                 "Authorization": f"Bearer {openrouter_api_key}",
                 "Content-Type": "application/json"
@@ -466,369 +451,6 @@ def generate_pdf_report(report_content: str, analysis_id: str) -> BytesIO:
         buffer.seek(0)
         return buffer
 
-def create_html_template() -> str:
-    """
-    Create the HTML template for the reports view page.
-    """
-    return """
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ElectionWatch - View Reports</title>
-        <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-            
-            body {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
-                padding: 20px;
-            }
-            
-            .container {
-                max-width: 1200px;
-                margin: 0 auto;
-                background: white;
-                border-radius: 15px;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                overflow: hidden;
-            }
-            
-            .header {
-                background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-                color: white;
-                padding: 30px;
-                text-align: center;
-            }
-            
-            .header h1 {
-                font-size: 2.5em;
-                margin-bottom: 10px;
-                font-weight: 300;
-            }
-            
-            .header p {
-                font-size: 1.1em;
-                opacity: 0.9;
-            }
-            
-            .content {
-                padding: 40px;
-            }
-            
-            .form-section {
-                background: #f8f9fa;
-                padding: 30px;
-                border-radius: 10px;
-                margin-bottom: 30px;
-                border: 1px solid #e9ecef;
-            }
-            
-            .form-group {
-                margin-bottom: 20px;
-            }
-            
-            label {
-                display: block;
-                margin-bottom: 8px;
-                font-weight: 600;
-                color: #2c3e50;
-            }
-            
-            select, button {
-                width: 100%;
-                padding: 12px 15px;
-                border: 2px solid #ddd;
-                border-radius: 8px;
-                font-size: 16px;
-                transition: all 0.3s ease;
-            }
-            
-            select:focus {
-                outline: none;
-                border-color: #667eea;
-                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            }
-            
-            .btn-primary {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                border: none;
-                cursor: pointer;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-            }
-            
-            .btn-primary:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-            }
-            
-            .btn-secondary {
-                background: #6c757d;
-                color: white;
-                border: none;
-                cursor: pointer;
-                font-weight: 600;
-                margin-top: 10px;
-            }
-            
-            .btn-secondary:hover {
-                background: #5a6268;
-            }
-            
-            .report-section {
-                margin-top: 30px;
-                display: none;
-            }
-            
-            .report-content {
-                background: white;
-                border: 1px solid #e9ecef;
-                border-radius: 10px;
-                padding: 30px;
-                margin-top: 20px;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            }
-            
-            .loading {
-                text-align: center;
-                padding: 40px;
-                color: #6c757d;
-            }
-            
-            .error {
-                background: #f8d7da;
-                color: #721c24;
-                padding: 15px;
-                border-radius: 8px;
-                margin-top: 20px;
-                border: 1px solid #f5c6cb;
-            }
-            
-            .success {
-                background: #d4edda;
-                color: #155724;
-                padding: 15px;
-                border-radius: 8px;
-                margin-top: 20px;
-                border: 1px solid #c3e6cb;
-            }
-            
-            .report-actions {
-                margin-top: 20px;
-                display: flex;
-                gap: 10px;
-                flex-wrap: wrap;
-            }
-            
-            .report-actions button {
-                flex: 1;
-                min-width: 150px;
-            }
-            
-            @media (max-width: 768px) {
-                .content {
-                    padding: 20px;
-                }
-                
-                .header h1 {
-                    font-size: 2em;
-                }
-                
-                .report-actions {
-                    flex-direction: column;
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>📊 ElectionWatch Reports</h1>
-                <p>View and download analysis reports from our database</p>
-            </div>
-            
-            <div class="content">
-                <div class="form-section">
-                    <h2 style="margin-bottom: 20px; color: #2c3e50;">Select Report</h2>
-                    
-                    <div class="form-group">
-                        <label for="reportSelect">Available Reports:</label>
-                        <select id="reportSelect">
-                            <option value="">-- Select a report --</option>
-                        </select>
-                    </div>
-                    
-                    <button class="btn-primary" onclick="viewReport()">View Report</button>
-                </div>
-                
-                <div id="reportSection" class="report-section">
-                    <div id="loading" class="loading" style="display: none;">
-                        <h3>🔄 Generating Report...</h3>
-                        <p>Please wait while we format your report with AI assistance.</p>
-                    </div>
-                    
-                    <div id="error" class="error" style="display: none;"></div>
-                    
-                    <div id="reportContent" class="report-content" style="display: none;"></div>
-                    
-                    <div id="reportActions" class="report-actions" style="display: none;">
-                        <button class="btn-secondary" onclick="downloadPDF()">📄 Download PDF</button>
-                        <button class="btn-secondary" onclick="printReport()">🖨️ Print Report</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <script>
-            let currentAnalysisId = null;
-            
-            // Load available reports on page load
-            window.onload = function() {
-                loadAvailableReports();
-            };
-            
-            async function loadAvailableReports() {
-                try {
-                    const response = await fetch('/api/reports/available');
-                    const data = await response.json();
-                    
-                    const select = document.getElementById('reportSelect');
-                    select.innerHTML = '<option value="">-- Select a report --</option>';
-                    
-                    data.reports.forEach(report => {
-                        const option = document.createElement('option');
-                        option.value = report.analysis_id;
-                        option.textContent = `${report.analysis_id} - ${report.date_analyzed} (${report.analysis_type})`;
-                        select.appendChild(option);
-                    });
-                } catch (error) {
-                    console.error('Error loading reports:', error);
-                    showError('Failed to load available reports');
-                }
-            }
-            
-            async function viewReport() {
-                const analysisId = document.getElementById('reportSelect').value;
-                if (!analysisId) {
-                    showError('Please select a report first');
-                    return;
-                }
-                
-                currentAnalysisId = analysisId;
-                showLoading();
-                hideError();
-                hideReport();
-                
-                try {
-                    const response = await fetch(`/api/reports/generate/${analysisId}`);
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        showReport(data.formatted_report);
-                    } else {
-                        showError(data.error || 'Failed to generate report');
-                    }
-                } catch (error) {
-                    console.error('Error generating report:', error);
-                    showError('Failed to generate report');
-                }
-            }
-            
-            function showLoading() {
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('reportSection').style.display = 'block';
-            }
-            
-            function hideLoading() {
-                document.getElementById('loading').style.display = 'none';
-            }
-            
-            function showError(message) {
-                document.getElementById('error').textContent = message;
-                document.getElementById('error').style.display = 'block';
-                document.getElementById('reportSection').style.display = 'block';
-                hideLoading();
-            }
-            
-            function hideError() {
-                document.getElementById('error').style.display = 'none';
-            }
-            
-            function showReport(content) {
-                document.getElementById('reportContent').innerHTML = content;
-                document.getElementById('reportContent').style.display = 'block';
-                document.getElementById('reportActions').style.display = 'flex';
-                document.getElementById('reportSection').style.display = 'block';
-                hideLoading();
-            }
-            
-            function hideReport() {
-                document.getElementById('reportContent').style.display = 'none';
-                document.getElementById('reportActions').style.display = 'none';
-            }
-            
-            async function downloadPDF() {
-                if (!currentAnalysisId) return;
-                
-                try {
-                    const response = await fetch(`/api/reports/download/${currentAnalysisId}`);
-                    if (response.ok) {
-                        const blob = await response.blob();
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `electionwatch_report_${currentAnalysisId}.pdf`;
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        document.body.removeChild(a);
-                    } else {
-                        showError('Failed to download PDF');
-                    }
-                } catch (error) {
-                    console.error('Error downloading PDF:', error);
-                    showError('Failed to download PDF');
-                }
-            }
-            
-            function printReport() {
-                const content = document.getElementById('reportContent').innerHTML;
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(`
-                    <html>
-                        <head>
-                            <title>ElectionWatch Report</title>
-                            <style>
-                                body { font-family: Arial, sans-serif; margin: 20px; }
-                                h1, h2, h3 { color: #2c3e50; }
-                                .header { text-align: center; margin-bottom: 30px; }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="header">
-                                <h1>ElectionWatch Analysis Report</h1>
-                            </div>
-                            ${content}
-                        </body>
-                    </html>
-                `);
-                printWindow.document.close();
-                printWindow.print();
-            }
-        </script>
-    </body>
-    </html>
-    """
-
 # Configuration following ADK standards
 SESSION_SERVICE_URI = "sqlite:///./sessions.db"
 ALLOWED_ORIGINS = [
@@ -916,907 +538,10 @@ def create_app():
         web=SERVE_WEB_INTERFACE,
     )
     
+    templates = Jinja2Templates(directory="ew_agents/templates")
+    
     # ===== ELECTIONWATCH CUSTOM ENDPOINTS =====
     
-    @app.post("/AnalysePosts")
-    async def analyze_posts(
-        text: Optional[str] = Form(None),
-        files: List[UploadFile] = File(default=[]),
-        analysis_type: str = Form("misinformation_detection"),
-        priority: str = Form("medium"),
-        source: str = Form("api_upload"),
-        metadata: str = Form("{}")
-    ):
-        """
-        Analyze posts from various sources for election-related insights.
-        
-        - **text**: Direct text input for analysis
-        - **files**: Upload files (CSV, text, images) for analysis
-        - **analysis_type**: Type of analysis to perform
-        - **priority**: Analysis priority (low, medium, high, critical)
-        - **source**: Source identifier
-        - **metadata**: Additional metadata as JSON string
-        """
-        start_time = datetime.now()
-        analysis_id = f"analysis_{int(start_time.timestamp())}"
-        
-        try:
-            # Parse metadata safely
-            try:
-                metadata_dict = json.loads(metadata) if metadata else {}
-            except json.JSONDecodeError:
-                metadata_dict = {"parsing_error": "Invalid JSON in metadata"}
-            
-            # Collect all text content
-            all_text = text or ""
-            processed_files = []
-            
-            # Process uploaded files
-            for file in files:
-                if file.filename:
-                    try:
-                        content = await file.read()
-                        file_info = {
-                            "filename": file.filename,
-                            "content_type": file.content_type,
-                            "size_bytes": len(content)
-                        }
-                        
-                        # Handle different file types
-                        if file.content_type in ["text/csv", "application/csv"]:
-                            csv_text = content.decode('utf-8')
-                            all_text += f"\n\nCSV file '{file.filename}':\n{csv_text}"
-                            file_info["processed"] = "csv_content"
-                            
-                        elif file.content_type and file.content_type.startswith("text/"):
-                            text_content = content.decode('utf-8')
-                            all_text += f"\n\nFile '{file.filename}':\n{text_content}"
-                            file_info["processed"] = "text_content"
-                            
-                        elif file.content_type and file.content_type.startswith("image/"):
-                            # Enhanced multimodal image analysis
-                            try:
-                                import base64
-                                from ew_agents.data_eng_tools import extract_text_from_image
-                                
-                                # Convert image to base64 for processing
-                                image_base64 = base64.b64encode(content).decode('utf-8')
-                                
-                                # Process image with multimodal analysis
-                                image_analysis = extract_text_from_image(
-                                    image_data=image_base64,
-                                    language_hint=metadata_dict.get("language", "en")
-                                )
-                                
-                                if image_analysis.get("success"):
-                                    file_info["processed"] = "multimodal_analysis"
-                                    file_info["analysis_results"] = {
-                                        "extracted_text": image_analysis.get("extracted_text", ""),
-                                        "content_analysis": image_analysis.get("content_analysis", ""),
-                                        "political_analysis": image_analysis.get("political_analysis", ""),
-                                        "confidence_score": image_analysis.get("confidence_score", 0.0),
-                                        "model_used": image_analysis.get("model_used", "placeholder")
-                                    }
-                                    
-                                    # Add extracted text to overall analysis
-                                    extracted_text = image_analysis.get("extracted_text", "")
-                                    if extracted_text and not extracted_text.startswith("[TEXT EXTRACTION]"):
-                                        all_text += f"\n\nImage '{file.filename}' extracted text:\n{extracted_text}"
-                                    
-                                    # Add political analysis to overall analysis
-                                    political_analysis = image_analysis.get("political_analysis", "")
-                                    if political_analysis and not political_analysis.startswith("[POLITICAL ANALYSIS]"):
-                                        all_text += f"\n\nImage '{file.filename}' political content:\n{political_analysis}"
-                                    
-                                else:
-                                    file_info["processed"] = "metadata_only"
-                                    file_info["note"] = f"Image analysis failed: {image_analysis.get('error', 'Unknown error')}"
-                                    
-                            except Exception as e:
-                                file_info["processed"] = "metadata_only"
-                                file_info["note"] = f"Image processing error: {str(e)}"
-                            
-                        elif file.content_type and file.content_type.startswith("video/"):
-                            # Enhanced multimodal video analysis
-                            try:
-                                import tempfile
-                                import os
-                                from ew_agents.data_eng_tools import extract_audio_transcript_from_video
-                                
-                                # Save video to temporary file for processing
-                                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
-                                    temp_video.write(content)
-                                    temp_video_path = temp_video.name
-                                
-                                # Process video with multimodal analysis
-                                video_analysis = extract_audio_transcript_from_video(
-                                    video_data=temp_video_path,
-                                    language_hint=metadata_dict.get("language", "en")
-                                )
-                                
-                                # Clean up temporary file
-                                try:
-                                    os.unlink(temp_video_path)
-                                except:
-                                    pass
-                                
-                                if video_analysis.get("success"):
-                                    file_info["processed"] = "multimodal_analysis"
-                                    file_info["analysis_results"] = {
-                                        "transcript": video_analysis.get("transcript", ""),
-                                        "political_analysis": video_analysis.get("political_analysis", ""),
-                                        "confidence_score": video_analysis.get("confidence_score", 0.0),
-                                        "model_used": video_analysis.get("model_used", "placeholder"),
-                                        "video_metadata": video_analysis.get("video_metadata", {})
-                                    }
-                                    
-                                    # Add transcript to overall analysis
-                                    transcript = video_analysis.get("transcript", "")
-                                    if transcript and not transcript.startswith("[TRANSCRIPT PROCESSING]"):
-                                        all_text += f"\n\nVideo '{file.filename}' transcript:\n{transcript}"
-                                    
-                                    # Add political analysis to overall analysis
-                                    political_analysis = video_analysis.get("political_analysis", "")
-                                    if political_analysis and not political_analysis.startswith("[POLITICAL ANALYSIS]"):
-                                        all_text += f"\n\nVideo '{file.filename}' political content:\n{political_analysis}"
-                                    
-                                else:
-                                    file_info["processed"] = "metadata_only"
-                                    file_info["note"] = f"Video analysis failed: {video_analysis.get('error', 'Unknown error')}"
-                                    
-                            except Exception as e:
-                                file_info["processed"] = "metadata_only"
-                                file_info["note"] = f"Video processing error: {str(e)}"
-                                
-                        else:
-                            file_info["note"] = f"File type {file.content_type} - processed as metadata only"
-                            file_info["processed"] = "metadata_only"
-                        
-                        processed_files.append(file_info)
-                        
-                    except Exception as e:
-                        processed_files.append({
-                            "filename": file.filename,
-                            "error": f"File processing error: {str(e)}"
-                        })
-            
-            # Enhanced multimodal analysis when multiple content types are present
-            multimodal_analysis = None
-            if len([f for f in processed_files if f.get("processed") == "multimodal_analysis"]) > 1:
-                try:
-                    from ew_agents.data_eng_tools import analyze_multimodal_content
-                    
-                    # Prepare content data for multimodal analysis
-                    content_data = {"text": all_text}
-                    
-                    # Add image content if present
-                    image_files = [f for f in processed_files if f.get("processed") == "multimodal_analysis" and f.get("content_type", "").startswith("image/")]
-                    if image_files:
-                        # Use the first image for multimodal analysis (could be enhanced to handle multiple)
-                        content_data["image"] = image_files[0].get("analysis_results", {}).get("extracted_text", "")
-                    
-                    # Add video content if present
-                    video_files = [f for f in processed_files if f.get("processed") == "multimodal_analysis" and f.get("content_type", "").startswith("video/")]
-                    if video_files:
-                        # Use the first video for multimodal analysis
-                        content_data["video"] = video_files[0].get("analysis_results", {}).get("transcript", "")
-                    
-                    # Run comprehensive multimodal analysis
-                    multimodal_analysis = analyze_multimodal_content(
-                        content_data=content_data,
-                        content_type="mixed"
-                    )
-                    
-                    # Add multimodal insights to text analysis
-                    if multimodal_analysis.get("success"):
-                        synthesis = multimodal_analysis.get("synthesis", {})
-                        risk_assessment = multimodal_analysis.get("risk_assessment", {})
-                        political_entities = multimodal_analysis.get("political_entities", [])
-                        
-                        all_text += f"\n\n=== MULTIMODAL ANALYSIS INSIGHTS ===\n"
-                        all_text += f"Overall Sentiment: {synthesis.get('overall_sentiment', 'neutral')}\n"
-                        all_text += f"Key Themes: {', '.join(synthesis.get('key_themes', []))}\n"
-                        all_text += f"Risk Level: {risk_assessment.get('overall_risk_level', 'low')}\n"
-                        all_text += f"Risk Factors: {', '.join(risk_assessment.get('risk_factors', []))}\n"
-                        
-                        if political_entities:
-                            all_text += f"Political Entities: {', '.join([e.get('text', '') for e in political_entities])}\n"
-                        
-                        if risk_assessment.get("recommendations"):
-                            all_text += f"Recommendations: {'; '.join(risk_assessment.get('recommendations', []))}\n"
-                        
-                except Exception as e:
-                    logger.error(f"Multimodal analysis failed: {e}")
-                    multimodal_analysis = {"success": False, "error": str(e)}
-            
-            # Use ADK standard endpoint to run analysis
-            if all_text.strip():
-                # Use proper ADK Runner APIs
-                try:
-                    from ew_agents.agent import root_agent
-                    from google.adk.runners import InMemoryRunner
-                    from google.genai import types
-                    
-                    # Create runner properly (Python ADK takes only agent parameter)
-                    runner = InMemoryRunner(root_agent)
-                    
-                    # Create proper ADK Content object
-                    # Use proper ADK Content object
-                    user_content = types.Content(
-                        role="user",
-                        parts=[
-                            types.Part(text=f"Analyze this content for election-related misinformation, narratives, and risks. Process both text and any CSV data thoroughly: {all_text} Metadata: {json.dumps(metadata_dict)}")]
-                    )
-                    
-                    # Generate unique session ID and create session
-                    import uuid
-                    session_id = f"analysis_{uuid.uuid4().hex[:8]}"
-                    user_id = "api_user"
-                    
-                    # Create session first if needed (ADK should auto-create, but let's be explicit)
-                    try:
-                        session = await runner.session_service.create_session(
-                            app_name=runner.app_name,
-                            user_id=user_id,
-                            session_id=session_id
-                        )
-                        logger.info(f"Created session: {session_id}")
-                    except Exception as e:
-                        logger.info(f"Session creation note: {e}, proceeding with run_async")
-                    
-                    # Run the agent properly with user_id, session_id, and new_message
-                    analysis_events = []
-                    async for event in runner.run_async(
-                        user_id=user_id,
-                        session_id=session_id,
-                        new_message=user_content
-                    ):
-                        analysis_events.append(event)
-                        logger.info(f"ADK Event: {event.author if hasattr(event, 'author') else 'unknown'}")
-                    
-                    # Extract final response from events
-                    analysis_text = "ElectionWatch Analysis Completed"
-                    for event in reversed(analysis_events):  # Check from last to first
-                        if hasattr(event, 'content') and event.content and event.content.parts:
-                            analysis_text = event.content.parts[0].text
-                            break
-                        elif hasattr(event, 'is_final_response') and event.is_final_response():
-                            if hasattr(event, 'content') and event.content:
-                                analysis_text = event.content.parts[0].text if event.content.parts else str(event.content)
-                            break
-                    
-                    logger.info(f"Final analysis result: {analysis_text[:200]}...")
-                    
-                    # Check if the workflow completed all agents (look for specific indicators)
-                    # Check for key workflow indicators (lexicon and trends are optional)
-                    key_indicators = [
-                        "ElectionWatch analysis workflow",
-                        "DataEngAgent: Extraction complete",
-                        "OsintAgent: Analysis complete",
-                        "✓ OsintAgent: Analysis complete",  # Handle checkmark version
-                        "Narrative Classification",  # OsintAgent output indicator
-                        "Political Actors and Their Roles"  # OsintAgent output indicator
-                    ]
-                    workflow_completed = any(phrase in analysis_text for phrase in key_indicators)
-                    
-                    if workflow_completed:
-                        logger.info("🔥 Full workflow detected, generating ElectionWatch template")
-                        try:
-                            # Import and call the template function directly
-                            sys.path.append('ew_agents')
-                            from ew_agents.report_templates import get_analysis_template
-                            
-                            # Build template from analysis_text instead of empty template
-                            template_result = {
-                                "report_metadata": {
-                                    "report_id": analysis_id,
-                                    "analysis_timestamp": datetime.now().isoformat(),
-                                    "report_type": "analysis", 
-                                    "content_type": metadata_dict.get("content_type", "text_post"),
-                                    "analysis_depth": "comprehensive"
-                                },
-                                "narrative_classification": {},  # Will be populated from analysis_text
-                                "actors": [],  # Will be populated from analysis_text  
-                                "lexicon_terms": [],  # Will be populated from analysis_text
-                                "risk_level": "medium",
-                                "date_analyzed": datetime.now().isoformat(),
-                                "recommendations": [],
-                                "analysis_insights": {}
-                            }
-                            
-                            # ENHANCED: Use Knowledge Base Integration for OsintAgent refinement
-                            logger.info('🔍 Refining OsintAgent analysis with knowledge base integration')
-                            
-                            try:
-                                # Import knowledge base functions
-                                from ew_agents.knowledge_retrieval import search_knowledge, analyze_content
-                                
-                                # Perform semantic search for narrative classification using OsintAgent output
-                                narrative_search = await search_knowledge(analysis_text, collections=['narratives'])
-                                logger.info(f'📚 Knowledge base narrative search: {len(narrative_search.get("narratives", {}).get("source_nodes", []))} matches found')
-                                
-                                # Extract narrative classification from knowledge base results
-                                if narrative_search.get('narratives', {}).get('source_nodes'):
-                                    best_narrative = narrative_search['narratives']['source_nodes'][0]
-                                    narrative_meta = best_narrative.get('metadata', {})
-                                    confidence = best_narrative.get('score', 0.5)
-                                    
-                                    template_result['narrative_classification'] = {
-                                        "theme": narrative_meta.get('category', 'general_political'),
-                                        "threat_level": "medium" if confidence > 0.7 else "low",
-                                        "details": narrative_meta.get('scenario', 'Content analyzed using knowledge base enhanced OsintAgent'),
-                                        "confidence_score": confidence,
-                                        "alternative_themes": narrative_meta.get('tags', [])[:3],  # Take first 3 tags
-                                        "threat_indicators": narrative_meta.get('key_indicators_for_ai', [])[:5],  # Take first 5 indicators
-                                        "knowledge_base_enhanced": True,
-                                        "osint_agent_integration": True
-                                    }
-                                    logger.info(f'✅ KB-enhanced narrative: {narrative_meta.get("category", "unknown")} (confidence: {confidence:.2f})')
-                                else:
-                                    # Fallback to OsintAgent-based classification with KB structure
-                                    template_result['narrative_classification'] = {
-                                        "theme": "candidate_support_campaigning" if "Candidate Support" in analysis_text else "general_political",
-                                        "threat_level": "medium" if any(word in analysis_text.lower() for word in ["threat", "risk", "violence"]) else "low",
-                                        "details": "OsintAgent analysis enhanced with knowledge base methodology",
-                                        "confidence_score": 0.7,
-                                        "alternative_themes": ["political_engagement", "voter_mobilization"],
-                                        "threat_indicators": [],
-                                        "knowledge_base_enhanced": False,
-                                        "osint_agent_integration": True
-                                    }
-                                    logger.info('⚠️ No KB narrative matches, using OsintAgent-based classification')
-                            
-                            except Exception as kb_error:
-                                logger.error(f'❌ Knowledge base integration failed in OsintAgent workflow: {kb_error}')
-                                # Fallback to original hardcoded logic
-                                if "Support for Peter Obi and the Labour Party" in analysis_text:
-                                    template_result['narrative_classification'] = {
-                                        "theme": "political_campaigning_support",
-                                        "threat_level": "medium",
-                                        "details": "Content shows support and promotion for Peter Obi and Labour Party, with voter mobilization efforts",
-                                        "confidence_score": 0.8,
-                                        "alternative_themes": ["voter_mobilization", "political_engagement", "candidate_scrutiny"],
-                                        "threat_indicators": ["anecdotal_evidence", "subtle_criticism", "coordinated_amplification"],
-                                        "knowledge_base_enhanced": False,
-                                        "osint_agent_integration": True,
-                                        "fallback_reason": str(kb_error)[:100]
-                                    }
-                                elif "Narrative Classification" in analysis_text:
-                                    template_result['narrative_classification'] = {
-                                        "theme": "political_campaigning_support",
-                                        "threat_level": "medium",
-                                        "details": "Primary narratives revolve around support for Peter Obi and Labour Party, voter mobilization, and candidate scrutiny",
-                                        "confidence_score": 0.8,
-                                        "alternative_themes": ["voter_mobilization", "candidate_scrutiny"],
-                                        "threat_indicators": ["anecdotal_evidence", "health_vitality_disinformation", "breaking_news_framing"],
-                                        "knowledge_base_enhanced": False,
-                                        "osint_agent_integration": True,
-                                        "fallback_reason": str(kb_error)[:100]
-                                    }
-                            
-                            # ENHANCED: Extract Lexicon Terms using Knowledge Base Integration
-                            logger.info('📖 Enhancing OsintAgent lexicon extraction with knowledge base')
-                            lexicon_terms = []
-                            
-                            try:
-                                # Perform semantic search for lexicon terms using OsintAgent output
-                                lexicon_search = await search_knowledge(analysis_text, collections=['hate_speech_lexicon'])
-                                logger.info(f'📖 Knowledge base lexicon search: {len(lexicon_search.get("hate_speech_lexicon", {}).get("source_nodes", []))} matches found')
-                                
-                                # Add knowledge base lexicon matches
-                                if lexicon_search.get('hate_speech_lexicon', {}).get('source_nodes'):
-                                    for lexicon_node in lexicon_search['hate_speech_lexicon']['source_nodes'][:3]:  # Top 3 matches
-                                        lexicon_meta = lexicon_node.get('metadata', {})
-                                        lexicon_terms.append({
-                                            "term": lexicon_meta.get('term', 'unknown'),
-                                            "category": lexicon_meta.get('category', 'general'),
-                                            "context": "knowledge_base_match",
-                                            "confidence_score": lexicon_node.get('score', 0.5),
-                                            "language": lexicon_meta.get('language', 'en'),
-                                            "severity": lexicon_meta.get('severity', 'medium'),
-                                            "definition": lexicon_meta.get('definition', 'Term from knowledge base'),
-                                            "source": "knowledge_base_enhanced_osint"
-                                        })
-                                    logger.info(f'✅ Added {len(lexicon_terms)} KB-matched lexicon terms')
-                                
-                            except Exception as lexicon_kb_error:
-                                logger.warning(f'⚠️ Knowledge base lexicon search failed: {lexicon_kb_error}')
-                            
-                            # Always add OsintAgent-detected terms (enhanced with KB methodology)
-                            if "PVC" in analysis_text:
-                                lexicon_terms.append({
-                                    "term": "PVC",
-                                    "category": "voter_mobilization",
-                                    "context": "osint_agent_extraction",
-                                    "confidence_score": 0.9,
-                                    "language": "en",
-                                    "severity": "low",
-                                    "definition": "Permanent Voter Card - Your PVC is your Power",
-                                    "source": "osint_agent_enhanced"
-                                })
-                            if "Obidients" in analysis_text or "#Obidients" in analysis_text:
-                                lexicon_terms.append({
-                                    "term": "Obidients",
-                                    "category": "political_movement",
-                                    "context": "osint_agent_extraction",
-                                    "confidence_score": 0.8,
-                                    "language": "en",
-                                    "severity": "low",
-                                    "definition": "Supporters of Peter Obi and Labour Party",
-                                    "source": "osint_agent_enhanced"
-                                })
-                            if "Labour Party" in analysis_text:
-                                lexicon_terms.append({
-                                    "term": "Labour Party",
-                                    "category": "political_party",
-                                    "context": "osint_agent_extraction",
-                                    "confidence_score": 0.9,
-                                    "language": "en",
-                                    "severity": "low",
-                                    "definition": "Political party in Nigerian elections",
-                                    "source": "osint_agent_enhanced"
-                                })
-                            if "Keke rider" in analysis_text:
-                                lexicon_terms.append({
-                                    "term": "Keke rider anecdote",
-                                    "category": "anecdotal_evidence",
-                                    "context": "osint_agent_extraction",
-                                    "confidence_score": 0.6,
-                                    "language": "en",
-                                    "severity": "medium",
-                                    "definition": "Repeated anecdote about Peter Obi's accessibility to common people",
-                                    "source": "osint_agent_enhanced"
-                                })
-                            
-                            # Ensure we always have lexicon terms for the report
-                            if not lexicon_terms:
-                                lexicon_terms = [{
-                                    "term": "election content",
-                                    "category": "general_political",
-                                    "context": "default_osint",
-                                    "confidence_score": 0.6,
-                                    "language": "en",
-                                    "severity": "low",
-                                    "definition": "General election-related content detected by OsintAgent",
-                                    "source": "osint_agent_fallback"
-                                }]
-                            
-                            template_result['lexicon_terms'] = lexicon_terms
-                            logger.info(f'✅ Final lexicon terms count: {len(lexicon_terms)} (KB + OsintAgent enhanced)')
-                            
-                            # ADD LLM RESPONSE to analysis_insights
-                            template_result['analysis_insights']['llm_response'] = analysis_text
-                            
-                            # ADD LLM RESPONSE to analysis_insights
-                            template_result['analysis_insights']['llm_response'] = analysis_text
-                            
-                            # ENHANCED: Generate Knowledge Base-Informed Recommendations
-                            logger.info('💡 Generating KB-enhanced recommendations for OsintAgent analysis')
-                            
-                            try:
-                                # Search for mitigation strategies based on narrative classification
-                                mitigation_search = await search_knowledge(
-                                    f"mitigation strategies for {template_result['narrative_classification'].get('theme', 'political content')}",
-                                    collections=['mitigations', 'disarm_techniques']
-                                )
-                                
-                                recommendations = []
-                                
-                                # Extract recommendations from knowledge base
-                                if mitigation_search:
-                                    for collection, results in mitigation_search.items():
-                                        if results.get('source_nodes'):
-                                            for node in results['source_nodes'][:2]:  # Top 2 recommendations per collection
-                                                mitigation_meta = node.get('metadata', {})
-                                                if collection == 'mitigations':
-                                                    mitigation_name = mitigation_meta.get('mitigation_name', '')
-                                                    if mitigation_name:
-                                                        recommendations.append(f"Apply {mitigation_name} strategy (KB-recommended)")
-                                                elif collection == 'disarm_techniques':
-                                                    technique_name = mitigation_meta.get('name', '')
-                                                    if technique_name:
-                                                        recommendations.append(f"Counter using {technique_name} approach (DISARM)")
-                                
-                                # Add threat-level specific recommendations based on narrative classification
-                                threat_level = template_result['narrative_classification'].get('threat_level', 'low')
-                                if threat_level == 'high':
-                                    recommendations.extend([
-                                        "Immediate escalation required based on KB analysis",
-                                        "Cross-reference with historical incident patterns",
-                                        "Monitor for coordinated amplification"
-                                    ])
-                                elif threat_level == 'medium':
-                                    recommendations.extend([
-                                        "Enhanced monitoring recommended by knowledge base",
-                                        "Track narrative evolution patterns",
-                                        "Apply standard verification protocols"
-                                    ])
-                                else:
-                                    recommendations.append("Standard monitoring protocols apply")
-                                
-                                # Add lexicon-specific recommendations
-                                if len(lexicon_terms) > 2:
-                                    recommendations.append(f"Monitor usage patterns of {len(lexicon_terms)} identified coded terms")
-                                
-                                # Fallback recommendations if KB search fails
-                                if not recommendations:
-                                    recommendations = [
-                                        "Monitor electoral fraud narratives",
-                                        "Track institutional pressure indicators", 
-                                        "Watch for violence escalation in mentioned locations",
-                                        "Verify claims through multiple sources"
-                                    ]
-                                
-                                template_result['recommendations'] = recommendations[:6]  # Limit to 6 recommendations
-                                template_result['risk_level'] = threat_level
-                                
-                                logger.info(f'✅ Generated {len(recommendations)} KB-enhanced recommendations')
-                                
-                            except Exception as rec_error:
-                                logger.warning(f'⚠️ KB recommendations failed, using fallback: {rec_error}')
-                                template_result['recommendations'] = [
-                                    "Monitor electoral fraud narratives",
-                                    "Track institutional pressure indicators", 
-                                    "Watch for violence escalation in mentioned locations",
-                                    "Verify claims through multiple sources"
-                                ]
-                                template_result['risk_level'] = "medium"
-                            
-                            # Enhance analysis_insights with comprehensive knowledge base findings
-                            if 'analysis_insights' not in template_result:
-                                template_result['analysis_insights'] = {}
-                            
-                            # Extract key findings from narrative search or use OsintAgent analysis
-                            kb_key_findings = "ElectionWatch OsintAgent analysis enhanced with knowledge base"
-                            if narrative_search and narrative_search.get('narratives', {}).get('response'):
-                                kb_key_findings = narrative_search['narratives']['response'][:400] + "..."
-                            
-                            template_result['analysis_insights'].update({
-                                "key_findings": kb_key_findings,
-                                "risk_factors": [
-                                    f"narrative_theme_{template_result['narrative_classification'].get('theme', 'unknown')}",
-                                    f"threat_level_{template_result['narrative_classification'].get('threat_level', 'unknown')}",
-                                    f"lexicon_terms_detected_{len(lexicon_terms)}",
-                                    "knowledge_base_enhanced_analysis"
-                                ],
-                                "recommendations": "Knowledge base enhanced monitoring and response strategies",
-                                "confidence_level": template_result['narrative_classification'].get('confidence_score', 0.7),
-                                "data_sources": [
-                                    "osint_agent_analysis", 
-                                    "knowledge_base_narratives", 
-                                    "semantic_lexicon_matching", 
-                                    "disarm_technique_integration"
-                                ],
-                                "knowledge_base_integration": {
-                                    "narrative_enhanced": template_result['narrative_classification'].get('knowledge_base_enhanced', False),
-                                    "lexicon_sources": list(set([term.get('source', 'unknown') for term in lexicon_terms])),
-                                    "recommendation_sources": ["mitigations", "disarm_techniques", "osint_agent"],
-                                    "confidence_boost": "knowledge_base_verified"
-                                }
-                            })
-                            
-                            # Store and return the complete template
-                            storage_success = await store_analysis_result(analysis_id, template_result)
-                            template_result.setdefault("analysis_insights", {}).setdefault("processing_metadata", {}).update({
-                                "analysis_id": analysis_id,
-                                "priority": priority,
-                                "agent_used": "ElectionWatchCoordinator",
-                                "files_info": processed_files,
-                                "storage_status": "stored" if storage_success else "failed"
-                            })
-                            
-                            logger.info("✅ ElectionWatch template generated successfully")
-                            return template_result
-                            
-                        except Exception as e:
-                            logger.error(f"❌ Template generation failed: {e}")
-                            # Fall through to generic format
-                    
-                    # Try to parse analysis_text as JSON (ElectionWatch template format)
-                    try:
-                        # Check if the agent returned a structured ElectionWatch report
-                        parsed_analysis = json.loads(analysis_text)
-                        if all(key in parsed_analysis for key in ['report_metadata', 'narrative_classification', 'actors', 'lexicon_terms']):
-                            logger.info("✅ Agent returned ElectionWatch template format, using directly")
-                            # Update metadata with actual processing info
-                            parsed_analysis['report_metadata'].update({
-                                "report_id": analysis_id,
-                                "analysis_timestamp": datetime.now().isoformat(),
-                                "content_source": source,
-                                "processing_time_seconds": (datetime.now() - start_time).total_seconds()
-                            })
-                            # Add storage status
-                            storage_success = await store_analysis_result(analysis_id, parsed_analysis)
-                            parsed_analysis.setdefault("analysis_insights", {}).setdefault("processing_metadata", {})["storage_status"] = "stored" if storage_success else "failed"
-                            return parsed_analysis
-                    except (json.JSONDecodeError, KeyError, TypeError):
-                        logger.info("Agent response not in ElectionWatch format, using fallback template")
-                    
-                    # Fallback: Generate unified ElectionWatch template format
-                    end_time = datetime.now()
-                    processing_time = (end_time - start_time).total_seconds()
-                    
-                    # Import and use the unified template
-                    sys.path.append('ew_agents')
-                    from ew_agents.report_templates import get_analysis_template
-                    analysis_result = get_analysis_template(content_type=metadata_dict.get("content_type", "text_post"), analysis_depth="standard")
-                    
-                    # Update with actual metadata
-                    analysis_result['report_metadata'].update({
-                        "report_id": analysis_id,
-                        "analysis_timestamp": end_time.isoformat(),
-                        "content_source": source,
-                        "processing_time_seconds": processing_time
-                    })
-                    
-                    # Populate with analysis data
-                    analysis_result['analysis_insights']['content_statistics'].update({
-                        "word_count": len(all_text.split()),
-                        "character_count": len(all_text),
-                        "language_detected": "en"
-                    })
-                    
-                    # Add processing metadata inside analysis_insights to match template structure
-                    analysis_result.setdefault("analysis_insights", {}).setdefault("processing_metadata", {}).update({
-                        "analysis_id": analysis_id,
-                        "priority": priority,
-                        "agent_used": "ElectionWatchCoordinator",
-                        "files_info": processed_files,
-                        "analysis_duration": processing_time,
-                        "storage_status": "stored"  # Will update this after storage attempt
-                    })
-                    
-                    # Add basic risk assessment
-                    analysis_result['risk_level'] = "Medium"
-                    analysis_result['narrative_classification'] = {
-                        "theme": "general_election_content",
-                        "threat_level": "low",
-                        "details": "Content analyzed using ElectionWatch AI system",
-                        "confidence_score": 0.85,
-                        "alternative_themes": [],
-                        "threat_indicators": []
-                    }
-                    
-                    # Add multimodal analysis results if available
-                    if multimodal_analysis and multimodal_analysis.get("success"):
-                        analysis_result['multimodal_analysis'] = {
-                            "synthesis": multimodal_analysis.get("synthesis", {}),
-                            "risk_assessment": multimodal_analysis.get("risk_assessment", {}),
-                            "political_entities": multimodal_analysis.get("political_entities", []),
-                            "misinformation_indicators": multimodal_analysis.get("misinformation_indicators", [])
-                        }
-                        
-                        # Update risk level based on multimodal analysis
-                        multimodal_risk = multimodal_analysis.get("risk_assessment", {}).get("overall_risk_level", "low")
-                        if multimodal_risk in ["high", "medium"]:
-                            analysis_result['risk_level'] = multimodal_risk.capitalize()
-                            analysis_result['narrative_classification']['threat_level'] = multimodal_risk
-                        
-                        # Add multimodal recommendations
-                        multimodal_recommendations = multimodal_analysis.get("risk_assessment", {}).get("recommendations", [])
-                        if multimodal_recommendations:
-                            analysis_result['recommendations'].extend(multimodal_recommendations)
-                    
-                    # Add file analysis results
-                    multimodal_files = [f for f in processed_files if f.get("processed") == "multimodal_analysis"]
-                    if multimodal_files:
-                        analysis_result['file_analysis'] = {
-                            "multimodal_files_processed": len(multimodal_files),
-                            "file_details": multimodal_files
-                        }
-                    
-                    # Add basic recommendations
-                    analysis_result['recommendations'] = [
-                        "Content analyzed using ElectionWatch AI system",
-                        f"Processed {len(processed_files)} uploaded files",
-                        f"Multimodal analysis applied to {len([f for f in processed_files if f.get('processed') == 'multimodal_analysis'])} files",
-                        "Monitor for similar content patterns"
-                    ]
-                    
-                    # Store in MongoDB for later retrieval with better error handling
-                    storage_success = await store_analysis_result(analysis_id, analysis_result)
-                    if not storage_success:
-                        logger.warning(f"⚠️ Failed to store analysis {analysis_id} in MongoDB, but analysis completed")
-                        # Update storage status
-                        analysis_result.setdefault("analysis_insights", {}).setdefault("processing_metadata", {})["storage_status"] = "failed"
-                    else:
-                        analysis_result.setdefault("analysis_insights", {}).setdefault("processing_metadata", {})["storage_status"] = "stored"
-                    
-                    return analysis_result
-                    
-                except Exception as e:
-                    raise HTTPException(
-                        status_code=500,
-                        detail=f"Agent processing error: {str(e)}"
-                    )
-            else:
-                raise HTTPException(
-                    status_code=400,
-                    detail="No content provided for analysis"
-                )
-                
-        except HTTPException:
-            raise
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Analysis processing error: {str(e)}"
-            )
-
-    @app.post("/get_raw_json")
-    async def get_raw_json(
-        text: str = Form(None),
-        files: List[UploadFile] = File(default=[]),
-        analysis_type: str = Form("misinformation_detection"),
-        priority: str = Form("medium"),
-        source: str = Form("api_upload"),
-        metadata: str = Form("{}")
-    ):
-        """
-        Get the raw JSON response from the LLM without any additional processing.
-        Returns the exact JSON structure that the agent produces.
-        """
-        start_time = datetime.now()
-        analysis_id = f"raw_json_{int(start_time.timestamp())}"
-        
-        try:
-            # Parse metadata safely
-            try:
-                metadata_dict = json.loads(metadata) if metadata else {}
-            except json.JSONDecodeError:
-                metadata_dict = {"parsing_error": "Invalid JSON in metadata"}
-            
-            # Collect all text content (same as original endpoint)
-            all_text = text or ""
-            processed_files = []
-            
-            # Process uploaded files (simplified version)
-            for file in files:
-                if file.filename:
-                    try:
-                        content = await file.read()
-                        file_info = {
-                            "filename": file.filename,
-                            "content_type": file.content_type,
-                            "size_bytes": len(content)
-                        }
-                        
-                        if file.content_type in ["text/csv", "application/csv"]:
-                            csv_text = content.decode('utf-8')
-                            all_text += f"\\n\\nCSV file '{file.filename}':\\n{csv_text}"
-                            file_info["processed"] = "csv_content"
-                        elif file.content_type and file.content_type.startswith("text/"):
-                            text_content = content.decode('utf-8')
-                            all_text += f"\\n\\nFile '{file.filename}':\\n{text_content}"
-                            file_info["processed"] = "text_content"
-                        else:
-                            file_info["processed"] = "metadata_only"
-                        
-                        processed_files.append(file_info)
-                        
-                    except Exception as e:
-                        processed_files.append({
-                            "filename": file.filename,
-                            "error": f"File processing error: {str(e)}"
-                        })
-            
-            # Run ADK analysis (same as original)
-            if all_text.strip():
-                try:
-                    from ew_agents.agent import root_agent
-                    from google.adk.runners import InMemoryRunner
-                    from google.genai import types
-                    
-                    runner = InMemoryRunner(root_agent)
-                    
-                    user_content = types.Content(
-                        role="user",
-                        parts=[
-                            types.Part(text=f"Analyze this content for election-related misinformation, narratives, and risks: {all_text} Metadata: {json.dumps(metadata_dict)}")]
-                    )
-                    
-                    import uuid
-                    session_id = f"raw_json_{uuid.uuid4().hex[:8]}"
-                    user_id = "raw_json_user"
-                    
-                    # Create session first if needed (ADK should auto-create, but let's be explicit)
-                    try:
-                        session = await runner.session_service.create_session(
-                            app_name=runner.app_name,
-                            user_id=user_id,
-                            session_id=session_id
-                        )
-                        logger.info(f"Created session: {session_id}")
-                    except Exception as e:
-                        logger.info(f"Session creation note: {e}, proceeding with run_async")
-                    
-                    # Run the agent
-                    analysis_events = []
-                    async for event in runner.run_async(
-                        user_id=user_id,
-                        session_id=session_id,
-                        new_message=user_content
-                    ):
-                        analysis_events.append(event)
-                        logger.info(f"ADK Event: {event.author if hasattr(event, 'author') else 'unknown'}")
-                    
-                    # Extract final response from events
-                    llm_response = "ElectionWatch Analysis Completed"
-                    for event in reversed(analysis_events):  # Check from last to first
-                        if hasattr(event, 'content') and event.content and event.content.parts:
-                            llm_response = event.content.parts[0].text
-                            break
-                        elif hasattr(event, 'is_final_response') and event.is_final_response():
-                            if hasattr(event, 'content') and event.content:
-                                llm_response = event.content.parts[0].text if event.content.parts else str(event.content)
-                            break
-                    
-                    logger.info(f"Final analysis result: {llm_response[:200]}...")
-                    
-                    end_time = datetime.now()
-                    processing_time = (end_time - start_time).total_seconds()
-                    
-                    # Try to parse as JSON and return the raw structure
-                    try:
-                        parsed_json = json.loads(llm_response)
-                        logger.info("✅ Agent returned valid JSON, returning raw structure")
-                        return {
-                            "success": True,
-                            "raw_json": parsed_json,
-                            "raw_text": llm_response,
-                            "metadata": {
-                                "analysis_id": analysis_id,
-                                "processing_time_seconds": processing_time,
-                                "content_length": len(all_text),
-                                "files_processed": len(processed_files)
-                            }
-                        }
-                    except json.JSONDecodeError:
-                        logger.info("Agent response not in JSON format, returning raw text")
-                        return {
-                            "success": False,
-                            "raw_text": llm_response,
-                            "error": "Response is not valid JSON",
-                            "metadata": {
-                                "analysis_id": analysis_id,
-                                "processing_time_seconds": processing_time,
-                                "content_length": len(all_text),
-                                "files_processed": len(processed_files)
-                            }
-                        }
-                    
-                except Exception as e:
-                    return {
-                        "success": False,
-                        "error": f"Analysis failed: {str(e)}",
-                        "raw_text": f"Error: {str(e)}",
-                        "metadata": {
-                            "analysis_id": analysis_id,
-                            "processing_time_seconds": (datetime.now() - start_time).total_seconds()
-                        }
-                    }
-            else:
-                return {
-                    "success": False,
-                    "error": "No content provided for analysis",
-                    "raw_text": "No content provided",
-                    "metadata": {
-                        "analysis_id": analysis_id,
-                        "processing_time_seconds": 0
-                    }
-                }
-                
-        except Exception as e:
-            return {
-                "success": False,
-                "error": f"Endpoint error: {str(e)}",
-                "raw_text": f"Error: {str(e)}",
-                "metadata": {
-                    "analysis_id": analysis_id,
-                    "processing_time_seconds": 0
-                }
-            }
-
     @app.post("/run_analysis")
     async def run_analysis(
         text: str = Form(None),
@@ -1844,11 +569,10 @@ def create_app():
             except json.JSONDecodeError:
                 metadata_dict = {"parsing_error": "Invalid JSON in metadata"}
             
-            # Collect all text content (same as original endpoint)
-            all_text = text or ""
+            # Initialize processed_files list
             processed_files = []
             
-            # Process uploaded files (simplified version)
+            # Process uploaded files (optimized version)
             for file in files:
                 if file.filename:
                     try:
@@ -1861,12 +585,14 @@ def create_app():
                         
                         if file.content_type in ["text/csv", "application/csv"]:
                             csv_text = content.decode('utf-8')
-                            all_text += f"\\n\\nCSV file '{file.filename}':\\n{csv_text}"
-                            file_info["processed"] = "csv_content"
+                            # Use optimized CSV processing instead of raw text concatenation
+                            file_info["processed"] = "csv_structured"
+                            file_info["csv_content"] = csv_text  # Store for structured processing
                         elif file.content_type and file.content_type.startswith("text/"):
                             text_content = content.decode('utf-8')
-                            all_text += f"\\n\\nFile '{file.filename}':\\n{text_content}"
-                            file_info["processed"] = "text_content"
+                            # Use optimized text processing
+                            file_info["processed"] = "text_optimized"
+                            file_info["text_content"] = text_content
                         else:
                             file_info["processed"] = "metadata_only"
                         
@@ -1877,6 +603,21 @@ def create_app():
                             "filename": file.filename,
                             "error": f"File processing error: {str(e)}"
                         })
+            
+            # Create optimized analysis content
+            if text:
+                all_text = text
+            elif processed_files:
+                # Use structured processing instead of raw concatenation
+                analysis_content = {
+                    "files": processed_files,
+                    "metadata": metadata_dict,
+                    "processing_optimized": True,
+                    "platform_detection": True
+                }
+                all_text = json.dumps(analysis_content, indent=2)
+            else:
+                all_text = ""
             
             # Run ADK analysis (same as original)
             if all_text.strip():
@@ -1918,18 +659,58 @@ def create_app():
                         analysis_events.append(event)
                         logger.info(f"ADK Event: {event.author if hasattr(event, 'author') else 'unknown'}")
                     
-                    # Extract final response from events
+                    # Extract final response from events with better debugging
                     llm_response = "ElectionWatch Analysis Completed"
-                    for event in reversed(analysis_events):  # Check from last to first
-                        if hasattr(event, 'content') and event.content and event.content.parts:
-                            llm_response = event.content.parts[0].text
-                            break
+                    logger.info(f"Total events received: {len(analysis_events)}")
+                    
+                    for i, event in enumerate(reversed(analysis_events)):  # Check from last to first
+                        logger.info(f"Checking event {len(analysis_events) - i}: {type(event).__name__}")
+                        
+                        # Check for content in the event
+                        if hasattr(event, 'content') and event.content:
+                            logger.info(f"Event has content: {type(event.content)}")
+                            if hasattr(event.content, 'parts') and event.content.parts:
+                                llm_response = event.content.parts[0].text
+                                logger.info(f"Found response in content.parts: {llm_response[:100]}...")
+                                break
+                            else:
+                                llm_response = str(event.content)
+                                logger.info(f"Found response in content: {llm_response[:100]}...")
+                                break
+                        
+                        # Check for final response flag
                         elif hasattr(event, 'is_final_response') and event.is_final_response():
+                            logger.info("Found final response event")
                             if hasattr(event, 'content') and event.content:
-                                llm_response = event.content.parts[0].text if event.content.parts else str(event.content)
+                                if hasattr(event.content, 'parts') and event.content.parts:
+                                    llm_response = event.content.parts[0].text
+                                else:
+                                    llm_response = str(event.content)
+                                logger.info(f"Final response: {llm_response[:100]}...")
+                                break
+                        
+                        # Check for text attribute directly
+                        elif hasattr(event, 'text') and event.text:
+                            llm_response = event.text
+                            logger.info(f"Found response in text: {llm_response[:100]}...")
+                            break
+                        
+                        # Check for message attribute
+                        elif hasattr(event, 'message') and event.message:
+                            llm_response = str(event.message)
+                            logger.info(f"Found response in message: {llm_response[:100]}...")
                             break
                     
+                    # If we still have the default response, try to get the last meaningful event
+                    if llm_response == "ElectionWatch Analysis Completed" and analysis_events:
+                        last_event = analysis_events[-1]
+                        logger.info(f"Using last event as fallback: {type(last_event).__name__}")
+                        llm_response = str(last_event)
+                    
                     logger.info(f"Final analysis result: {llm_response[:200]}...")
+                    logger.info(f"Full response length: {len(llm_response)}")
+                    if len(llm_response) > 200:
+                        logger.info(f"Response continues: ...{llm_response[200:400]}...")
                     
                     end_time = datetime.now()
                     processing_time = (end_time - start_time).total_seconds()
@@ -1941,6 +722,17 @@ def create_app():
                         return parsed_json
                     except json.JSONDecodeError:
                         logger.info("Agent response not in JSON format, extracting data dynamically")
+                        
+                        # Try to extract JSON from the response if it contains JSON-like content
+                        import re
+                        json_match = re.search(r'\{.*\}', llm_response, re.DOTALL)
+                        if json_match:
+                            try:
+                                extracted_json = json.loads(json_match.group())
+                                logger.info("✅ Extracted JSON from response")
+                                return extracted_json
+                            except json.JSONDecodeError:
+                                logger.info("Failed to parse extracted JSON")
                     
                     # Dynamic report structure - start empty and populate based on LLM content
                     report = {
@@ -1986,6 +778,10 @@ def create_app():
                     
                     # ENHANCED: Use Knowledge Base Integration instead of hardcoded string matching
                     logger.info('🔍 Using knowledge base for narrative classification and lexicon extraction')
+                    
+                    # Initialize search variables
+                    narrative_search = None
+                    lexicon_search = None
                     
                     try:
                         # Import knowledge base functions
@@ -2127,453 +923,44 @@ def create_app():
                         report['risk_level'] = report['narrative_classification']['threat_level']
                         
                         logger.info('✅ Knowledge base integration completed successfully')
-                        
-                    except Exception as kb_error:
-                        logger.error(f'❌ Knowledge base integration failed: {kb_error}')
-                        # Fallback to hardcoded values if knowledge base fails
-                        report['narrative_classification'] = {
-                            "theme": "general_political",
-                            "threat_level": "low",
-                            "details": f"Fallback analysis due to KB error: {str(kb_error)[:100]}",
-                            "confidence_score": 0.5,
-                            "alternative_themes": [],
-                            "threat_indicators": []
-                        }
-                        report['lexicon_terms'] = [{
-                            "term": "election content",
-                            "category": "general",
-                            "context": "fallback",
-                            "confidence_score": 0.5,
-                            "language": "en",
-                            "severity": "low",
-                            "definition": "Fallback term due to knowledge base error"
-                        }]
-                        report['analysis_insights']["llm_response"] = llm_response
-                        report['analysis_insights']['key_findings'] = f"Analysis of {len(all_text.split())} words of content (knowledge base unavailable)"
-                        report['recommendations'] = ["Manual review recommended - knowledge base integration failed"]
-                    
-                    # Store the complete analysis result in MongoDB
-                    try:
-                        # Determine if knowledge base was used successfully
-                        kb_used = 'kb_error' not in locals()
-                        kb_error_reason = str(kb_error) if 'kb_error' in locals() else None
-                        
-                        analysis_data = {
-                            "llm_response": llm_response,
-                            "structured_report": report,
-                            "metadata": {
-                                "source": source,
-                                "analysis_type": analysis_type,
-                                "priority": priority,
-                                "processing_time": processing_time,
-                                "content_length": len(all_text),
-                                "word_count": len(all_text.split()),
-                                "knowledge_base_used": kb_used,
-                                "error_reason": kb_error_reason,
-                                "narrative_matches": len(narrative_search.get("narratives", {}).get("source_nodes", [])) if 'narrative_search' in locals() else 0,
-                                "lexicon_matches": len(lexicon_search.get("hate_speech_lexicon", {}).get("source_nodes", [])) if 'lexicon_search' in locals() else 0
-                            },
-                            "timestamp": end_time.isoformat()
-                        }
-                        
-                        storage_success = await store_analysis_result(analysis_id, analysis_data)
-                        
-                        if storage_success:
-                            logger.info(f'✅ Analysis result stored in MongoDB with ID: {analysis_id}')
-                        else:
-                            logger.warning(f'⚠️ Failed to store analysis result in MongoDB for ID: {analysis_id}')
-                            
-                    except Exception as storage_error:
-                        logger.error(f'❌ Error storing analysis result: {storage_error}')
-                        # Continue with response even if storage fails
-                    
-                    # Return both raw LLM response and structured report
-                    return {
-                        "LLM_Response": llm_response,
-                        # "Report": report
-                    }
-                    
                 except Exception as e:
-                    # Store error analysis result in MongoDB
-                    try:
-                        error_data = {
-                            "llm_response": f"Error: {str(e)}",
-                            "structured_report": {
-                                "error": f"Analysis failed: {str(e)}",
-                                "timestamp": datetime.now().isoformat()
-                            },
-                            "metadata": {
-                                "source": source,
-                                "analysis_type": analysis_type,
-                                "priority": priority,
-                                "processing_time": processing_time,
-                                "error_type": "analysis_failure",
-                                "error_message": str(e)
-                            },
-                            "timestamp": datetime.now().isoformat()
-                        }
-                        
-                        await store_analysis_result(analysis_id, error_data)
-                        logger.info(f'✅ Error analysis result stored in MongoDB with ID: {analysis_id}')
-                        
-                    except Exception as storage_error:
-                        logger.error(f'❌ Error storing error analysis result: {storage_error}')
-                    
-                    return {
-                        "LLM_Response": f"Error: {str(e)}",
-                        "Report": {
-                            "error": f"Analysis failed: {str(e)}",
-                            "timestamp": datetime.now().isoformat()
-                        }
-                    }
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"Agent processing error: {str(e)}"
+                    )
             else:
-                # Store no content analysis result in MongoDB
-                try:
-                    no_content_data = {
-                        "llm_response": "No content provided",
-                        "structured_report": {
-                            "error": "No content provided for analysis",
-                            "timestamp": datetime.now().isoformat()
-                        },
-                        "metadata": {
-                            "source": source,
-                            "analysis_type": analysis_type,
-                            "priority": priority,
-                            "processing_time": processing_time,
-                            "error_type": "no_content",
-                            "error_message": "No content provided for analysis"
-                        },
-                        "timestamp": datetime.now().isoformat()
-                    }
-                    
-                    await store_analysis_result(analysis_id, no_content_data)
-                    logger.info(f'✅ No content analysis result stored in MongoDB with ID: {analysis_id}')
-                    
-                except Exception as storage_error:
-                    logger.error(f'❌ Error storing no content analysis result: {storage_error}')
+                raise HTTPException(
+                    status_code=400,
+                    detail="No content provided for analysis"
+                )
                 
-                return {
-                    "LLM_Response": "No content provided",
-                    "Report": {
-                        "error": "No content provided for analysis",
-                        "timestamp": datetime.now().isoformat()
-                    }
-                }
-                
+        except HTTPException:
+            raise
         except Exception as e:
-            # Store endpoint error analysis result in MongoDB
-            try:
-                endpoint_error_data = {
-                    "llm_response": f"Endpoint error: {str(e)}",
-                    "structured_report": {
-                        "error": f"Endpoint processing error: {str(e)}",
-                        "timestamp": datetime.now().isoformat()
-                    },
-                    "metadata": {
-                        "source": source if 'source' in locals() else "unknown",
-                        "analysis_type": analysis_type if 'analysis_type' in locals() else "unknown",
-                        "priority": priority if 'priority' in locals() else "unknown",
-                        "processing_time": processing_time if 'processing_time' in locals() else 0,
-                        "error_type": "endpoint_failure",
-                        "error_message": str(e)
-                    },
-                    "timestamp": datetime.now().isoformat()
-                }
-                
-                await store_analysis_result(analysis_id, endpoint_error_data)
-                logger.info(f'✅ Endpoint error analysis result stored in MongoDB with ID: {analysis_id}')
-                
-            except Exception as storage_error:
-                logger.error(f'❌ Error storing endpoint error analysis result: {storage_error}')
-            
-            return {
-                "LLM_Response": f"Endpoint error: {str(e)}",
-                "Report": {
-                    "error": f"Endpoint processing error: {str(e)}",
-                    "timestamp": datetime.now().isoformat()
-                }
-            }
-
+            raise HTTPException(
+                status_code=500,
+                detail=f"Analysis processing error: {str(e)}"
+            )
+    
+    @app.get("/view_reports", response_class=HTMLResponse)
+    async def view_reports_page(request: Request):
+        """Serve the reports view page."""
+        return templates.TemplateResponse("view_reports.html", {"request": request})
+        
     @app.post("/submitReport")
     async def submit_report(report: ReportSubmission):
         """
-        Submit structured analysis reports for processing, storage, and priority routing.
+        Submit a manual report for storage and analysis.
         """
         try:
-            submission_id = f"report_{int(datetime.now().timestamp())}"
-            timestamp = datetime.now().isoformat()
+            # Store the report submission
+            success = await store_report_submission(report.report_id, report.dict())
             
-            # Process the report submission
-            submission_result = {
-                "submission_id": submission_id,
-                "status": "accepted",
-                "report_id": report.report_id,
-                "priority_level": "high" if report.threat_level in ["high", "critical"] else "medium",
-                "estimated_processing_time": "5-10 minutes",
-                "next_steps": [
-                    "Report queued for expert review",
-                    "Automated trend analysis initiated" if report.report_type == "trend_report" else "Threat assessment processing"
-                ],
-                "timestamp": timestamp
-            }
-            
-            # Store in MongoDB
-            report_data = {
-                "submission": report.dict(),
-                "result": submission_result,
-                "submitted_at": timestamp
-            }
-            await store_report_submission(submission_id, report_data)
-            
-            return submission_result
-            
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Report submission error: {str(e)}"
-            )
-
-    @app.get("/analysis/{analysis_id}")
-    async def get_analysis_results(analysis_id: str):
-        """
-        Retrieve previously completed analysis results by ID.
-        """
-        analysis_doc = await get_analysis_result(analysis_id)
-        if not analysis_doc:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Analysis {analysis_id} not found"
-            )
-        
-        analysis = analysis_doc["data"]
-        return {
-            "analysis_id": analysis_id,
-            "status": analysis_doc.get("status", "completed"),
-            "results": analysis,
-            "created_at": analysis_doc.get("created_at"),
-            "completed_at": analysis_doc.get("created_at")
-        }
-
-    @app.get("/report/{submission_id}")
-    async def get_report_submission_endpoint(submission_id: str):
-        """
-        Retrieve report submission status and details by ID.
-        """
-        report_doc = await get_report_submission(submission_id)
-        if not report_doc:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Report submission {submission_id} not found"
-            )
-        
-        stored_report = report_doc["data"]
-        return {
-            "submission_id": submission_id,
-            "report_id": stored_report["submission"]["report_id"],
-            "status": report_doc.get("status", "completed"),
-            "processing_details": stored_report["result"],
-            "submitted_at": stored_report["submitted_at"]
-        }
-
-    # ===== UTILITY ENDPOINTS =====
-    
-    @app.get("/health")
-    async def health_check():
-        """Custom health check endpoint with ElectionWatch metrics."""
-        storage_stats = await get_storage_stats()
-        
-        return {
-            "status": "healthy",
-            "service": "electionwatch",
-            "version": "v2_unified",
-            "adk_integration": "standard",
-            "timestamp": datetime.now().isoformat(),
-            "analysis_count": storage_stats.get("analysis_count", 0),
-            "report_count": storage_stats.get("reports_count", 0),
-            "database_status": storage_stats.get("status", "unknown"),
-            "uptime_seconds": 3600  # This would be calculated from startup time
-        }
-    
-    @app.get("/analysis-template")
-    async def get_analysis_template():
-        """Get the unified analysis template structure."""
-        try:
-            from ew_agents.report_templates import ElectionWatchReportTemplate
-            template = ElectionWatchReportTemplate.get_analysis_template()
-            return {
-                "template": template,
-                "description": "Unified analysis template for Election Watch reports"
-            }
-        except Exception as e:
-            return {"error": f"Failed to get template: {str(e)}"}
-    
-    @app.get("/dev-ui")
-    async def dev_ui_redirect():
-        """Redirect to the development UI."""
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(url="/dev-ui/?app=ew_agents")
-    
-    @app.get("/analyses")
-    async def list_recent_analyses(limit: int = 20):
-        """List recent analysis results from MongoDB."""
-        try:
-            # This would use a proper MongoDB query in the final implementation
-            return {
-                "analyses": [],  # Placeholder - would query MongoDB
-                "total_count": 0,
-                "limit": limit,
-                "database": "election_watch",
-                "collection": "analysis_results"
-            }
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to list analyses: {str(e)}"
-            )
-    
-    @app.get("/storage/stats")
-    async def get_storage_statistics():
-        """
-        Get MongoDB storage statistics and collection information.
-        """
-        try:
-            stats = await get_stats()
-            return stats
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to retrieve storage stats: {str(e)}"
-            )
-
-    @app.get("/storage/recent")
-    async def get_recent_analyses(limit: int = 10):
-        """
-        Get recent analysis results from storage.
-        """
-        try:
-            from ew_agents.mongodb_storage import storage
-            recent = await storage.list_recent_analyses(limit=limit)
-            return {
-                "recent_analyses": recent,
-                "count": len(recent),
-                "limit": limit
-            }
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to retrieve recent analyses: {str(e)}"
-            )
-    
-    @app.get("/storage-info")
-    async def get_storage_info():
-        """Get detailed MongoDB storage information."""
-        storage_stats = await get_storage_stats()
-        
-        # Get collection info using MCP
-        try:
-            return {
-                "database": "election_watch",
-                "collections": {
-                    "analysis_results": {
-                        "count": storage_stats.get("analysis_count", 0),
-                        "description": "Stores analysis results from /AnalysePosts"
-                    },
-                    "report_submissions": {
-                        "count": storage_stats.get("reports_count", 0),
-                        "description": "Stores reports from /submitReport"
-                    }
-                },
-                "status": storage_stats.get("status", "unknown"),
-                "version": "v2_unified"
-            }
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to get storage info: {str(e)}"
-            )
-    
-    @app.get("/storage/test-connection")
-    async def test_mongodb_connection():
-        """
-        Test MongoDB Atlas connection and return status.
-        """
-        try:
-            from ew_agents.mongodb_storage import test_mongodb_connection as test_conn
-            
-            # Test connection with detailed diagnostics
-            connection_result = await test_conn()
-            
-            return {
-                "test_timestamp": datetime.now().isoformat(),
-                "connection_test": connection_result,
-                "environment": {
-                    "mongodb_atlas_uri_configured": bool(os.getenv("MONGODB_ATLAS_URI")),
-                    "mongodb_uri_configured": bool(os.getenv("MONGODB_URI")),
-                    "pymongo_available": True  # We know it's available if we got here
-                }
-            }
-                
-        except Exception as e:
-            return {
-                "status": "error",
-                "error": str(e),
-                "message": "Failed to test MongoDB Atlas connection",
-                "help": "Check your MONGODB_ATLAS_URI configuration in .env file"
-            }
-
-    @app.get("/debug/env-check")
-    async def debug_environment_check():
-        """
-        Debug endpoint to check environment configuration (without exposing sensitive data).
-        """
-        try:
-            mongodb_atlas_uri = os.getenv("MONGODB_ATLAS_URI")
-            mongodb_uri = os.getenv("MONGODB_URI")
-            
-            env_info = {
-                "environment_variables": {
-                    "MONGODB_ATLAS_URI": "set" if mongodb_atlas_uri else "not_set",
-                    "MONGODB_URI": "set" if mongodb_uri else "not_set (legacy fallback)",
-                    "GOOGLE_API_KEY": "set" if os.getenv("GOOGLE_API_KEY") else "not_set"
-                },
-                "mongodb_config": {}
-            }
-            
-            # Check which URI is being used (without exposing credentials)
-            if mongodb_atlas_uri:
-                if "<username>" in mongodb_atlas_uri:
-                    env_info["mongodb_config"]["status"] = "placeholder_values_detected"
-                    env_info["mongodb_config"]["issue"] = "MONGODB_ATLAS_URI contains placeholder values like <username>"
-                else:
-                    env_info["mongodb_config"]["status"] = "uri_configured"
-                    if mongodb_atlas_uri.startswith("mongodb+srv://"):
-                        cluster_part = mongodb_atlas_uri.split("@")[1] if "@" in mongodb_atlas_uri else "unknown"
-                        env_info["mongodb_config"]["cluster"] = cluster_part
-                        env_info["mongodb_config"]["type"] = "atlas"
-                    else:
-                        env_info["mongodb_config"]["type"] = "custom"
-            elif mongodb_uri:
-                env_info["mongodb_config"]["status"] = "using_legacy_fallback"
-                env_info["mongodb_config"]["recommendation"] = "Consider migrating to MONGODB_ATLAS_URI"
+            if success:
+                return {"status": "success", "message": "Report submitted successfully"}
             else:
-                env_info["mongodb_config"]["status"] = "no_uri_configured"
-                env_info["mongodb_config"]["issue"] = "No MongoDB URI found in environment"
-            
-            # Check pymongo availability
-            try:
-                import pymongo
-                env_info["pymongo"] = {
-                    "available": True,
-                    "version": pymongo.version
-                }
-            except ImportError:
-                env_info["pymongo"] = {
-                    "available": False,
-                    "issue": "pymongo not installed"
-                }
-            
-            return env_info
-            
+                raise HTTPException(status_code=500, detail="Failed to store report")
+                
         except Exception as e:
             return {
                 "error": "Failed to check environment",
@@ -2768,51 +1155,68 @@ def create_app():
             logger.error(f"Error downloading PDF report: {e}")
             raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")
 
+    @app.get("/health")
+    async def health_check():
+        """Health check endpoint"""
+        return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+    
+    @app.get("/debug/agent-test")
+    async def test_agent_response():
+        """Test endpoint to check agent response format"""
+        try:
+            from ew_agents.agent import root_agent
+            from google.adk.runners import InMemoryRunner
+            from google.genai import types
+            
+            runner = InMemoryRunner(root_agent)
+            
+            user_content = types.Content(
+                role="user",
+                parts=[types.Part(text="Analyze this simple text: 'Election day is tomorrow'")]
+            )
+            
+            import uuid
+            session_id = f"test_{uuid.uuid4().hex[:8]}"
+            user_id = "test_user"
+            
+            # Run the agent
+            analysis_events = []
+            async for event in runner.run_async(
+                user_id=user_id,
+                session_id=session_id,
+                new_message=user_content
+            ):
+                analysis_events.append(event)
+                logger.info(f"Test Event: {type(event).__name__}")
+            
+            # Extract response
+            llm_response = "No response found"
+            for event in reversed(analysis_events):
+                if hasattr(event, 'content') and event.content and hasattr(event.content, 'parts') and event.content.parts:
+                    llm_response = event.content.parts[0].text
+                    break
+            
+            return {
+                "success": True,
+                "events_count": len(analysis_events),
+                "event_types": [type(event).__name__ for event in analysis_events],
+                "response": llm_response,
+                "response_length": len(llm_response)
+            }
+            
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
     return app
 
-# Create the app instance
-app = create_app()
-
 if __name__ == "__main__":
-    # Cloud Run compatible port configuration
-    port = int(os.environ.get("PORT", 8080))
+    # Create the app
+    app = create_app()
     
-    # MongoDB Atlas connection info at startup
-    logger.info("🔗 MongoDB Atlas Configuration:")
-    mongodb_atlas_uri = os.getenv("MONGODB_ATLAS_URI")
-    mongodb_uri = os.getenv("MONGODB_URI")
-
-    if mongodb_atlas_uri:
-        # Don't log the full URI for security, just indicate it's set
-        if mongodb_atlas_uri.startswith("mongodb+srv://"):
-            logger.info("✅ MongoDB Atlas URI configured (MONGODB_ATLAS_URI)")
-        else:
-            logger.info("⚠️ Custom MongoDB URI configured (MONGODB_ATLAS_URI)")
-    elif mongodb_uri:
-        if mongodb_uri.startswith("mongodb+srv://"):
-            logger.info("✅ MongoDB Atlas URI configured (MONGODB_URI - legacy)")
-        else:
-            logger.info("⚠️ Custom MongoDB URI configured (MONGODB_URI - legacy)")
-    else:
-        logger.warning("❌ MONGODB_ATLAS_URI not set - storage will be disabled")
-        logger.info("💡 Set your MongoDB Atlas connection in .env file:")
-        logger.info("💡 MONGODB_ATLAS_URI='mongodb+srv://username:password@cluster.mongodb.net/'")
-
-    print("🚀 Starting ElectionWatch with Standard ADK FastAPI Setup")
-    print(f"📍 Agents Directory: {AGENT_DIR}")
-    print(f"💾 Session DB: {SESSION_SERVICE_URI}")
-    print(f"🌐 Web Interface: {SERVE_WEB_INTERFACE}")
-    print(f"🔗 Port: {port}")
-    print("\n📋 Available Endpoints:")
-    print("   Standard ADK: /run, /run_sse, /list-apps")
-    print("   ElectionWatch: /AnalysePosts, /submitReport")
-    print("   Reports: /view_reports, /api/reports/*")
-    print("   Raw JSON: /get_raw_json, /run_analysis")
-    print("   Utilities: /health, /analysis-template, /dev-ui")
-    
+    # Run with Uvicorn
     uvicorn.run(
-        app, 
-        host="0.0.0.0", 
-        port=port,
+        app,
+        host=os.getenv("HOST", "0.0.0.0"),
+        port=int(os.getenv("PORT", 8080)),
         log_level="info"
-    ) 
+    )

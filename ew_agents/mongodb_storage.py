@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 class ElectionWatchStorage:
     """MongoDB storage handler with seamless MCP integration."""
     
-    def __init__(self, database_name: str = "election_watch", mongo_uri: str = None):
+    def __init__(self, database_name: str = "election_watch", mongo_uri: Optional[str] = None):
         self.database_name = database_name
         self.analysis_collection = "analysis_results"
         self.reports_collection = "report_submissions"
@@ -464,7 +464,7 @@ class ElectionWatchStorage:
             logger.error(f"❌ Unexpected find error in {collection}: {e}")
             return None
 
-    async def _mcp_find_documents(self, collection: str, filter: Dict[str, Any], sort: Dict[str, Any] = None, limit: int = 10) -> List[Dict[str, Any]]:
+    async def _mcp_find_documents(self, collection: str, filter: Dict[str, Any], sort: Optional[Dict[str, Any]] = None, limit: int = 10) -> List[Dict[str, Any]]:
         """Find multiple documents using pymongo."""
         if self.db is None:
             return []
@@ -493,7 +493,7 @@ class ElectionWatchStorage:
             logger.error(f"❌ Unexpected find_many error in {collection}: {e}")
             return []
 
-    async def _mcp_count_documents(self, collection: str, query: Dict[str, Any] = None) -> int:
+    async def _mcp_count_documents(self, collection: str, query: Optional[Dict[str, Any]] = None) -> int:
         """Count documents using pymongo."""
         if self.db is None:
             return 0
