@@ -299,6 +299,159 @@ async def format_report_with_ai(llm_response: str, analysis_data: Dict[str, Any]
         logger.error(f"Error formatting report with AI: {e}")
         return llm_response
 
+def create_html_template() -> str:
+    """
+    Create the HTML template for the reports viewing page.
+    This function returns the contents of the view_reports.html template.
+    """
+    try:
+        # Try to read the template file
+        template_path = Path("ew_agents/templates/view_reports.html")
+        if template_path.exists():
+            return template_path.read_text(encoding='utf-8')
+        else:
+            # Return a basic fallback template if file doesn't exist
+            return """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ElectionWatch - View Reports</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 40px; }
+        .form-group { margin-bottom: 20px; }
+        select, button { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px; }
+        button { background: #007bff; color: white; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .report-section { margin-top: 30px; display: none; }
+        .loading { text-align: center; padding: 20px; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 ElectionWatch Reports</h1>
+            <p>View and download analysis reports</p>
+        </div>
+        
+        <div class="form-group">
+            <label for="reportSelect">Available Reports:</label>
+            <select id="reportSelect">
+                <option value="">-- Select a report --</option>
+            </select>
+        </div>
+        
+        <button onclick="viewReport()">View Report</button>
+        
+        <div id="reportSection" class="report-section">
+            <div id="loading" class="loading" style="display: none;">
+                <h3>🔄 Generating Report...</h3>
+            </div>
+            <div id="error" class="error" style="display: none;"></div>
+            <div id="reportContent" style="display: none;"></div>
+            <div id="reportActions" style="display: none;">
+                <button onclick="downloadPDF()">📄 Download PDF</button>
+                <button onclick="printReport()">🖨️ Print Report</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentAnalysisId = null;
+        
+        window.onload = function() { loadAvailableReports(); };
+        
+        async function loadAvailableReports() {
+            try {
+                const response = await fetch('/api/reports/available');
+                const data = await response.json();
+                const select = document.getElementById('reportSelect');
+                select.innerHTML = '<option value="">-- Select a report --</option>';
+                data.reports.forEach(report => {
+                    const option = document.createElement('option');
+                    option.value = report.analysis_id;
+                    option.textContent = `${report.analysis_id} - ${report.date_analyzed}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading reports:', error);
+            }
+        }
+        
+        async function viewReport() {
+            const analysisId = document.getElementById('reportSelect').value;
+            if (!analysisId) return;
+            
+            currentAnalysisId = analysisId;
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('reportSection').style.display = 'block';
+            
+            try {
+                const response = await fetch(`/api/reports/generate/${analysisId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('reportContent').innerHTML = data.formatted_report;
+                    document.getElementById('reportContent').style.display = 'block';
+                    document.getElementById('reportActions').style.display = 'block';
+                } else {
+                    document.getElementById('error').textContent = data.error;
+                    document.getElementById('error').style.display = 'block';
+                }
+            } catch (error) {
+                document.getElementById('error').textContent = 'Failed to generate report';
+                document.getElementById('error').style.display = 'block';
+            }
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        async function downloadPDF() {
+            if (!currentAnalysisId) return;
+            try {
+                const response = await fetch(`/api/reports/download/${currentAnalysisId}`);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `electionwatch_report_${currentAnalysisId}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                }
+            } catch (error) {
+                console.error('Error downloading PDF:', error);
+            }
+        }
+        
+        function printReport() {
+            const content = document.getElementById('reportContent').innerHTML;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                    <head><title>ElectionWatch Report</title></head>
+                    <body style="font-family: Arial, sans-serif; margin: 20px;">
+                        <h1>ElectionWatch Analysis Report</h1>
+                        ${content}
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+    </script>
+</body>
+</html>
+            """
+    except Exception as e:
+        logger.error(f"Error creating HTML template: {e}")
+        return "<h1>Error loading template</h1><p>Please try again later.</p>"
+
 def generate_pdf_report(report_content: str, analysis_id: str) -> BytesIO:
     """
     Generate a PDF report from the formatted content with enhanced aesthetics.
@@ -795,11 +948,6 @@ def create_app():
                         lexicon_search = await search_knowledge(llm_response, collections=['hate_speech_lexicon'])
                         logger.info(f'📖 Lexicon search: {len(lexicon_search.get("hate_speech_lexicon", {}).get("source_nodes", []))} matches found')
                         
-                    except Exception as kb_error:
-                        logger.warning(f'⚠️ Knowledge base integration failed: {kb_error}')
-                        logger.info('🔄 Falling back to basic analysis without knowledge base enhancement')
-                        # Continue with basic analysis
-                        
                         # Extract narrative classification from knowledge base results
                         if narrative_search and narrative_search.get('narratives', {}).get('source_nodes'):
                             best_narrative = narrative_search['narratives']['source_nodes'][0]
@@ -923,6 +1071,44 @@ def create_app():
                         report['risk_level'] = report['narrative_classification']['threat_level']
                         
                         logger.info('✅ Knowledge base integration completed successfully')
+                        
+                    except Exception as kb_error:
+                        logger.warning(f'⚠️ Knowledge base integration failed: {kb_error}')
+                        logger.info('🔄 Falling back to basic analysis without knowledge base enhancement')
+                        
+                        # Basic fallback analysis
+                        report['narrative_classification'] = {
+                            "theme": "general_political",
+                            "threat_level": "low",
+                            "details": "Content analyzed using basic ElectionWatch AI system",
+                            "confidence_score": 0.5,
+                            "alternative_themes": ["political_engagement"],
+                            "threat_indicators": []
+                        }
+                        
+                        report['lexicon_terms'] = [{
+                            "term": "election content",
+                            "category": "general",
+                            "context": "fallback",
+                            "confidence_score": 0.5,
+                            "language": "en",
+                            "severity": "low",
+                            "definition": "General election-related content"
+                        }]
+                        
+                        report['recommendations'] = ["Standard monitoring protocols apply"]
+                        report['risk_level'] = "low"
+                
+                    # Store the analysis result
+                    try:
+                        await store_analysis_result(analysis_id, report)
+                        logger.info(f'✅ Analysis stored with ID: {analysis_id}')
+                    except Exception as store_error:
+                        logger.warning(f'⚠️ Failed to store analysis: {store_error}')
+                    
+                    # Return the final report
+                    return report
+                    
                 except Exception as e:
                     raise HTTPException(
                         status_code=500,
@@ -942,11 +1128,7 @@ def create_app():
                 detail=f"Analysis processing error: {str(e)}"
             )
     
-    @app.get("/view_reports", response_class=HTMLResponse)
-    async def view_reports_page(request: Request):
-        """Serve the reports view page."""
-        return templates.TemplateResponse("view_reports.html", {"request": request})
-        
+
     @app.post("/submitReport")
     async def submit_report(report: ReportSubmission):
         """
@@ -963,14 +1145,14 @@ def create_app():
                 
         except Exception as e:
             return {
-                "error": "Failed to check environment",
+                "error": "Failed to submit report",
                 "details": str(e)
             }
 
     # ===== REPORT VIEWING ENDPOINTS =====
     
     @app.get("/view_reports")
-    async def view_reports_page():
+    async def view_reports():
         """
         Serve the reports viewing page with dropdown of available reports.
         """
