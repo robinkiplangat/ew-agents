@@ -1,15 +1,22 @@
 from google.adk.tools import FunctionTool
+from typing import List, Optional
 import datetime
 import os
 
 def analyze_narrative_trends(
-    narrative_themes: list,
+    narrative_themes: str,
     time_period_days: int = 7,
-    platform = None,
-    origin_country = None
+    platform: Optional[str] = None,
+    origin_country: Optional[str] = None
 ) -> dict:
     """
     Analyzes trends for specified narrative themes over a time window.
+    
+    Args:
+        narrative_themes: Comma-separated list of narrative themes to analyze
+        time_period_days: Number of days to analyze
+        platform: Optional platform filter
+        origin_country: Optional country filter
     
     TODO: Implement real analytical database connection (Elasticsearch, ClickHouse, etc.)
     This should query time-series data for:
@@ -18,7 +25,10 @@ def analyze_narrative_trends(
     - Geographic distribution
     - Platform-specific metrics
     """
-    print(f"[TrendTool] Analyzing trends for themes: {narrative_themes} in last {time_period_days}d. Platform: {platform}, Origin: {origin_country}")
+    # Convert comma-separated string to list
+    themes_list = [t.strip() for t in narrative_themes.split(',') if t.strip()]
+    
+    print(f"[TrendTool] Analyzing trends for themes: {themes_list} in last {time_period_days}d. Platform: {platform}, Origin: {origin_country}")
 
     # TODO: Implement real analytical database queries
     # Example with Elasticsearch:

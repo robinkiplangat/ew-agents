@@ -17,7 +17,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY ew_agents/ ./ew_agents/
 COPY main.py ./
-COPY *.json ./
 
 # Set environment for production
 ENV PYTHONPATH=/app \
@@ -27,4 +26,4 @@ ENV PYTHONPATH=/app \
 
 EXPOSE 8080
 
-CMD ["python", "-u", "main.py"]
+CMD ["python3", "-u", "main.py"]

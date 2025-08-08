@@ -42,6 +42,71 @@ AGENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ===== REPORT GENERATION FUNCTIONS =====
 
+def map_agent_json_to_unified(
+    agent_json: Dict[str, Any],
+    analysis_id: str,
+    end_time: datetime,
+    source: str,
+    metadata_dict: Dict[str, Any],
+    content_text: str,
+    processing_time: float
+) -> Dict[str, Any]:
+    """Map coordinator agent JSON into the unified ElectionWatch report format."""
+    narrative = agent_json.get("narrative_classification", {})
+    risk = agent_json.get("risk_assessment", {})
+    recs = agent_json.get("recommendations", [])
+    actors_src = agent_json.get("actors_identified", [])
+
+    # Map actors into unified structure (keep minimal required fields)
+    actors_mapped: List[Dict[str, Any]] = []
+    for a in actors_src:
+        actors_mapped.append({
+            "name": a.get("name") or a.get("actor") or "Unknown",
+            "affiliation": "",
+            "role": a.get("role") or a.get("context") or "",
+            "influence_level": "",
+            "verification_status": "",
+            "social_metrics": {}
+        })
+
+    report = {
+        "report_metadata": {
+            "report_id": analysis_id,
+            "analysis_timestamp": end_time.isoformat(),
+            "report_type": "analysis",
+            "content_type": metadata_dict.get("content_type", "text_post"),
+            "analysis_depth": "standard",
+            "content_source": source,
+            "processing_time_seconds": processing_time,
+        },
+        "narrative_classification": {
+            "theme": narrative.get("theme", "general_political"),
+            "threat_level": (risk.get("level") or "low").lower() if isinstance(risk.get("level"), str) else "low",
+            "details": narrative.get("details", ""),
+            "confidence_score": narrative.get("confidence", 0.0),
+            "alternative_themes": narrative.get("alternative_themes", []),
+            "threat_indicators": []
+        },
+        "actors": actors_mapped,
+        "lexicon_terms": [],
+        "risk_level": (risk.get("level") or "low").lower() if isinstance(risk.get("level"), str) else "low",
+        "date_analyzed": end_time.isoformat(),
+        "recommendations": recs,
+        "analysis_insights": {
+            "content_statistics": {
+                "word_count": len((content_text or "").split()),
+                "character_count": len(content_text or ""),
+                "language_detected": metadata_dict.get("language", "en")
+            },
+            "key_findings": "",
+            "risk_factors": risk.get("factors", []),
+            "confidence_level": "medium",
+            "llm_response": json.dumps(agent_json)  # preserve original agent JSON
+        }
+    }
+
+    return report
+
 async def format_report_with_ai(llm_response: str, analysis_data: Dict[str, Any]) -> str:
     """
     Format the LLM response into a clean, professional report using AI via OpenRouter.
@@ -757,20 +822,68 @@ def create_app():
                             "error": f"File processing error: {str(e)}"
                         })
             
-            # Create optimized analysis content
-            if text:
-                all_text = text
-            elif processed_files:
-                # Use structured processing instead of raw concatenation
-                analysis_content = {
-                    "files": processed_files,
-                    "metadata": metadata_dict,
-                    "processing_optimized": True,
-                    "platform_detection": True
-                }
-                all_text = json.dumps(analysis_content, indent=2)
+            # Create optimized analysis content with robust guards against placeholder inputs
+            # 1) Try to build content from CSV/text files first
+            csv_text_blocks: List[str] = []
+            try:
+                from ew_agents.data_eng_tools import process_csv_data
+                for f in processed_files:
+                    # Treat as CSV when content-type says csv OR filename ends with .csv
+                    is_csv = False
+                    try:
+                        ct = (f.get("content_type") or "").lower()
+                        is_csv = ("csv" in ct) or (str(f.get("filename", "")).lower().endswith(".csv"))
+                    except Exception:
+                        is_csv = False
+
+                    if (f.get("processed") == "csv_structured" and f.get("csv_content")) or is_csv:
+                        csv_payload = f.get("csv_content")
+                        if not csv_payload:
+                            # Best effort: if we didn't store csv_content for some reason, skip gracefully
+                            continue
+
+                        csv_result = process_csv_data(csv_payload)  # type: ignore[arg-type]
+                        summary = csv_result.get("content_summary", {})
+                        # Build a concise text for the coordinator
+                        platform = csv_result.get("platform_detected", "social")
+                        posts = csv_result.get("structured_posts", [])[:25]
+                        lines = [
+                            f"Platform: {platform}",
+                            f"Rows: {csv_result.get('total_rows')}",
+                            f"Hashtags: {', '.join(summary.get('top_hashtags', [])[:10])}",
+                            f"Mentions: {', '.join(summary.get('top_mentions', [])[:10])}",
+                        ]
+                        for p in posts:
+                            lines.append(f"[{p.get('user','user')}] {p.get('content','')}")
+                        csv_text_blocks.append("\n".join(lines))
+            except Exception as e:
+                logger.info(f"CSV preprocessing note: {e}")
+
+            all_text = ""
+            if csv_text_blocks:
+                all_text = "\n\n".join(csv_text_blocks)
             else:
-                all_text = ""
+                # 2) If no usable CSV-derived text, consider the provided form text
+                placeholder_values = {"string", "", None}
+                cleaned_text = (text or "").strip() if isinstance(text, str) else ""
+                if cleaned_text and cleaned_text.lower() not in placeholder_values:
+                    all_text = cleaned_text
+                else:
+                    # 3) Fallback to a structured JSON bundle to ensure agents have context
+                    analysis_content = {
+                        "files": processed_files,
+                        "metadata": metadata_dict,
+                        "processing_optimized": True,
+                        "platform_detection": True
+                    }
+                    all_text = json.dumps(analysis_content, indent=2)
+
+            # Log a brief preview to help diagnose empty/placeholder content issues
+            try:
+                preview = (all_text or "").replace("\n", " ")
+                logger.info(f"Prepared analysis text preview: {preview[:200]}{'...' if len(preview) > 200 else ''}")
+            except Exception:
+                pass
             
             # Run ADK analysis (same as original)
             if all_text.strip():
@@ -868,25 +981,44 @@ def create_app():
                     end_time = datetime.now()
                     processing_time = (end_time - start_time).total_seconds()
                     
-                    # Check if LLM response is already valid JSON and store it
+                    # Check if LLM response is already valid JSON
                     agent_json_response = None
                     try:
                         parsed_json = json.loads(llm_response)
-                        logger.info("✅ Agent returned valid JSON, will store and return")
+                        logger.info("✅ Agent returned valid JSON")
                         agent_json_response = parsed_json
                     except json.JSONDecodeError:
-                        logger.info("Agent response not in JSON format, extracting data dynamically")
+                        logger.info("Agent response not in JSON format, attempting JSON extraction")
                         
-                        # Try to extract JSON from the response if it contains JSON-like content
+                        # Try to extract JSON from within code fences or text
                         import re
                         json_match = re.search(r'\{.*\}', llm_response, re.DOTALL)
                         if json_match:
                             try:
                                 extracted_json = json.loads(json_match.group())
-                                logger.info("✅ Extracted JSON from response")
+                                logger.info("✅ Extracted JSON from response body")
                                 agent_json_response = extracted_json
                             except json.JSONDecodeError:
                                 logger.info("Failed to parse extracted JSON")
+
+                    # If the coordinator produced a structured JSON, prefer returning it directly
+                    if agent_json_response:
+                        # Prefer returning the unified mapped structure for consistency
+                        unified = map_agent_json_to_unified(
+                            agent_json=agent_json_response,
+                            analysis_id=analysis_id,
+                            end_time=end_time,
+                            source=source,
+                            metadata_dict=metadata_dict,
+                            content_text=all_text,
+                            processing_time=processing_time,
+                        )
+                        try:
+                            await store_analysis_result(analysis_id, unified)
+                            logger.info(f'✅ Agent mapped analysis stored with ID: {analysis_id}')
+                        except Exception as store_error:
+                            logger.warning(f'⚠️ Failed to store mapped analysis: {store_error}')
+                        return unified
                     
                     # Dynamic report structure - start empty and populate based on LLM content
                     report = {
@@ -1107,20 +1239,8 @@ def create_app():
                     except Exception as store_error:
                         logger.warning(f'⚠️ Failed to store analysis: {store_error}')
                     
-                    # Return the final report
+                    # Return the final synthesized report (fallback when no agent JSON)
                     return report
-                    
-                    # Handle agent JSON responses
-                    if agent_json_response:
-                        # Store the agent JSON response
-                        try:
-                            await store_analysis_result(analysis_id, agent_json_response)
-                            logger.info(f'✅ Agent JSON analysis stored with ID: {analysis_id}')
-                        except Exception as store_error:
-                            logger.warning(f'⚠️ Failed to store agent JSON analysis: {store_error}')
-                        
-                        # Return the agent JSON response
-                        return agent_json_response
                     
                 except Exception as e:
                     raise HTTPException(
