@@ -1821,7 +1821,7 @@ def sync_process_user_request(user_request: str) -> Dict[str, Any]:
 # Traditional agent interface (for ADK compatibility)
 if ADK_AVAILABLE:
     try:
-        # Reference existing agents from election_watch_agents.py instead of recreating them
+        # Reference existing agents from consolidated agent.py
         from .agent import (
             data_eng_agent,
             osint_agent, 
@@ -1830,10 +1830,10 @@ if ADK_AVAILABLE:
             coordinator_agent
         )
         
-        logger.info("Google ADK agents imported successfully from election_watch_agents")
+        logger.info("Google ADK agents imported successfully from consolidated agent.py")
         
     except ImportError as e:
-        logger.error(f"Failed to import ADK agents from election_watch_agents: {e}")
+        logger.error(f"Failed to import ADK agents from consolidated agent.py: {e}")
         coordinator_agent = None
         data_eng_agent = None
         osint_agent = None

@@ -1,0 +1,358 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ElectionWatch - View Reports</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                padding: 20px;
+            }
+            
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 15px;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                overflow: hidden;
+            }
+            
+            .header {
+                background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+                color: white;
+                padding: 30px;
+                text-align: center;
+            }
+            
+            .header h1 {
+                font-size: 2.5em;
+                margin-bottom: 10px;
+                font-weight: 300;
+            }
+            
+            .header p {
+                font-size: 1.1em;
+                opacity: 0.9;
+            }
+            
+            .content {
+                padding: 40px;
+            }
+            
+            .form-section {
+                background: #f8f9fa;
+                padding: 30px;
+                border-radius: 10px;
+                margin-bottom: 30px;
+                border: 1px solid #e9ecef;
+            }
+            
+            .form-group {
+                margin-bottom: 20px;
+            }
+            
+            label {
+                display: block;
+                margin-bottom: 8px;
+                font-weight: 600;
+                color: #2c3e50;
+            }
+            
+            select, button {
+                width: 100%;
+                padding: 12px 15px;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                font-size: 16px;
+                transition: all 0.3s ease;
+            }
+            
+            select:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+            
+            .btn-primary {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                cursor: pointer;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+            
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            }
+            
+            .btn-secondary {
+                background: #6c757d;
+                color: white;
+                border: none;
+                cursor: pointer;
+                font-weight: 600;
+                margin-top: 10px;
+            }
+            
+            .btn-secondary:hover {
+                background: #5a6268;
+            }
+            
+            .report-section {
+                margin-top: 30px;
+                display: none;
+            }
+            
+            .report-content {
+                background: white;
+                border: 1px solid #e9ecef;
+                border-radius: 10px;
+                padding: 30px;
+                margin-top: 20px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            }
+            
+            .loading {
+                text-align: center;
+                padding: 40px;
+                color: #6c757d;
+            }
+            
+            .error {
+                background: #f8d7da;
+                color: #721c24;
+                padding: 15px;
+                border-radius: 8px;
+                margin-top: 20px;
+                border: 1px solid #f5c6cb;
+            }
+            
+            .success {
+                background: #d4edda;
+                color: #155724;
+                padding: 15px;
+                border-radius: 8px;
+                margin-top: 20px;
+                border: 1px solid #c3e6cb;
+            }
+            
+            .report-actions {
+                margin-top: 20px;
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            
+            .report-actions button {
+                flex: 1;
+                min-width: 150px;
+            }
+            
+            @media (max-width: 768px) {
+                .content {
+                    padding: 20px;
+                }
+                
+                .header h1 {
+                    font-size: 2em;
+                }
+                
+                .report-actions {
+                    flex-direction: column;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>📊 ElectionWatch Reports</h1>
+                <p>View and download analysis reports from our database</p>
+            </div>
+            
+            <div class="content">
+                <div class="form-section">
+                    <h2 style="margin-bottom: 20px; color: #2c3e50;">Select Report</h2>
+                    
+                    <div class="form-group">
+                        <label for="reportSelect">Available Reports:</label>
+                        <select id="reportSelect">
+                            <option value="">-- Select a report --</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn-primary" onclick="viewReport()">View Report</button>
+                </div>
+                
+                <div id="reportSection" class="report-section">
+                    <div id="loading" class="loading" style="display: none;">
+                        <h3>🔄 Generating Report...</h3>
+                        <p>Please wait while we format your report with AI assistance.</p>
+                    </div>
+                    
+                    <div id="error" class="error" style="display: none;"></div>
+                    
+                    <div id="reportContent" class="report-content" style="display: none;"></div>
+                    
+                    <div id="reportActions" class="report-actions" style="display: none;">
+                        <button class="btn-secondary" onclick="downloadPDF()">📄 Download PDF</button>
+                        <button class="btn-secondary" onclick="printReport()">🖨️ Print Report</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            let currentAnalysisId = null;
+            
+            // Load available reports on page load
+            window.onload = function() {
+                loadAvailableReports();
+            };
+            
+            async function loadAvailableReports() {
+                try {
+                    const response = await fetch('/api/reports/available');
+                    const data = await response.json();
+                    
+                    const select = document.getElementById('reportSelect');
+                    select.innerHTML = '<option value="">-- Select a report --</option>';
+                    
+                    data.reports.forEach(report => {
+                        const option = document.createElement('option');
+                        option.value = report.analysis_id;
+                        option.textContent = `${report.analysis_id} - ${report.date_analyzed} (${report.analysis_type})`;
+                        select.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error loading reports:', error);
+                    showError('Failed to load available reports');
+                }
+            }
+            
+            async function viewReport() {
+                const analysisId = document.getElementById('reportSelect').value;
+                if (!analysisId) {
+                    showError('Please select a report first');
+                    return;
+                }
+                
+                currentAnalysisId = analysisId;
+                showLoading();
+                hideError();
+                hideReport();
+                
+                try {
+                    const response = await fetch(`/api/reports/generate/${analysisId}`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showReport(data.formatted_report);
+                    } else {
+                        showError(data.error || 'Failed to generate report');
+                    }
+                } catch (error) {
+                    console.error('Error generating report:', error);
+                    showError('Failed to generate report');
+                }
+            }
+            
+            function showLoading() {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('reportSection').style.display = 'block';
+            }
+            
+            function hideLoading() {
+                document.getElementById('loading').style.display = 'none';
+            }
+            
+            function showError(message) {
+                document.getElementById('error').textContent = message;
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('reportSection').style.display = 'block';
+                hideLoading();
+            }
+            
+            function hideError() {
+                document.getElementById('error').style.display = 'none';
+            }
+            
+            function showReport(content) {
+                document.getElementById('reportContent').innerHTML = content;
+                document.getElementById('reportContent').style.display = 'block';
+                document.getElementById('reportActions').style.display = 'flex';
+                document.getElementById('reportSection').style.display = 'block';
+                hideLoading();
+            }
+            
+            function hideReport() {
+                document.getElementById('reportContent').style.display = 'none';
+                document.getElementById('reportActions').style.display = 'none';
+            }
+            
+            async function downloadPDF() {
+                if (!currentAnalysisId) return;
+                
+                try {
+                    const response = await fetch(`/api/reports/download/${currentAnalysisId}`);
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `electionwatch_report_${currentAnalysisId}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    } else {
+                        showError('Failed to download PDF');
+                    }
+                } catch (error) {
+                    console.error('Error downloading PDF:', error);
+                    showError('Failed to download PDF');
+                }
+            }
+            
+            function printReport() {
+                const content = document.getElementById('reportContent').innerHTML;
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(`
+                    <html>
+                        <head>
+                            <title>ElectionWatch Report</title>
+                            <style>
+                                body { font-family: Arial, sans-serif; margin: 20px; }
+                                h1, h2, h3 { color: #2c3e50; }
+                                .header { text-align: center; margin-bottom: 30px; }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="header">
+                                <h1>ElectionWatch Analysis Report</h1>
+                            </div>
+                            ${content}
+                        </body>
+                    </html>
+                `);
+                printWindow.document.close();
+                printWindow.print();
+            }
+        </script>
+    </body>
+    </html>
+    

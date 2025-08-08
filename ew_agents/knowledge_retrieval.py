@@ -55,7 +55,7 @@ logger = logging.getLogger(__name__)
 class KnowledgeQuery:
     """Structured query for knowledge retrieval"""
     query_text: str
-    collections: List[str] = None  # Specific collections to search
+    collections: Optional[List[str]] = None  # Specific collections to search
     max_results: int = 10
     similarity_threshold: float = 0.7
     context_type: str = "analysis"  # analysis, recommendation, detection
@@ -68,7 +68,7 @@ class KnowledgeRetriever:
     """
     
     def __init__(self, 
-                 mongodb_uri: str = None,
+                 mongodb_uri: Optional[str] = None,
                  database_name: str = "knowledge",
                  embedding_model: str = "BAAI/bge-small-en-v1.5"):
         """

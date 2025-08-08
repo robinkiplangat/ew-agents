@@ -1,4 +1,6 @@
 # ElectionWatch ML Agent System
+   pip install accelerate bitsandbytes sentencepiece
+
 
 This directory (`ml/`) contains the multi-agent system designed for the ElectionWatch platform. It uses the Google Agent Development Kit (ADK) to orchestrate various specialized agents for tasks related to misinformation tracking, actor identification, trend analysis, and lexicon management.
 
