@@ -52,24 +52,62 @@ def map_agent_json_to_unified(
     processing_time: float
 ) -> Dict[str, Any]:
     """Map coordinator agent JSON into the unified ElectionWatch report format."""
+    
+    # Preserve rich agent data - map don't strip
     narrative = agent_json.get("narrative_classification", {})
     risk = agent_json.get("risk_assessment", {})
     recs = agent_json.get("recommendations", [])
     actors_src = agent_json.get("actors_identified", [])
 
-    # Map actors into unified structure (keep minimal required fields)
+    # Map actors preserving rich details
     actors_mapped: List[Dict[str, Any]] = []
     for a in actors_src:
-        actors_mapped.append({
-            "name": a.get("name") or a.get("actor") or "Unknown",
-            "affiliation": "",
-            "role": a.get("role") or a.get("context") or "",
-            "influence_level": "",
-            "verification_status": "",
-            "social_metrics": {}
-        })
+        # Preserve original actor structure if it exists
+        if isinstance(a, dict):
+            actors_mapped.append({
+                "name": a.get("name") or a.get("actor") or "Unknown",
+                "role": a.get("role") or a.get("context") or "",
+                # Keep additional fields if they exist
+                "affiliation": a.get("affiliation", ""),
+                "influence_level": a.get("influence_level", ""),
+                "verification_status": a.get("verification_status", ""),
+                "social_metrics": a.get("social_metrics", {})
+            })
+        else:
+            # Fallback for string actors
+            actors_mapped.append({
+                "name": str(a) if a else "Unknown",
+                "role": "",
+                "affiliation": "",
+                "influence_level": "",
+                "verification_status": "",
+                "social_metrics": {}
+            })
 
+    # Map narrative classification preserving rich details
+    narrative_mapped = {
+        "theme": narrative.get("theme", "general_political"),
+        "confidence": narrative.get("confidence", 0.0),
+        "details": narrative.get("details", ""),
+        "threat_indicators": narrative.get("threat_indicators", []),
+        "threat_level": narrative.get("threat_level", (risk.get("level") or "low").lower() if isinstance(risk.get("level"), str) else "low")
+    }
+
+    # Map risk assessment preserving factors
+    risk_mapped = {
+        "level": (risk.get("level") or "low").lower() if isinstance(risk.get("level"), str) else "low",
+        "factors": risk.get("factors", [])
+    }
+
+    # Create unified report preserving rich data
     report = {
+        "analysis_id": analysis_id,
+        "status": "completed",
+        "narrative_classification": narrative_mapped,
+        "actors_identified": actors_mapped,  # Use original field name
+        "risk_assessment": risk_mapped,      # Use original field name
+        "recommendations": recs,
+        # Keep additional metadata for backward compatibility
         "report_metadata": {
             "report_id": analysis_id,
             "analysis_timestamp": end_time.isoformat(),
@@ -79,19 +117,7 @@ def map_agent_json_to_unified(
             "content_source": source,
             "processing_time_seconds": processing_time,
         },
-        "narrative_classification": {
-            "theme": narrative.get("theme", "general_political"),
-            "threat_level": (risk.get("level") or "low").lower() if isinstance(risk.get("level"), str) else "low",
-            "details": narrative.get("details", ""),
-            "confidence_score": narrative.get("confidence", 0.0),
-            "alternative_themes": narrative.get("alternative_themes", []),
-            "threat_indicators": []
-        },
-        "actors": actors_mapped,
-        "lexicon_terms": [],
-        "risk_level": (risk.get("level") or "low").lower() if isinstance(risk.get("level"), str) else "low",
         "date_analyzed": end_time.isoformat(),
-        "recommendations": recs,
         "analysis_insights": {
             "content_statistics": {
                 "word_count": len((content_text or "").split()),
@@ -762,12 +788,12 @@ def create_app():
     
     @app.post("/run_analysis")
     async def run_analysis(
-        text: str = Form(None),
+        text: str = Form(""),
         files: List[UploadFile] = File(default=[]),
         analysis_type: str = Form("misinformation_detection"),
         priority: str = Form("medium"),
         source: str = Form("api_upload"),
-        metadata: str = Form("{}")
+        metadata: str = Form("")
     ):
         """
         Test endpoint that outputs raw LLM response and structured report
