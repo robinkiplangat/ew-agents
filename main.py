@@ -14,6 +14,7 @@ import asyncio
 import uvicorn
 import logging
 from datetime import datetime
+import time
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 import sys # Added for sys.path.append
@@ -1986,26 +1987,35 @@ def create_app():
                     
                     # ENHANCED: Use Knowledge Base Integration instead of hardcoded string matching
                     logger.info('🔍 Using knowledge base for narrative classification and lexicon extraction')
-                    
+
+                    # Initialize defaults to avoid scope errors
+                    narrative_search = {}
+                    lexicon_search = {}
+                    kb_error = None
+
                     try:
                         # Import knowledge base functions
-                        from ew_agents.knowledge_retrieval import search_knowledge, analyze_content
-                        
-                        # Perform semantic search for narrative classification
-                        narrative_search = await search_knowledge(llm_response, collections=['narratives'])
-                        logger.info(f'📚 Narrative search: {len(narrative_search.get("narratives", {}).get("source_nodes", []))} matches found')
-                        
-                        # Perform semantic search for lexicon terms  
-                        lexicon_search = await search_knowledge(llm_response, collections=['hate_speech_lexicon'])
-                        logger.info(f'📖 Lexicon search: {len(lexicon_search.get("hate_speech_lexicon", {}).get("source_nodes", []))} matches found')
-                        
-                    except Exception as kb_error:
+                        from ew_agents.knowledge_retrieval import search_knowledge
+
+                        # Run KB searches concurrently for latency reduction
+                        narrative_search, lexicon_search = await asyncio.gather(
+                            search_knowledge(llm_response, collections=['narratives']),
+                            search_knowledge(llm_response, collections=['hate_speech_lexicon'])
+                        )
+
+                        logger.info(
+                            f"📚 Narrative matches: {len(narrative_search.get('narratives', {}).get('source_nodes', []))} | "
+                            f"📖 Lexicon matches: {len(lexicon_search.get('hate_speech_lexicon', {}).get('source_nodes', []))}"
+                        )
+
+                    except Exception as e:
+                        kb_error = e
                         logger.warning(f'⚠️ Knowledge base integration failed: {kb_error}')
                         logger.info('🔄 Falling back to basic analysis without knowledge base enhancement')
-                        # Continue with basic analysis
-                        
-                        # Extract narrative classification from knowledge base results
-                        if narrative_search and narrative_search.get('narratives', {}).get('source_nodes'):
+
+                    # Extract narrative classification using KB results when available, else fallback
+                    try:
+                        if narrative_search.get('narratives', {}).get('source_nodes'):
                             best_narrative = narrative_search['narratives']['source_nodes'][0]
                             narrative_meta = best_narrative.get('metadata', {})
                             confidence = best_narrative.get('score', 0.5)
@@ -2030,12 +2040,15 @@ def create_app():
                                 "threat_indicators": []
                             }
                             logger.info('⚠️ No narrative matches found, using LLM-based classification')
-                        
-                        # Extract lexicon terms from knowledge base results and LLM analysis
-                        lexicon_terms = []
-                        
-                        # Add knowledge base lexicon matches
-                        if lexicon_search and lexicon_search.get('hate_speech_lexicon', {}).get('source_nodes'):
+                    except Exception as e:
+                        logger.error(f"Narrative extraction error: {e}")
+
+                    # Extract lexicon terms from knowledge base results and LLM analysis
+                    lexicon_terms = []
+
+                    # Add knowledge base lexicon matches
+                    try:
+                        if lexicon_search.get('hate_speech_lexicon', {}).get('source_nodes'):
                             for lexicon_node in lexicon_search['hate_speech_lexicon']['source_nodes'][:3]:  # Top 3 matches
                                 lexicon_meta = lexicon_node.get('metadata', {})
                                 lexicon_terms.append({
@@ -2047,8 +2060,10 @@ def create_app():
                                     "severity": lexicon_meta.get('severity', 'medium'),
                                     "definition": lexicon_meta.get('definition', 'Term from knowledge base')
                                 })
-                        
-                        # Add terms extracted from LLM analysis
+                    except Exception as e:
+                        logger.error(f"Lexicon extraction error: {e}")
+
+                    # Add terms extracted from LLM analysis
                         if 'PVC' in llm_response:
                             lexicon_terms.append({
                                 "term": "PVC",
@@ -2059,7 +2074,6 @@ def create_app():
                                 "severity": "low",
                                 "definition": "Permanent Voter Card - essential for voting"
                             })
-                        
                         if 'Obidients' in llm_response or '#Obidients' in llm_response:
                             lexicon_terms.append({
                                 "term": "Obidients",
@@ -2070,7 +2084,7 @@ def create_app():
                                 "severity": "low",
                                 "definition": "Supporters of Peter Obi and Labour Party"
                             })
-                        
+
                         if 'Labour Party' in llm_response:
                             lexicon_terms.append({
                                 "term": "Labour Party",
@@ -2081,8 +2095,8 @@ def create_app():
                                 "severity": "low",
                                 "definition": "Political party in Nigerian elections"
                             })
-                        
-                        # If no terms found, add default
+
+                    # If no terms found, add default
                         if not lexicon_terms:
                             lexicon_terms = [{
                                 "term": "election content",
@@ -2093,7 +2107,7 @@ def create_app():
                                 "severity": "low",
                                 "definition": "General election-related content"
                             }]
-                        
+                    
                         report['lexicon_terms'] = lexicon_terms
                         logger.info(f'✅ Extracted {len(lexicon_terms)} lexicon terms')
                         
@@ -2102,7 +2116,7 @@ def create_app():
                         logger.info('✅ Added LLM response to analysis_insights')
                         
                         # Extract key findings from knowledge base
-                        if narrative_search and narrative_search.get('narratives', {}).get('response'):
+                        if narrative_search.get('narratives', {}).get('response'):
                             report['analysis_insights']['key_findings'] = narrative_search['narratives']['response'][:500]
                         else:
                             report['analysis_insights']['key_findings'] = f"Analysis of {len(all_text.split())} words of content for election-related patterns"
@@ -2126,31 +2140,7 @@ def create_app():
                         # Set risk level based on narrative classification
                         report['risk_level'] = report['narrative_classification']['threat_level']
                         
-                        logger.info('✅ Knowledge base integration completed successfully')
-                        
-                    except Exception as kb_error:
-                        logger.error(f'❌ Knowledge base integration failed: {kb_error}')
-                        # Fallback to hardcoded values if knowledge base fails
-                        report['narrative_classification'] = {
-                            "theme": "general_political",
-                            "threat_level": "low",
-                            "details": f"Fallback analysis due to KB error: {str(kb_error)[:100]}",
-                            "confidence_score": 0.5,
-                            "alternative_themes": [],
-                            "threat_indicators": []
-                        }
-                        report['lexicon_terms'] = [{
-                            "term": "election content",
-                            "category": "general",
-                            "context": "fallback",
-                            "confidence_score": 0.5,
-                            "language": "en",
-                            "severity": "low",
-                            "definition": "Fallback term due to knowledge base error"
-                        }]
-                        report['analysis_insights']["llm_response"] = llm_response
-                        report['analysis_insights']['key_findings'] = f"Analysis of {len(all_text.split())} words of content (knowledge base unavailable)"
-                        report['recommendations'] = ["Manual review recommended - knowledge base integration failed"]
+                        logger.info('✅ Knowledge base integration stage completed')
                     
                     # Store the complete analysis result in MongoDB
                     try:
@@ -2158,6 +2148,10 @@ def create_app():
                         kb_used = 'kb_error' not in locals()
                         kb_error_reason = str(kb_error) if 'kb_error' in locals() else None
                         
+                        # Determine if knowledge base was used successfully
+                        kb_used = (kb_error is None)
+                        kb_error_reason = str(kb_error) if kb_error is not None else None
+
                         analysis_data = {
                             "llm_response": llm_response,
                             "structured_report": report,
@@ -2170,8 +2164,8 @@ def create_app():
                                 "word_count": len(all_text.split()),
                                 "knowledge_base_used": kb_used,
                                 "error_reason": kb_error_reason,
-                                "narrative_matches": len(narrative_search.get("narratives", {}).get("source_nodes", [])) if 'narrative_search' in locals() else 0,
-                                "lexicon_matches": len(lexicon_search.get("hate_speech_lexicon", {}).get("source_nodes", [])) if 'lexicon_search' in locals() else 0
+                                "narrative_matches": len(narrative_search.get("narratives", {}).get("source_nodes", [])),
+                                "lexicon_matches": len(lexicon_search.get("hate_speech_lexicon", {}).get("source_nodes", []))
                             },
                             "timestamp": end_time.isoformat()
                         }
@@ -2190,7 +2184,7 @@ def create_app():
                     # Return both raw LLM response and structured report
                     return {
                         "LLM_Response": llm_response,
-                        # "Report": report
+                        "Report": report
                     }
                     
                 except Exception as e:
@@ -2444,6 +2438,20 @@ def create_app():
                 status_code=500,
                 detail=f"Failed to retrieve storage stats: {str(e)}"
             )
+
+    # ===== PERFORMANCE MIDDLEWARE =====
+    @app.middleware("http")
+    async def log_requests(request, call_next):
+        start_time = time.time()
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        try:
+            path = request.url.path
+        except Exception:
+            path = "unknown"
+        if path == "/run_analysis":
+            logger.info(f"Analysis completed in {process_time:.2f}s")
+        return response
 
     @app.get("/storage/recent")
     async def get_recent_analyses(limit: int = 10):

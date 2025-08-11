@@ -27,4 +27,4 @@ ENV PYTHONPATH=/app \
 
 EXPOSE 8080
 
-CMD ["python", "-u", "main.py"]
+CMD ["python3", "-u", "main.py"]
