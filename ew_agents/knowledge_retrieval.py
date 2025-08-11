@@ -102,7 +102,9 @@ class KnowledgeRetriever:
             "threat_actors",
             "known_incidents",
             "tools_and_software",
-            "mitigations"
+            "mitigations",
+            # Optional collection: if present in MongoDB, we will index it. If not, we'll log a warning.
+            "hate_speech_lexicon"
         ]
         
         logger.info(f"Initialized KnowledgeRetriever with model: {embedding_model}")

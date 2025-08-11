@@ -1153,6 +1153,34 @@ def process_document_with_multimodal(document_data: str, document_type: str = "p
             "timestamp": datetime.now().isoformat()
         }
 
+# =============================================================================
+# TEXT AGGREGATION HELPERS (Batch-friendly)
+# =============================================================================
+
+def extract_posts(text: str) -> List[str]:
+    """Extract line-like posts from raw text input.
+    Keeps simple heuristics to avoid empty/placeholder lines.
+    """
+    if not text:
+        return []
+    lines = [ln.strip() for ln in text.splitlines()]
+    posts = [ln for ln in lines if ln and len(ln) > 1]
+    return posts[:500]  # soft cap to protect memory
+
+def aggregate_clean_text(posts: List[str]) -> str:
+    """Aggregate posts into a single cleaned text blob suitable for downstream batch analysis."""
+    if not posts:
+        return ""
+    # lightweight normalization
+    normalized = [p.replace("\t", " ") for p in posts]
+    return "\n".join(normalized)
+
+def chunk_for_batch(text: str, max_chars: int = 3000) -> List[str]:
+    """Chunk a large text into manageable slices for batch classification (char-based conservative split)."""
+    if not text:
+        return []
+    return [text[i:i+max_chars] for i in range(0, len(text), max_chars)]
+
 def create_pipeline_handoff(processed_data: Dict[str, Any], target_agents: Optional[List[str]] = None) -> Dict[str, Any]:
     """
     Create structured handoff data for downstream agents with minimal token usage.

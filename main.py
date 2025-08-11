@@ -813,40 +813,30 @@ def create_app():
             except json.JSONDecodeError:
                 metadata_dict = {"parsing_error": "Invalid JSON in metadata"}
             
-            # Initialize processed_files list
-            processed_files = []
-            
-            # Process uploaded files (optimized version)
-            for file in files:
-                if file.filename:
+            # Concurrent file processing
+            async def process_file(file: UploadFile) -> Dict[str, Any]:
+                if not file or not file.filename:
+                    return {"processed": "skip"}
                     try:
                         content = await file.read()
-                        file_info = {
+                    info = {
                             "filename": file.filename,
                             "content_type": file.content_type,
                             "size_bytes": len(content)
                         }
-                        
                         if file.content_type in ["text/csv", "application/csv"]:
-                            csv_text = content.decode('utf-8')
-                            # Use optimized CSV processing instead of raw text concatenation
-                            file_info["processed"] = "csv_structured"
-                            file_info["csv_content"] = csv_text  # Store for structured processing
+                        info["processed"] = "csv_structured"
+                        info["csv_content"] = content.decode('utf-8', errors='ignore')
                         elif file.content_type and file.content_type.startswith("text/"):
-                            text_content = content.decode('utf-8')
-                            # Use optimized text processing
-                            file_info["processed"] = "text_optimized"
-                            file_info["text_content"] = text_content
-                        else:
-                            file_info["processed"] = "metadata_only"
-                        
-                        processed_files.append(file_info)
-                        
-                    except Exception as e:
-                        processed_files.append({
-                            "filename": file.filename,
-                            "error": f"File processing error: {str(e)}"
-                        })
+                        info["processed"] = "text_optimized"
+                        info["text_content"] = content.decode('utf-8', errors='ignore')
+                                else:
+                        info["processed"] = "metadata_only"
+                    return info
+                            except Exception as e:
+                    return {"filename": getattr(file, 'filename', ''), "error": f"File processing error: {e}"}
+
+            processed_files = await asyncio.gather(*(process_file(f) for f in files))
             
             # Create optimized analysis content with robust guards against placeholder inputs
             # 1) Try to build content from CSV/text files first
@@ -882,27 +872,27 @@ def create_app():
                         for p in posts:
                             lines.append(f"[{p.get('user','user')}] {p.get('content','')}")
                         csv_text_blocks.append("\n".join(lines))
-            except Exception as e:
+                        except Exception as e:
                 logger.info(f"CSV preprocessing note: {e}")
 
+            from ew_agents.data_eng_tools import extract_posts, aggregate_clean_text
             all_text = ""
             if csv_text_blocks:
                 all_text = "\n\n".join(csv_text_blocks)
-            else:
-                # 2) If no usable CSV-derived text, consider the provided form text
-                placeholder_values = {"string", "", None}
-                cleaned_text = (text or "").strip() if isinstance(text, str) else ""
-                if cleaned_text and cleaned_text.lower() not in placeholder_values:
-                    all_text = cleaned_text
-                else:
-                    # 3) Fallback to a structured JSON bundle to ensure agents have context
-                    analysis_content = {
-                        "files": processed_files,
-                        "metadata": metadata_dict,
-                        "processing_optimized": True,
-                        "platform_detection": True
-                    }
-                    all_text = json.dumps(analysis_content, indent=2)
+            # Merge any free text extracted into posts and aggregate
+            extra_posts: List[str] = []
+            for f in processed_files:
+                if f.get("processed") == "text_optimized" and f.get("text_content"):
+                    extra_posts.extend(extract_posts(f["text_content"]))
+            # fall back to provided form text
+            if not csv_text_blocks:
+                extra_posts.extend(extract_posts(text or ""))
+            if extra_posts:
+                aggregated = aggregate_clean_text(extra_posts)
+                all_text = f"{all_text}\n\n{aggregated}".strip()
+            if not all_text:
+                analysis_content = {"files": processed_files, "metadata": metadata_dict, "processing_optimized": True}
+                all_text = json.dumps(analysis_content, indent=2)
 
             # Log a brief preview to help diagnose empty/placeholder content issues
             try:
@@ -962,9 +952,9 @@ def create_app():
                         if hasattr(event, 'content') and event.content:
                             logger.info(f"Event has content: {type(event.content)}")
                             if hasattr(event.content, 'parts') and event.content.parts:
-                                llm_response = event.content.parts[0].text
+                            llm_response = event.content.parts[0].text
                                 logger.info(f"Found response in content.parts: {llm_response[:100]}...")
-                                break
+                            break
                             else:
                                 llm_response = str(event.content)
                                 logger.info(f"Found response in content: {llm_response[:100]}...")
@@ -979,7 +969,7 @@ def create_app():
                                 else:
                                     llm_response = str(event.content)
                                 logger.info(f"Final response: {llm_response[:100]}...")
-                                break
+                            break
                         
                         # Check for text attribute directly
                         elif hasattr(event, 'text') and event.text:
@@ -1024,7 +1014,7 @@ def create_app():
                                 extracted_json = json.loads(json_match.group())
                                 logger.info("✅ Extracted JSON from response body")
                                 agent_json_response = extracted_json
-                            except json.JSONDecodeError:
+            except json.JSONDecodeError:
                                 logger.info("Failed to parse extracted JSON")
 
                     # If the coordinator produced a structured JSON, prefer returning it directly
@@ -1267,14 +1257,14 @@ def create_app():
                     
                     # Return the final synthesized report (fallback when no agent JSON)
                     return report
-                    
-                except Exception as e:
-                    raise HTTPException(
-                        status_code=500,
+            
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
                         detail=f"Agent processing error: {str(e)}"
                     )
             else:
-                raise HTTPException(
+            raise HTTPException(
                     status_code=400,
                     detail="No content provided for analysis"
                 )
@@ -1299,9 +1289,9 @@ def create_app():
             
             if success:
                 return {"status": "success", "message": "Report submitted successfully"}
-            else:
+                else:
                 raise HTTPException(status_code=500, detail="Failed to store report")
-                
+            
         except Exception as e:
             return {
                 "error": "Failed to submit report",
@@ -1556,8 +1546,8 @@ if __name__ == "__main__":
     
     # Run with Uvicorn
     uvicorn.run(
-        app,
+        app, 
         host=os.getenv("HOST", "0.0.0.0"),
         port=int(os.getenv("PORT", 8080)),
         log_level="info"
-    )
+    ) 

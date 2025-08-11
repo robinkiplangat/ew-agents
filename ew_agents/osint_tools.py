@@ -277,6 +277,33 @@ def classify_image_content_theme(image_url: str, associated_text: Optional[str] 
     }
 
 # =============================================================================
+# Batch classification helper
+# =============================================================================
+
+def classify_narratives_batch(texts: List[str]) -> dict:
+    """Batch wrapper applying classify_narrative over multiple texts and aggregating a best pick.
+    Reduces upstream agent call overhead by allowing a single batched call.
+    """
+    results = []
+    for t in texts or []:
+        results.append(classify_narrative(t))
+    # choose best by confidence when available
+    best = None
+    best_conf = -1.0
+    for r in results:
+        if r.get("status") == "success":
+            conf = r.get("narrative_classification", {}).get("confidence", 0.0)
+            if conf > best_conf:
+                best_conf = conf
+                best = r
+    return {
+        "status": "success" if results else "empty",
+        "count": len(results),
+        "best": best,
+        "items": results,
+    }
+
+# =============================================================================
 # Fallback Analysis Functions
 # =============================================================================
 
