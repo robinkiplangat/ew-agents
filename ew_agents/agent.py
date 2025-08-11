@@ -35,7 +35,6 @@ try:
         data_eng_tools,
         osint_tools,
         lexicon_tools,
-        trend_analysis_tools,
         report_templates,
         knowledge_retrieval
     )
@@ -43,7 +42,6 @@ except ImportError:
     import data_eng_tools
     import osint_tools
     import lexicon_tools
-    import trend_analysis_tools
     import report_templates
     import knowledge_retrieval
 
@@ -99,7 +97,6 @@ logger.info("Wrapping tools from all modules...")
 data_eng_tools_all = wrap_module_functions_with_functiontool(data_eng_tools)
 osint_tools_all = wrap_module_functions_with_functiontool(osint_tools)
 lexicon_tools_all = wrap_module_functions_with_functiontool(lexicon_tools)
-trend_tools_all = wrap_module_functions_with_functiontool(trend_analysis_tools)
 report_tools_all = wrap_module_functions_with_functiontool(report_templates)
 
 # Wrap knowledge retrieval tools
@@ -123,7 +120,7 @@ def log_tool_summary():
     logger.info(f"DataEng tools: {len(data_eng_tools_all)}")
     logger.info(f"OSINT tools: {len(osint_tools_all)}")
     logger.info(f"Lexicon tools: {len(lexicon_tools_all)}")
-    logger.info(f"Trend tools: {len(trend_tools_all)}")
+    # Trend tools removed
     logger.info(f"Report tools: {len(report_tools_all)}")
     logger.info(f"Knowledge tools: {len(knowledge_tools_wrapped)}")
     
@@ -309,47 +306,6 @@ AGENT_CONFIGS = [
             ] if tool is not None
         ],
         "output_key": "lexicon_results"
-    },
-    {
-        "name": "TrendAnalysisAgent",
-        "model": "gemini-2.5-flash",
-        "description": "Comprehensive temporal pattern analysis and early warning specialist.",
-        "instruction": 
-        """You are the TrendAnalysisAgent specializing in temporal pattern analysis.
-            Your role is to analyze processed content for temporal patterns, trends, and early warning indicators.
-
-            ANALYSIS STEPS:
-            1. Analyze narrative trends over time using analyze_narrative_trends()
-            2. Identify emerging patterns and potential threats
-            3. Generate timeline data for visualization using generate_timeline_data()
-            4. Create early warning alerts when necessary using generate_early_warning_alert()
-            5. Support report template analysis
-
-            Use your tools systematically:
-            - analyze_narrative_trends() for comprehensive trend analysis
-            - generate_timeline_data() for timeline visualization
-            - generate_early_warning_alert() for alert generation
-            - get_analysis_template() for template structure
-
-            Always provide clear status updates:
-            → TrendAnalysisAgent: Analyzing temporal patterns...
-            ✓ TrendAnalysisAgent: Analysis complete
-            ✗ TrendAnalysisAgent: Analysis failed
-
-            Focus on temporal patterns and emerging threats.
-        """,
-        "tools": [
-            tool for tool in [
-                # Core trend analysis tools
-                trend_tools_all.get("analyze_narrative_trends"),
-                trend_tools_all.get("generate_timeline_data"),
-                trend_tools_all.get("generate_early_warning_alert"),
-                
-                # Report template integration
-                report_tools_all.get("get_analysis_template")
-            ] if tool is not None
-        ],
-        "output_key": "trend_results"
     }
 ]
 
@@ -395,8 +351,7 @@ logger.info(f"✓ OsintAgent created with {len(osint_agent.tools)} tools")
 lexicon_agent = create_agent(AGENT_CONFIGS[2])
 logger.info(f"✓ LexiconAgent created with {len(lexicon_agent.tools)} tools")
 
-trend_analysis_agent = create_agent(AGENT_CONFIGS[3])
-logger.info(f"✓ TrendAnalysisAgent created with {len(trend_analysis_agent.tools)} tools")
+# TrendAnalysisAgent removed
 
 # === COORDINATOR AGENT (unchanged) ===
 
@@ -425,7 +380,7 @@ coordinator_agent = LlmAgent(
 
         **→ Step 2: Coordinate Specialized Agents**
         - Announce: "Coordinating analysis with specialized agents..."
-        - Call agents (`DataEngAgent`, `OsintAgent`, `LexiconAgent`, `TrendAnalysisAgent`) sequentially, reporting real-time status for each (e.g., "→ DataEngAgent: Extracting content...").
+        - Call agents (`DataEngAgent`, `OsintAgent`, `LexiconAgent`) sequentially, reporting real-time status for each (e.g., "→ DataEngAgent: Extracting content...").
         - Ensure that the actual content from the user request is passed to each agent for processing.
         - **AGENT STATUS INTERPRETATION**: 
           * ✓ Completed: Agent returned results with status "success" or "limited_analysis" with meaningful data
@@ -486,13 +441,12 @@ coordinator_agent = LlmAgent(
           """,
     
     # Use ADK's native sub-agent pattern
-    sub_agents=[data_eng_agent, osint_agent, lexicon_agent, trend_analysis_agent],
+    sub_agents=[data_eng_agent, osint_agent, lexicon_agent],
     tools=[
         # Core agent tools for direct coordination
         AgentTool(data_eng_agent),
         AgentTool(osint_agent),
         AgentTool(lexicon_agent),
-        AgentTool(trend_analysis_agent),
         
         # Report generation tools
         *[tool for tool in [
@@ -536,7 +490,6 @@ def check_agent_pipeline_health() -> Dict[str, Any]:
         ("DataEngAgent", data_eng_agent),
         ("OsintAgent", osint_agent),
         ("LexiconAgent", lexicon_agent),
-        ("TrendAnalysisAgent", trend_analysis_agent),
         ("CoordinatorAgent", coordinator_agent)
     ]
     
@@ -565,7 +518,7 @@ def check_agent_pipeline_health() -> Dict[str, Any]:
         "data_eng_tools": len(data_eng_tools_all),
         "osint_tools": len(osint_tools_all),
         "lexicon_tools": len(lexicon_tools_all),
-        "trend_analysis_tools": len(trend_tools_all),
+        # Trend tools removed
         "report_templates": len(report_tools_all),
         "knowledge_retrieval": len(knowledge_tools_wrapped)
     }
@@ -600,14 +553,13 @@ def get_tool_inventory() -> Dict[str, Any]:
         "data_eng_tools": list(data_eng_tools_all.keys()),
         "osint_tools": list(osint_tools_all.keys()),
         "lexicon_tools": list(lexicon_tools_all.keys()),
-        "trend_analysis_tools": list(trend_tools_all.keys()),
+        # Trend tools removed
         "report_templates": list(report_tools_all.keys()),
         "knowledge_retrieval": list(knowledge_tools_wrapped.keys()),
         "total_unique_tools": len(set(
             list(data_eng_tools_all.keys()) +
             list(osint_tools_all.keys()) +
             list(lexicon_tools_all.keys()) +
-            list(trend_tools_all.keys()) +
             list(report_tools_all.keys()) +
             list(knowledge_tools_wrapped.keys())
         ))
@@ -621,7 +573,7 @@ __all__ = [
     'data_eng_agent',
     'osint_agent', 
     'lexicon_agent',
-    'trend_analysis_agent',
+    # TrendAnalysisAgent removed
     
     # Health and diagnostics
     'check_agent_pipeline_health',

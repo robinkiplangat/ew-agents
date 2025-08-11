@@ -35,7 +35,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 
-from google.adk.cli.fast_api import get_fast_api_app
+# ADK import moved to create_app() function to handle import failures gracefully
 
 # Get the directory where main.py is located
 AGENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -774,13 +774,35 @@ class ReportSubmission(BaseModel):
 def create_app():
     """Create and configure the FastAPI application using ADK standards."""
     
-    # Use ADK's built-in FastAPI app factory
-    app = get_fast_api_app(
-        agents_dir=AGENT_DIR,
-        session_service_uri=SESSION_SERVICE_URI,
-        allow_origins=ALLOWED_ORIGINS,
-        web=SERVE_WEB_INTERFACE,
-    )
+    print("🔧 Initializing ADK FastAPI app...")
+    try:
+        # Import ADK here to handle import failures gracefully
+        from google.adk.cli.fast_api import get_fast_api_app
+        
+        # Use ADK's built-in FastAPI app factory
+        app = get_fast_api_app(
+            agents_dir=AGENT_DIR,
+            session_service_uri=SESSION_SERVICE_URI,
+            allow_origins=ALLOWED_ORIGINS,
+            web=SERVE_WEB_INTERFACE,
+        )
+        print("✅ ADK FastAPI app initialized!")
+    except Exception as e:
+        print(f"❌ Failed to initialize ADK app: {e}")
+        # Fallback to basic FastAPI if ADK fails
+        print("🔄 Falling back to basic FastAPI...")
+        from fastapi import FastAPI
+        from fastapi.middleware.cors import CORSMiddleware
+        
+        app = FastAPI(title="ElectionWatch API", description="OSINT Analysis API")
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=ALLOWED_ORIGINS,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+        print("✅ Basic FastAPI app created!")
     
     templates = Jinja2Templates(directory="ew_agents/templates")
     
@@ -817,24 +839,27 @@ def create_app():
             async def process_file(file: UploadFile) -> Dict[str, Any]:
                 if not file or not file.filename:
                     return {"processed": "skip"}
-                    try:
-                        content = await file.read()
+                try:
+                    content = await file.read()
                     info = {
-                            "filename": file.filename,
-                            "content_type": file.content_type,
-                            "size_bytes": len(content)
-                        }
-                        if file.content_type in ["text/csv", "application/csv"]:
+                        "filename": file.filename,
+                        "content_type": file.content_type,
+                        "size_bytes": len(content),
+                    }
+                    if file.content_type in ["text/csv", "application/csv"]:
                         info["processed"] = "csv_structured"
-                        info["csv_content"] = content.decode('utf-8', errors='ignore')
-                        elif file.content_type and file.content_type.startswith("text/"):
+                        info["csv_content"] = content.decode("utf-8", errors="ignore")
+                    elif file.content_type and file.content_type.startswith("text/"):
                         info["processed"] = "text_optimized"
-                        info["text_content"] = content.decode('utf-8', errors='ignore')
-                                else:
+                        info["text_content"] = content.decode("utf-8", errors="ignore")
+                    else:
                         info["processed"] = "metadata_only"
                     return info
-                            except Exception as e:
-                    return {"filename": getattr(file, 'filename', ''), "error": f"File processing error: {e}"}
+                except Exception as e:
+                    return {
+                        "filename": getattr(file, "filename", ""),
+                        "error": f"File processing error: {e}",
+                    }
 
             processed_files = await asyncio.gather(*(process_file(f) for f in files))
             
@@ -872,7 +897,7 @@ def create_app():
                         for p in posts:
                             lines.append(f"[{p.get('user','user')}] {p.get('content','')}")
                         csv_text_blocks.append("\n".join(lines))
-                        except Exception as e:
+            except Exception as e:
                 logger.info(f"CSV preprocessing note: {e}")
 
             from ew_agents.data_eng_tools import extract_posts, aggregate_clean_text
@@ -952,9 +977,9 @@ def create_app():
                         if hasattr(event, 'content') and event.content:
                             logger.info(f"Event has content: {type(event.content)}")
                             if hasattr(event.content, 'parts') and event.content.parts:
-                            llm_response = event.content.parts[0].text
+                                llm_response = event.content.parts[0].text
                                 logger.info(f"Found response in content.parts: {llm_response[:100]}...")
-                            break
+                                break
                             else:
                                 llm_response = str(event.content)
                                 logger.info(f"Found response in content: {llm_response[:100]}...")
@@ -1014,7 +1039,7 @@ def create_app():
                                 extracted_json = json.loads(json_match.group())
                                 logger.info("✅ Extracted JSON from response body")
                                 agent_json_response = extracted_json
-            except json.JSONDecodeError:
+                            except json.JSONDecodeError:
                                 logger.info("Failed to parse extracted JSON")
 
                     # If the coordinator produced a structured JSON, prefer returning it directly
@@ -1258,13 +1283,13 @@ def create_app():
                     # Return the final synthesized report (fallback when no agent JSON)
                     return report
             
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
+                except Exception as e:
+                    raise HTTPException(
+                        status_code=500,
                         detail=f"Agent processing error: {str(e)}"
                     )
             else:
-            raise HTTPException(
+                raise HTTPException(
                     status_code=400,
                     detail="No content provided for analysis"
                 )
@@ -1278,276 +1303,42 @@ def create_app():
             )
     
 
-    @app.post("/submitReport")
-    async def submit_report(report: ReportSubmission):
-        """
-        Submit a manual report for storage and analysis.
-        """
-        try:
-            # Store the report submission
-            success = await store_report_submission(report.report_id, report.dict())
-            
-            if success:
-                return {"status": "success", "message": "Report submitted successfully"}
-                else:
-                raise HTTPException(status_code=500, detail="Failed to store report")
-            
-        except Exception as e:
-            return {
-                "error": "Failed to submit report",
-                "details": str(e)
-            }
+    # Trimmed: Only focus on /run_analysis endpoint. Other endpoints removed for simplicity.
 
     # ===== REPORT VIEWING ENDPOINTS =====
     
-    @app.get("/view_reports")
-    async def view_reports():
-        """
-        Serve the reports viewing page with dropdown of available reports.
-        """
-        try:
-            html_content = create_html_template()
-            return HTMLResponse(content=html_content, status_code=200)
-        except Exception as e:
-            logger.error(f"Error serving reports page: {e}")
-            return HTMLResponse(
-                content="<h1>Error loading reports page</h1><p>Please try again later.</p>",
-                status_code=500
-            )
+    # Removed ancillary report viewing endpoints to reduce surface area
 
-    @app.get("/api/reports/available")
-    async def get_available_reports():
-        """
-        Get list of available reports from MongoDB analysis_results collection for the dropdown.
-        """
-        try:
-            # Get the actual analysis data directly from storage
-            from ew_agents.mongodb_storage import storage
-            analyses = await storage.list_recent_analyses(limit=50)
-            
-            reports = []
-            for analysis in analyses:
-                # Check if this analysis has LLM response data
-                # The list_recent_analyses returns full documents, so we need to look in data.llm_response
-                data = analysis.get("data", {})
-                llm_response = data.get("llm_response", "")
-                
-                # If not found in data, look in analysis_insights
-                if not llm_response:
-                    analysis_insights = data.get("analysis_insights", {})
-                    llm_response = analysis_insights.get("llm_response", "")
-                
-                if llm_response and len(llm_response.strip()) > 10:  # Only include analyses with substantial LLM responses
-                    # Get timestamp
-                    date_analyzed = data.get("date_analyzed", analysis.get("created_at", "Unknown"))
-                    if date_analyzed and date_analyzed != "Unknown":
-                        try:
-                            if isinstance(date_analyzed, str):
-                                dt = datetime.fromisoformat(date_analyzed.replace('Z', '+00:00'))
-                                date_str = dt.strftime("%Y-%m-%d %H:%M")
-                            else:
-                                date_str = date_analyzed.strftime("%Y-%m-%d %H:%M")
-                        except:
-                            date_str = "Unknown"
-                    else:
-                        date_str = "Unknown"
-                    
-                    reports.append({
-                        "analysis_id": analysis.get("analysis_id", "unknown"),
-                        "date_analyzed": date_str,
-                        "analysis_type": data.get("analysis_type", "misinformation_analysis"),
-                        "risk_level": data.get("risk_level", "unknown"),
-                        "content_preview": llm_response[:100] + "..." if len(llm_response) > 100 else llm_response
-                    })
-            
-            # Sort by date (newest first)
-            reports.sort(key=lambda x: x["date_analyzed"], reverse=True)
-            
-            return {
-                "success": True,
-                "reports": reports,
-                "total_count": len(reports)
-            }
-            
-        except Exception as e:
-            logger.error(f"Error getting available reports: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "reports": [],
-                "total_count": 0
-            }
+    # Removed reports API endpoints
 
-    @app.get("/api/reports/generate/{analysis_id}")
-    async def generate_formatted_report(analysis_id: str):
-        """
-        Generate a formatted report using AI for the specified analysis.
-        """
-        try:
-            # Get the analysis data from MongoDB storage
-            from ew_agents.mongodb_storage import storage
-            analysis_data = await storage.get_analysis_result(analysis_id)
-            
-            if not analysis_data:
-                return {
-                    "success": False,
-                    "error": f"Analysis with ID {analysis_id} not found"
-                }
-            
-            # Extract LLM response from the analysis data
-            # The MongoDB storage returns the data field directly (not wrapped)
-            # So analysis_data IS the data object containing llm_response
-            llm_response = analysis_data.get("llm_response", "")
-            
-            # If not found at top level, look in analysis_insights
-            if not llm_response:
-                analysis_insights = analysis_data.get("analysis_insights", {})
-                llm_response = analysis_insights.get("llm_response", "")
-            
-            # Debug logging
-            logger.info(f"Analysis data keys: {list(analysis_data.keys()) if analysis_data else 'None'}")
-            logger.info(f"LLM response found: {bool(llm_response)}")
-            logger.info(f"LLM response length: {len(llm_response) if llm_response else 0}")
-            
-            if not llm_response:
-                return {
-                    "success": False,
-                    "error": "No LLM response found in analysis data"
-                }
-            
-            # Format the report using AI
-            formatted_report = await format_report_with_ai(llm_response, analysis_data)
-            
-            return {
-                "success": True,
-                "formatted_report": formatted_report,
-                "analysis_id": analysis_id,
-                "original_data": analysis_data
-            }
-            
-        except Exception as e:
-            logger.error(f"Error generating formatted report: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+    # Removed reports API endpoints
 
-    @app.get("/api/reports/download/{analysis_id}")
-    async def download_pdf_report(analysis_id: str):
-        """
-        Download a PDF version of the formatted report.
-        """
-        try:
-            # Get the analysis data from MongoDB storage
-            from ew_agents.mongodb_storage import storage
-            analysis_data = await storage.get_analysis_result(analysis_id)
-            
-            if not analysis_data:
-                raise HTTPException(status_code=404, detail=f"Analysis with ID {analysis_id} not found")
-            
-            # Extract LLM response from the analysis data
-            # The MongoDB storage returns the data field directly (not wrapped)
-            # So analysis_data IS the data object containing llm_response
-            llm_response = analysis_data.get("llm_response", "")
-            
-            # If not found at top level, look in analysis_insights
-            if not llm_response:
-                analysis_insights = analysis_data.get("analysis_insights", {})
-                llm_response = analysis_insights.get("llm_response", "")
-            
-            # Debug logging
-            logger.info(f"Analysis data keys: {list(analysis_data.keys()) if analysis_data else 'None'}")
-            logger.info(f"LLM response found: {bool(llm_response)}")
-            logger.info(f"LLM response length: {len(llm_response) if llm_response else 0}")
-            
-            if not llm_response:
-                raise HTTPException(status_code=400, detail="No LLM response found in analysis data")
-            
-            # Format the report using AI
-            formatted_report = await format_report_with_ai(llm_response, analysis_data)
-            
-            # Generate PDF
-            pdf_buffer = generate_pdf_report(formatted_report, analysis_id)
-            
-            # Return the PDF as a response with proper headers
-            from fastapi.responses import Response
-            
-            return Response(
-                content=pdf_buffer.getvalue(),
-                media_type="application/pdf",
-                headers={
-                    "Content-Disposition": f"attachment; filename=electionwatch_report_{analysis_id}.pdf"
-                }
-            )
-            
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(f"Error downloading PDF report: {e}")
-            raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")
+    # Removed reports API endpoints
 
-    @app.get("/health")
-    async def health_check():
-        """Health check endpoint"""
-        return {"status": "healthy", "timestamp": datetime.now().isoformat()}
-    
-    @app.get("/debug/agent-test")
-    async def test_agent_response():
-        """Test endpoint to check agent response format"""
-        try:
-            from ew_agents.agent import root_agent
-            from google.adk.runners import InMemoryRunner
-            from google.genai import types
-            
-            runner = InMemoryRunner(root_agent)
-            
-            user_content = types.Content(
-                role="user",
-                parts=[types.Part(text="Analyze this simple text: 'Election day is tomorrow'")]
-            )
-            
-            import uuid
-            session_id = f"test_{uuid.uuid4().hex[:8]}"
-            user_id = "test_user"
-            
-            # Run the agent
-            analysis_events = []
-            async for event in runner.run_async(
-                user_id=user_id,
-                session_id=session_id,
-                new_message=user_content
-            ):
-                analysis_events.append(event)
-                logger.info(f"Test Event: {type(event).__name__}")
-            
-            # Extract response
-            llm_response = "No response found"
-            for event in reversed(analysis_events):
-                if hasattr(event, 'content') and event.content and hasattr(event.content, 'parts') and event.content.parts:
-                    llm_response = event.content.parts[0].text
-                    break
-            
-            return {
-                "success": True,
-                "events_count": len(analysis_events),
-                "event_types": [type(event).__name__ for event in analysis_events],
-                "response": llm_response,
-                "response_length": len(llm_response)
-            }
-            
-        except Exception as e:
-            return {"success": False, "error": str(e)}
+    # Removed health/debug endpoints to keep only /run_analysis
 
     return app
 
 if __name__ == "__main__":
-    # Create the app
-    app = create_app()
+    print("🚀 Starting ElectionWatch API Server...")
+    print(f"📍 HOST: {os.getenv('HOST', '0.0.0.0')}")
+    print(f"🔌 PORT: {os.getenv('PORT', '8080')}")
+    print(f"🌍 PROJECT: {os.getenv('GOOGLE_CLOUD_PROJECT', 'ew-agents-v02')}")
     
-    # Run with Uvicorn
-    uvicorn.run(
-        app, 
-        host=os.getenv("HOST", "0.0.0.0"),
-        port=int(os.getenv("PORT", 8080)),
-        log_level="info"
-    ) 
+    try:
+        print("⚙️ Creating FastAPI app...")
+        app = create_app()
+        print("✅ FastAPI app created successfully!")
+        
+        print("🔥 Starting Uvicorn server...")
+        uvicorn.run(
+            app, 
+            host=os.getenv("HOST", "0.0.0.0"),
+            port=int(os.getenv("PORT", 8080)),
+            log_level="info"
+        )
+    except Exception as e:
+        print(f"❌ Failed to start server: {e}")
+        import traceback
+        traceback.print_exc()
+        raise 

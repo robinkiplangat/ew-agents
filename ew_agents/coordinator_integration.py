@@ -27,7 +27,7 @@ except ImportError:
     logging.warning("Google ADK not available, using enhanced coordinator only")
 
 from .agent import coordinator_agent
-from . import data_eng_tools, osint_tools, lexicon_tools, trend_analysis_tools
+from . import data_eng_tools, osint_tools, lexicon_tools
 from .report_templates import ElectionWatchReportTemplate
 
 logger = logging.getLogger(__name__)
@@ -52,14 +52,10 @@ class EnhancedCoordinator:
             },
             "comprehensive_analysis": {
                 "name": "Comprehensive Analysis",
-                "description": "Full analysis with trends, actors, and risk assessment",
-                "required_agents": ["DataEngAgent", "OsintAgent", "LexiconAgent", "TrendAnalysisAgent"]
+                "description": "Full analysis with actors and risk assessment",
+                "required_agents": ["DataEngAgent", "OsintAgent", "LexiconAgent"]
             },
-            "social_media_monitoring": {
-                "name": "Social Media Monitoring",
-                "description": "Real-time monitoring with alerts and trend tracking",
-                "required_agents": ["DataEngAgent", "OsintAgent", "TrendAnalysisAgent"]
-            },
+            # TrendAnalysisAgent removed; simplify templates
             "multimedia_analysis": {
                 "name": "Multimedia Analysis",
                 "description": "Image and video content analysis",
@@ -172,14 +168,12 @@ class EnhancedCoordinator:
             "task_priorities": {
                 "DataEngAgent": "high" if content_analysis["has_multimedia"] else "medium",
                 "OsintAgent": "high",  # Always required for narrative analysis
-                "LexiconAgent": "high" if any(keyword in actual_content.lower() for keyword in ["ghost", "rigged", "fraud", "manipulate"]) else "medium",
-                "TrendAnalysisAgent": "medium" if content_analysis["has_hashtags"] else "low"
+                "LexiconAgent": "high" if any(keyword in actual_content.lower() for keyword in ["ghost", "rigged", "fraud", "manipulate"]) else "medium"
             },
             "specific_tasks": {
                 "DataEngAgent": ["extract_text", "preprocess_content"] + (["extract_multimedia_features"] if content_analysis["has_multimedia"] else []),
                 "OsintAgent": ["classify_narrative", "assess_threat_level", "identify_actors"],
-                "LexiconAgent": ["detect_coded_language", "analyze_terms", "assess_risk"],
-                "TrendAnalysisAgent": ["analyze_trends", "assess_viral_potential"] if content_analysis["has_hashtags"] else ["basic_trend_analysis"]
+                "LexiconAgent": ["detect_coded_language", "analyze_terms", "assess_risk"]
             }
         }
         
@@ -1650,13 +1644,7 @@ class CoordinatorBridge:
                     "translate_term": lexicon_tools.translate_term,
                 }
             },
-            "TrendAnalysisAgent": {
-                "tools": {
-                    "analyze_narrative_trends": trend_analysis_tools.analyze_narrative_trends,
-                    "generate_timeline_data": trend_analysis_tools.generate_timeline_data,
-                    "generate_early_warning_alert": trend_analysis_tools.generate_early_warning_alert,
-                }
-            }
+            # TrendAnalysisAgent removed
         }
     
     async def process_request(self, user_request: str, 
@@ -1826,7 +1814,6 @@ if ADK_AVAILABLE:
             data_eng_agent,
             osint_agent, 
             lexicon_agent,
-            trend_analysis_agent,
             coordinator_agent
         )
         
@@ -1838,7 +1825,7 @@ if ADK_AVAILABLE:
         data_eng_agent = None
         osint_agent = None
         lexicon_agent = None
-        trend_analysis_agent = None
+        # TrendAnalysisAgent removed
 
 else:
     # Fallback when ADK is not available
@@ -1846,7 +1833,7 @@ else:
     data_eng_agent = None
     osint_agent = None
     lexicon_agent = None
-    trend_analysis_agent = None
+    # TrendAnalysisAgent removed
     logger.info("Using enhanced coordinator without Google ADK integration")
 
 # Export the main coordinator function
@@ -1857,6 +1844,5 @@ __all__ = [
     'coordinator_agent',
     'data_eng_agent',
     'osint_agent', 
-    'lexicon_agent',
-    'trend_analysis_agent'
+    'lexicon_agent'
 ] 

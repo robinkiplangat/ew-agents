@@ -15,6 +15,10 @@ Key Features:
 import os
 import logging
 from typing import List, Dict, Any, Optional, Union
+import json
+import glob
+import hashlib
+from datetime import datetime
 from dataclasses import dataclass
 import asyncio
 
@@ -494,6 +498,144 @@ class KnowledgeRetriever:
         if self.client:
             self.client.close()
             logger.info("MongoDB connection closed")
+
+
+# ==============================
+# Knowledge Seeding (from outputs)
+# ==============================
+
+def _fingerprint(*parts: str) -> str:
+    data = "|".join([p for p in parts if p])
+    return hashlib.sha1(data.encode("utf-8")).hexdigest()
+
+def _ensure_list(value: Any) -> List[Any]:
+    if value is None:
+        return []
+    return value if isinstance(value, list) else [value]
+
+def _extract_from_analysis(payload: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
+    """Extract knowledge docs from a single analysis payload in unified structures."""
+    results: Dict[str, List[Dict[str, Any]]] = {
+        "narratives": [],
+        "threat_actors": [],
+        "mitigations": [],
+        "hate_speech_lexicon": [],
+    }
+
+    # narrative classification
+    nc = payload.get("narrative_classification") or payload.get("data", {}).get("narrative_classification")
+    if nc and isinstance(nc, dict):
+        theme = str(nc.get("theme", "")).strip()
+        details = str(nc.get("details", "")).strip()
+        indicators = _ensure_list(nc.get("threat_indicators") or nc.get("key_indicators", []))
+        meta = {
+            "id": _fingerprint(theme, details),
+            "category": theme,
+            "meta_narrative": nc.get("meta_narrative", ""),
+            "scenario": details,
+            "key_indicators_for_ai": indicators,
+            "primary_disarm_technique": nc.get("primary_disarm_technique", ""),
+            "common_platforms": _ensure_list(nc.get("common_platforms", [])),
+            "created_at": datetime.utcnow().isoformat(),
+        }
+        results["narratives"].append(meta)
+
+    # actors
+    actors = payload.get("actors") or payload.get("actors_identified") or payload.get("data", {}).get("actors", [])
+    for a in actors or []:
+        name = str(a.get("name", "")).strip()
+        if not name:
+            continue
+        doc = {
+            "_id": _fingerprint("actor", name, a.get("role", ""), a.get("affiliation", "")),
+            "group_name": name,
+            "aliases": _ensure_list(a.get("aliases", [])),
+            "country": a.get("country", ""),
+            "description": a.get("role", ""),
+            "attribution": a.get("affiliation", ""),
+            "source": "analysis_output",
+            "created_at": datetime.utcnow().isoformat(),
+        }
+        results["threat_actors"].append(doc)
+
+    # recommendations -> mitigations
+    recs = payload.get("recommendations") or payload.get("data", {}).get("recommendations", [])
+    for rec in recs or []:
+        rec_str = rec if isinstance(rec, str) else json.dumps(rec)
+        doc = {
+            "_id": _fingerprint("mitigation", rec_str),
+            "mitigation_name": rec_str[:80],
+            "phase": "analysis_recommendation",
+            "description": rec_str,
+            "created_at": datetime.utcnow().isoformat(),
+        }
+        results["mitigations"].append(doc)
+
+    # lexicon terms
+    lex = payload.get("lexicon_terms") or payload.get("data", {}).get("lexicon_terms", [])
+    for t in lex or []:
+        term = str(t.get("term") or t.get("term_candidate") or "").strip()
+        if not term:
+            continue
+        doc = {
+            "_id": _fingerprint("lex", term, t.get("category", "")),
+            "term": term,
+            "category": t.get("category", "general"),
+            "language": t.get("language", t.get("language_code", "en")),
+            "severity": t.get("severity", ""),
+            "definition": t.get("definition", ""),
+            "created_at": datetime.utcnow().isoformat(),
+        }
+        results["hate_speech_lexicon"].append(doc)
+
+    return results
+
+def seed_knowledge_from_outputs(outputs_dir: str) -> Dict[str, Any]:
+    """Seed the knowledge DB from analysis output JSON files without hard-coded mappings.
+
+    - Parses narrative_classification, actors/actors_identified, recommendations, lexicon_terms
+    - Upserts into collections used by KnowledgeRetriever
+    """
+    mongodb_uri = os.getenv("MONGODB_ATLAS_URI") or os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+    client = MongoClient(mongodb_uri, tlsAllowInvalidCertificates=True, serverSelectionTimeoutMS=5000)
+    db = client[os.getenv("KNOWLEDGE_DB_NAME", "knowledge")]
+
+    files = sorted(glob.glob(os.path.join(outputs_dir, "*.json")))
+    total = {"files": 0, "narratives": 0, "threat_actors": 0, "mitigations": 0, "hate_speech_lexicon": 0}
+
+    for fp in files:
+        try:
+            with open(fp, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception as e:
+            logger.warning(f"Skipping file {fp}: {e}")
+            continue
+
+        total["files"] += 1
+        extracted = _extract_from_analysis(data)
+
+        # Upsert each collection
+        for coll_name, docs in extracted.items():
+            if not docs:
+                continue
+            coll = db[coll_name]
+            for d in docs:
+                # Prefer _id if present, else use hash of all string fields
+                if "_id" not in d:
+                    # build deterministic id
+                    concat = "|".join([str(v) for v in d.values() if isinstance(v, (str, int, float))])
+                    d["_id"] = _fingerprint(coll_name, concat)
+                coll.replace_one({"_id": d["_id"]}, d, upsert=True)
+                total[coll_name] += 1
+
+    try:
+        client.admin.command('ping')
+    except Exception:
+        pass
+    finally:
+        client.close()
+
+    return total
 
 
 # Global instance
