@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class DISARMModelLoader:
     """Loader for the fine-tuned DISARM model."""
     
-    def __init__(self, model_name: str = "ArapCheruiyot/disarm_ew-llama3_merged_16bit"):
+    def __init__(self, model_name: str = "fourbic/disarm-ew-llama3-finetuned"):
         self.model_name = model_name
         self.tokenizer = None
         self.model = None
@@ -32,7 +32,8 @@ class DISARMModelLoader:
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.model_name,
                 trust_remote_code=True,
-                use_fast=False
+                use_fast=False,
+                token=os.getenv("HUGGING_FACE_HUB_TOKEN")  # Add token for gated models
             )
             
             # Load model with quantization for efficiency
@@ -41,7 +42,8 @@ class DISARMModelLoader:
                 torch_dtype=torch.float16,
                 device_map="auto",
                 trust_remote_code=True,
-                load_in_8bit=True if self.device == "cuda" else False
+                load_in_8bit=True if self.device == "cuda" else False,
+                token=os.getenv("HUGGING_FACE_HUB_TOKEN")  # Add token for gated models
             )
             
             logger.info(f"✅ Fine-tuned DISARM model loaded successfully on {self.device}")

@@ -218,9 +218,8 @@ AGENT_CONFIGS = [
     },
     {
         "name": "OsintAgent",
-        # "model": "ArapCheruiyot/disarm_ew-llama3_merged_16bit",  # Fine-tuned DISARM model
-        "model": "gemini-2.5-flash",
-        "description": "Specialist for OSINT analysis using fine-tuned DISARM model for narrative classification and actor profiling.",
+        "model": "gemini-2.5-flash",  # Using Gemini for ADK compatibility, DISARM analysis through tools
+        "description": "Specialist for OSINT analysis using DISARM framework for narrative classification and actor profiling with enhanced election security capabilities.",
         "instruction": 
         """You are an OSINT analysis specialist for election monitoring using a fine-tuned DISARM model.
             Your role is to analyze processed content for narratives, actors, and potential misinformation with enhanced accuracy.
@@ -235,7 +234,7 @@ AGENT_CONFIGS = [
             7. Analyze image content themes
 
             Use your tools systematically:
-            - classify_narrative() for narrative classification
+            - classify_narrative() for narrative classification with DISARM framework
             - generate_actor_profile() for detailed actor analysis
             - track_keywords() for keyword monitoring
             - detect_coordinated_behavior() for behavior analysis
