@@ -392,11 +392,9 @@ logger.info(f"✓ DataEngAgent created with {len(data_eng_agent.tools)} tools")
 osint_agent = create_agent(AGENT_CONFIGS[1])
 logger.info(f"✓ OsintAgent created with {len(osint_agent.tools)} tools")
 
-lexicon_agent = create_agent(AGENT_CONFIGS[2])
-logger.info(f"✓ LexiconAgent created with {len(lexicon_agent.tools)} tools")
-
-trend_analysis_agent = create_agent(AGENT_CONFIGS[3])
-logger.info(f"✓ TrendAnalysisAgent created with {len(trend_analysis_agent.tools)} tools")
+# Removed: LexiconAgent and TrendAnalysisAgent for lean 3-agent architecture
+# Lexicon functionality integrated into OsintAgent
+logger.info("✓ Using lean 3-agent architecture: DataEng → OSINT → Coordinator")
 
 # === COORDINATOR AGENT (unchanged) ===
 
@@ -423,15 +421,16 @@ coordinator_agent = LlmAgent(
         - Call the `get_analysis_template` function.
         - Update to `✓ Template retrieved` upon success, then proceed.
 
-        **→ Step 2: Coordinate Specialized Agents**
-        - Announce: "Coordinating analysis with specialized agents..."
-        - Call agents (`DataEngAgent`, `OsintAgent`, `LexiconAgent`, `TrendAnalysisAgent`) sequentially, reporting real-time status for each (e.g., "→ DataEngAgent: Extracting content...").
+        **→ Step 2: Execute Lean Agent Pipeline**
+        - Announce: "Executing lean analysis pipeline..."
+        - Call agents in sequence: `DataEngAgent` → `OsintAgent`
+        - Report real-time status for each (e.g., "→ DataEngAgent: Processing content...", "→ OsintAgent: Extracting actors and narratives...")
         - Ensure that the actual content from the user request is passed to each agent for processing.
         - **AGENT STATUS INTERPRETATION**: 
           * ✓ Completed: Agent returned results with status "success" or "limited_analysis" with meaningful data
           * ✗ Failed: Agent returned status "error" or no usable results
           * Use actual tool outputs, not assumptions - inspect the "status" field and "has_content" field when available
-        - If the user requests specific data (e.g., "only actors"), only call relevant agents (e.g., `OsintAgent`) and deliver the requested output immediately.
+        - If the user requests specific data (e.g., "only actors"), only call `OsintAgent` and deliver the requested output immediately.
 
         **→ Step 3: Generate Final Report**
         - Do not announce this step separately.
@@ -465,34 +464,20 @@ coordinator_agent = LlmAgent(
         }
         ```
 
-        **PARTIAL OUTPUT HANDLING**
-        - If the user requests specific data (e.g., "only actors"), check available results from prior agent calls or run only the necessary agent (e.g., `OsintAgent`).
-        - Deliver the requested data in a concise format, e.g.:
-        
-        **IMPORTANT: DYNAMIC ANALYSIS REQUIREMENTS**
+           **IMPORTANT: DYNAMIC ANALYSIS REQUIREMENTS**
         - Always analyze the ACTUAL content provided, not pre-defined templates
         - Generate unique analysis IDs based on timestamp and content hash
         - Vary confidence scores based on actual content analysis (0.1-0.95 range)
         - Identify actors and themes specific to the provided content
-        - Generate recommendations tailored to the specific analysis findings
-        - Avoid using the same examples repeatedly - each analysis should be unique
-          ```json
-          {
-            "actors_identified": [
-              {"actor": "Candidate X", "role": "Mentioned in relation to voter fraud"},
-              {"actor": "Unknown - 'Official Reports'", "role": "Source of the claim (needs verification)"}
-            ]
-          }
+        - Generate recommendations tailored to the specific analysis findings         
           """,
     
-    # Use ADK's native sub-agent pattern
-    sub_agents=[data_eng_agent, osint_agent, lexicon_agent, trend_analysis_agent],
+    # Use ADK's native sub-agent pattern - lean 3-agent architecture
+    sub_agents=[data_eng_agent, osint_agent],
     tools=[
-        # Core agent tools for direct coordination
+        # Core agent tools for lean coordination
         AgentTool(data_eng_agent),
         AgentTool(osint_agent),
-        AgentTool(lexicon_agent),
-        AgentTool(trend_analysis_agent),
         
         # Report generation tools
         *[tool for tool in [
@@ -531,12 +516,10 @@ def check_agent_pipeline_health() -> Dict[str, Any]:
         }
     }
     
-    # Check each agent
+    # Check each agent in lean architecture
     agents_to_check = [
         ("DataEngAgent", data_eng_agent),
         ("OsintAgent", osint_agent),
-        ("LexiconAgent", lexicon_agent),
-        ("TrendAnalysisAgent", trend_analysis_agent),
         ("CoordinatorAgent", coordinator_agent)
     ]
     
