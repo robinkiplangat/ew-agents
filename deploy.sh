@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ElectionWatch Optimized Cloud Run Deployment
-# Combines Cloud Run flexibility with Agent Engine benefits and Reports System
+# Delegates to unified build_and_deploy.sh; keeps secrets setup as optional add-on
 
 set -e
 
@@ -12,15 +12,18 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# Configuration
-PROJECT_ID="ew-agents-v02"
-REGION="europe-west1"
-SERVICE_NAME="electionwatch-agents-api"
-IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}"
-MEMORY="2Gi"        # Optimized for quota limits
-CPU="1"             # Within quota limits
-MAX_INSTANCES="5"   # Max allowed per quota
-MIN_INSTANCES="1"   # Keep warm instances
+# Configuration (can be overridden via env)
+PROJECT_ID="${PROJECT_ID:-ew-agents-v02}"
+REGION="${REGION:-us-central1}"
+SERVICE_NAME="${SERVICE_NAME:-EMERY-agents-api}"
+MEMORY="${MEMORY:-2Gi}"
+CPU="${CPU:-1}"
+MAX_INSTANCES="${MAX_INSTANCES:-5}"
+MIN_INSTANCES="${MIN_INSTANCES:-1}"
+CONCURRENCY="${CONCURRENCY:-100}"
+TIMEOUT="${TIMEOUT:-3600}"
+PORT="${PORT:-8080}"
+SERVICE_ACCOUNT="${SERVICE_ACCOUNT:-ew-agent-service@${PROJECT_ID}.iam.gserviceaccount.com}"
 
 echo -e "${BLUE}🚀 ElectionWatch Optimized Deployment with Reports System${NC}"
 echo -e "${BLUE}=====================================================${NC}"
@@ -46,20 +49,26 @@ fi
 
 echo -e "${GREEN}✅ All system components verified${NC}"
 
-# Step 2: Enable required APIs (enhanced for Agent Engine compatibility)
-echo -e "${BLUE}⚙️  Step 2: Enabling Google Cloud APIs...${NC}"
+echo -e "${BLUE}⚙️  Step 2: Deploying core service via unified script...${NC}"
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+UNIFIED_SCRIPT="${SCRIPT_DIR}/build_and_deploy.sh"
+if [[ ! -x "${UNIFIED_SCRIPT}" ]]; then
+  echo -e "${RED}❌ ${UNIFIED_SCRIPT} not found or not executable${NC}"
+  exit 1
+fi
 
-gcloud config set project $PROJECT_ID
-gcloud config set run/region $REGION
-
-gcloud services enable \
-    cloudbuild.googleapis.com \
-    run.googleapis.com \
-    containerregistry.googleapis.com \
-    aiplatform.googleapis.com \
-    secretmanager.googleapis.com
-
-echo -e "${GREEN}✅ APIs enabled${NC}"
+"${UNIFIED_SCRIPT}" \
+  --project "${PROJECT_ID}" \
+  --region "${REGION}" \
+  --service "${SERVICE_NAME}" \
+  --memory "${MEMORY}" \
+  --cpu "${CPU}" \
+  --min-instances "${MIN_INSTANCES}" \
+  --max-instances "${MAX_INSTANCES}" \
+  --concurrency "${CONCURRENCY}" \
+  --timeout "${TIMEOUT}" \
+  --port "${PORT}" \
+  --sa "${SERVICE_ACCOUNT}" || true
 
 # Step 3: Setup Secrets Manager
 echo -e "${BLUE}🔐 Step 3: Setting up Secrets Manager...${NC}"
@@ -140,88 +149,9 @@ else
     echo -e "${YELLOW}   Reports system will use fallback formatting${NC}"
 fi
 
-# Step 4: Build optimized container
-echo -e "${BLUE}🔨 Step 4: Building optimized container...${NC}"
+# Optional advanced features below (Secrets). Core deploy above already done.
 
-# Create optimized Dockerfile if needed
-cat > Dockerfile.optimized << 'EOF'
-FROM python:3.12-slim
-
-# Install system dependencies for ADK + Vertex AI + Reports
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    git \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create app directory
-WORKDIR /app
-
-# Copy requirements and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
-COPY ew_agents/ ./ew_agents/
-COPY main.py ./
-COPY *.json ./
-
-# Set environment for production
-ENV PYTHONPATH=/app \
-    PYTHONUNBUFFERED=1 \
-    GOOGLE_CLOUD_PROJECT=ew-agents-v02 \
-    GOOGLE_CLOUD_LOCATION=europe-west1
-
-EXPOSE 8080
-
-CMD ["python3", "-u", "main.py"]
-EOF
-
-echo -e "${YELLOW}📦 Building with optimized Dockerfile...${NC}"
-mv Dockerfile.optimized Dockerfile
-gcloud builds submit --tag $IMAGE_NAME .
-
-echo -e "${GREEN}✅ Container built successfully${NC}"
-
-# Step 5: Deploy with enhanced configuration including Reports System
-echo -e "${BLUE}🚀 Step 5: Deploying with enhanced configuration...${NC}"
-
-# First, clear existing environment variables to avoid type conflicts
-echo -e "${YELLOW}🧹 Clearing existing environment variables...${NC}"
-gcloud run services update $SERVICE_NAME \
-    --region $REGION \
-    --clear-env-vars
-
-# Then deploy with new environment variables including Reports System
-gcloud run deploy $SERVICE_NAME \
-    --image $IMAGE_NAME \
-    --platform managed \
-    --region $REGION \
-    --allow-unauthenticated \
-    --memory $MEMORY \
-    --cpu $CPU \
-    --min-instances $MIN_INSTANCES \
-    --max-instances $MAX_INSTANCES \
-    --timeout 3600 \
-    --concurrency 100 \
-    --port 8080 \
-    --set-env-vars="GOOGLE_CLOUD_PROJECT=${PROJECT_ID}" \
-    --set-env-vars="GOOGLE_CLOUD_LOCATION=${REGION}" \
-    --set-env-vars="GOOGLE_GENAI_USE_VERTEXAI=TRUE" \
-    --set-env-vars="VERTEX_AI_ENABLED=true" \
-    --set-env-vars="ADK_VERTEX_INTEGRATION=enabled" \
-
-    --set-env-vars="ADK_AGENTS_ENABLED=true" \
-    --set-env-vars="ENHANCED_COORDINATOR_ENABLED=true" \
-    --set-env-vars="REASONING_ENGINE_COMPATIBLE=true" \
-    --set-env-vars="REPORTS_SYSTEM_ENABLED=true" \
-    --set-env-vars="AI_REPORT_GENERATION_ENABLED=true" \
-    --set-env-vars="CLOUD_RUN_MODE=true" \
-    --service-account="ew-agent-service@${PROJECT_ID}.iam.gserviceaccount.com" \
-    --execution-environment gen2 \
-    --cpu-boost
-
-echo -e "${GREEN}✅ Service deployed successfully${NC}"
+echo -e "${GREEN}✅ Core service deployed (via unified script)${NC}"
 
 # Step 6: Configure secret access
 echo -e "${BLUE}🔐 Step 6: Configuring secret access...${NC}"
@@ -278,8 +208,7 @@ echo -e "   Analysis: ${SERVICE_URL}/AnalysePosts"
 echo ""
 echo -e "${GREEN}✨ ElectionWatch with Reports System is live!${NC}"
 
-# Cleanup temporary files
-rm -f Dockerfile.optimized
+true
 
 echo ""
 echo -e "${BLUE}🎯 Next Steps:${NC}"

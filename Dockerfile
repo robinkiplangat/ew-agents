@@ -22,7 +22,7 @@ COPY main.py ./
 ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
     GOOGLE_CLOUD_PROJECT=ew-agents-v02 \
-    GOOGLE_CLOUD_LOCATION=europe-west1
+    GOOGLE_CLOUD_LOCATION=us-central1
 
 EXPOSE 8080
 
