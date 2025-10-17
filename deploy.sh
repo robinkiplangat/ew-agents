@@ -68,7 +68,7 @@ fi
   --concurrency "${CONCURRENCY}" \
   --timeout "${TIMEOUT}" \
   --port "${PORT}" \
-  --sa "${SERVICE_ACCOUNT}" || true
+  --sa "${SERVICE_ACCOUNT}"
 
 # Step 3: Setup Secrets Manager
 echo -e "${BLUE}🔐 Step 3: Setting up Secrets Manager...${NC}"

@@ -1,8 +1,7 @@
 # ElectionWatch ML Agent System
-   pip install accelerate bitsandbytes sentencepiece
 
 
-This directory (`ml/`) contains the multi-agent system designed for the ElectionWatch platform. It uses the Google Agent Development Kit (ADK) to orchestrate various specialized agents for tasks related to misinformation tracking, actor identification, trend analysis, and lexicon management.
+This directory contains the multi-agent system designed for the ElectionWatch platform. It uses the Google Agent Development Kit (ADK) to orchestrate various specialized agents for tasks related to misinformation tracking, actor identification, trend analysis, and lexicon management.
 
 ## 🎯 System Overview
 
@@ -30,11 +29,11 @@ The system is built around a `CoordinatorAgent` that intelligently delegates tas
 
 *   Python 3.8+
 *   Google Cloud SDK installed and configured (for running `LlmAgent` instances live).
-    *   Authenticate using: `gcloud auth login`
+  *   Authenticate using: `gcloud auth login`
 *   Environment variables for GCP:
-    *   `GOOGLE_CLOUD_PROJECT`: Your GCP project ID.
-    *   `GOOGLE_CLOUD_LOCATION`: Your GCP region (e.g., `us-central1`).
-    *   `MONGODB_ATLAS_URI`: MongoDB connection string
+  *   `GOOGLE_CLOUD_PROJECT`: Your GCP project ID.
+  *   `GOOGLE_CLOUD_LOCATION`: Your GCP region (e.g., `us-central1`).
+  *   `MONGODB_ATLAS_URI`: MongoDB connection string
 *   Required Python packages (see `requirements.txt`). Install using:
     ```bash
     # For development (flexible versions)
@@ -57,7 +56,7 @@ The server will start on `http://localhost:8080`
 
 #### 2. Access Key Interfaces
 
-- **Development UI**: `http://localhost:8080/dev-ui/?app=ew_agents`
+- **Development UI**: `http://localhost:8080/docs`
 - **Health Check**: `http://localhost:8080/health`
 
 
