@@ -32,7 +32,7 @@ class VertexAIAgentEngine:
     Provides cloud-based AI capabilities and deployment support.
     """
     
-    def __init__(self, project_id: str = None, location: str = "europe-west1"):
+    def __init__(self, project_id: Optional[str] = None, location: str = "europe-west1"):
         self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT", "ew-agents-v02")
         self.location = location
         self.initialized = False

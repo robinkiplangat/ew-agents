@@ -1,4 +1,5 @@
 from google.adk.tools import FunctionTool
+from typing import List, Optional
 import datetime
 import os
 import logging
@@ -39,14 +40,22 @@ def update_lexicon_term(
     category: str,
     language_code: str,
     severity_level: str,
-    tags: list,
-    related_terms: list = None,
+    tags: str,
+    related_terms: str = "",
     source: str = "manual input"
 ) -> dict:
     """
     Adds or updates a term in the multilingual lexicon using MongoDB Atlas.
     If the term exists, it updates its details. Otherwise, it adds a new term.
+    
+    Args:
+        tags: Comma-separated list of tags
+        related_terms: Comma-separated list of related terms
     """
+    # Convert comma-separated strings to lists
+    tags_list = [t.strip() for t in tags.split(',') if t.strip()]
+    related_terms_list = [t.strip() for t in related_terms.split(',') if t.strip()] if related_terms else []
+    
     print(f"[LexiconTool] Updating lexicon for term '{term}' in language '{language_code}'")
     
     client, db = get_mongo_connection()
@@ -58,9 +67,6 @@ def update_lexicon_term(
             "language_code": language_code
         }
     
-    if related_terms is None:
-        related_terms = []
-
     try:
         # Check if term already exists
         existing_term = db.lexicons.find_one({"term": term, "language_code": language_code})
@@ -69,8 +75,8 @@ def update_lexicon_term(
             "term": term,
             "language_code": language_code,
             "definition": definition,
-            "tags": list(set(tags)),  # Ensure unique tags
-            "related_terms": list(set(related_terms)),  # Ensure unique related terms
+            "tags": list(set(tags_list)),  # Ensure unique tags
+            "related_terms": list(set(related_terms_list)),  # Ensure unique related terms
             "source": source,
             "usage_count": existing_term.get("usage_count", 0) if existing_term else 0,
             "updated_at": datetime.datetime.now(datetime.timezone.utc)
@@ -182,15 +188,20 @@ def get_lexicon_term(term: str, language_code: str) -> dict:
 def detect_coded_language(
     text: str,
     language_code: str = "en",
-    context_keywords = None
+    context_keywords: str = ""
 ) -> dict:
     """
     Detects new or coded language within a text sample using NLP analysis and existing lexicon.
-    """
-    if context_keywords is None:
-        context_keywords = []
     
-    print(f"[LexiconTool] Detecting coded language in sample (lang: {language_code}): '{text[:50]}...' with context: {context_keywords}")
+    Args:
+        text: Text to analyze for coded language
+        language_code: Language code (default: "en")
+        context_keywords: Comma-separated list of context keywords
+    """
+    # Convert comma-separated string to list
+    context_list = [k.strip() for k in context_keywords.split(',') if k.strip()] if context_keywords else []
+    
+    print(f"[LexiconTool] Detecting coded language in sample (lang: {language_code}): '{text[:50]}...' with context: {context_list}")
 
     client, db = get_mongo_connection()
     if db is None:

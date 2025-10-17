@@ -17,14 +17,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY ew_agents/ ./ew_agents/
 COPY main.py ./
-COPY *.json ./
 
 # Set environment for production
 ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
     GOOGLE_CLOUD_PROJECT=ew-agents-v02 \
-    GOOGLE_CLOUD_LOCATION=europe-west1
+    GOOGLE_CLOUD_LOCATION=us-central1
 
 EXPOSE 8080
 
-CMD ["python", "-u", "main.py"]
+CMD ["python3", "-u", "main.py"]

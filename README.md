@@ -1,6 +1,7 @@
 # ElectionWatch ML Agent System
 
-This directory (`ml/`) contains the multi-agent system designed for the ElectionWatch platform. It uses the Google Agent Development Kit (ADK) to orchestrate various specialized agents for tasks related to misinformation tracking, actor identification, trend analysis, and lexicon management.
+
+This directory contains the multi-agent system designed for the ElectionWatch platform. It uses the Google Agent Development Kit (ADK) to orchestrate various specialized agents for tasks related to misinformation tracking, actor identification, trend analysis, and lexicon management.
 
 ## 🎯 System Overview
 
@@ -12,15 +13,9 @@ The system is built around a `CoordinatorAgent` that intelligently delegates tas
 
 *   **`DataEngAgent`**: Handles data ingestion, preprocessing (text, and conceptually image/video), and database interactions.
 *   **`OsintAgent`**: Performs open-source intelligence tasks like narrative classification (text, and conceptually image), actor profiling, and network analysis.
-*   **`LexiconAgent`**: Manages multilingual lexicons, detects coded language, and offers (mock) translation.
+*   **`LexiconAgent`**: Manages multilingual lexicons, detects coded language, and offers translation.
 *   **`TrendAnalysisAgent`**: Analyzes narrative trends over time, generates data for visualizations, and issues early warnings.
 
-### 🆕 New Features
-
-#### Reports System
-- **Report Generation**: Transform raw analysis data into clean, professional reports using AI
-- **PDF Export**: Download reports as professionally formatted PDF documents
-- **Web Interface**: User-friendly interface for viewing and managing reports
 
 #### Enhanced Analysis
 - **Real-time Processing**: Fast analysis of text, images, and documents
@@ -34,26 +29,25 @@ The system is built around a `CoordinatorAgent` that intelligently delegates tas
 
 *   Python 3.8+
 *   Google Cloud SDK installed and configured (for running `LlmAgent` instances live).
-    *   Authenticate using: `gcloud auth application-default login`
+  *   Authenticate using: `gcloud auth login`
 *   Environment variables for GCP:
-    *   `GOOGLE_CLOUD_PROJECT`: Your GCP project ID.
-    *   `GOOGLE_CLOUD_LOCATION`: Your GCP region (e.g., `europe-west1`).
-    *   `OPEN_ROUTER_API_KEY`: For AI report formatting
-    *   `MONGODB_ATLAS_URI`: MongoDB connection string
-*   Required Python packages (see `ml/requirements.txt`). Install using:
+  *   `GOOGLE_CLOUD_PROJECT`: Your GCP project ID.
+  *   `GOOGLE_CLOUD_LOCATION`: Your GCP region (e.g., `us-central1`).
+  *   `MONGODB_ATLAS_URI`: MongoDB connection string
+*   Required Python packages (see `requirements.txt`). Install using:
     ```bash
     # For development (flexible versions)
-    pip install -r ml/requirements.txt
+    pip install -r requirements.txt
     
     # For production (exact versions)
-    pip install -r ml/requirements.lock
+    pip install -r requirements.lock
     ```
 
 ### Running the System
 
 #### 1. Start the FastAPI Server
 ```bash
-cd ml
+python3 -m venv .venv
 source .venv/bin/activate
 python3 main.py
 ```
@@ -62,21 +56,10 @@ The server will start on `http://localhost:8080`
 
 #### 2. Access Key Interfaces
 
-- **Development UI**: `http://localhost:8080/dev-ui/?app=ew_agents`
-- **Reports Interface**: `http://localhost:8080/view_reports`
+- **Development UI**: `http://localhost:8080/docs`
 - **Health Check**: `http://localhost:8080/health`
 
-#### 3. Run Agent System (Alternative)
-For interactive testing and development using the `CoordinatorAgent`:
 
-```bash
-adk run ml.main:coordinator_agent
-```
-
-For batch processing:
-```bash
-python -m ml.agents
-```
 
 ## 📊 API Endpoints
 
@@ -84,15 +67,9 @@ The system provides comprehensive REST API endpoints:
 
 ### Core Analysis
 - `POST /run_analysis` - **Main misinformation analysis endpoint**
-- `POST /AnalysePosts` - Legacy endpoint (deprecated)
+<!-- - `POST /AnalysePosts` - Legacy endpoint (deprecated)
 - `POST /get_raw_json` - Raw analysis results
-- `POST /submitReport` - Submit manual reports
-
-### Reports System
-- `GET /view_reports` - Web interface for reports
-- `GET /api/reports/available` - List available reports
-- `GET /api/reports/generate/{analysis_id}` - Generate formatted report
-- `GET /api/reports/download/{analysis_id}` - Download PDF report
+- `POST /submitReport` - Submit manual reports -->
 
 ### Data Management
 - `GET /analysis/{analysis_id}` - Get specific analysis
@@ -129,117 +106,82 @@ The system provides comprehensive REST API endpoints:
 
 ## 🚀 Deployment
 
-### Google Cloud Run Deployment
+### Google Cloud Run (One-command deploy)
 
-The system can be deployed to Google Cloud Run using the provided deployment script.
+We ship a unified script that builds the Docker image and deploys to Cloud Run.
 
 #### Prerequisites
 - Google Cloud SDK installed and authenticated
-- Service account key file (`ew-agent-service-key.json`)
-- Required environment variables or configuration file
-- MongoDB connection string stored in Google Secret Manager (or environment variable for local development)
+  - `gcloud auth login`
+  - Ensure your project has billing enabled
+- A billing-enabled GCP project and region (e.g., `us-central1`)
 
-#### Configuration Options
-
-The deployment script supports multiple configuration methods:
-
-**1. Environment Variables (Recommended for CI/CD)**
+#### Quick start (copy-paste)
 ```bash
-export PROJECT_ID=your-project-id
-export REGION=europe-west1
-export SERVICE_NAME=your-service-name
-export MEMORY=2Gi
-export CPU=1
-export MAX_INSTANCES=10
-export MIN_INSTANCES=1
+chmod +x build_and_deploy.sh
+
+# Minimal (uses script defaults)
+./build_and_deploy.sh
+
+# Recommended (explicit values)
+./build_and_deploy.sh \
+  --project <YOUR_PROJECT_ID> \
+  --region us-central1 \
+  --service electionwatch-api \
+  --memory 2Gi --cpu 1 --max-instances 5
 ```
 
-**2. Configuration File (Recommended for local development)**
+After deploy, get the URL and verify health:
 ```bash
-# Copy the example configuration
-cp deploy_config.env.example deploy_config.env
-
-# Edit the configuration file
-nano deploy_config.env
+SERVICE_URL=$(gcloud run services describe electionwatch-api \
+  --region us-central1 --format='value(status.url)')
+echo "$SERVICE_URL"
+curl -s "$SERVICE_URL/health"
 ```
 
-Example `deploy_config.env`:
-```bash
-# Required Configuration
-PROJECT_ID=ew-agents-v02
-REGION=europe-west1
-SERVICE_NAME=electionwatch-misinformation-api
+#### Configuration options
+`build_and_deploy.sh` accepts flags or environment variables:
+- `--project` (or `PROJECT_ID`)
+- `--region` (or `REGION`)
+- `--service` (or `SERVICE_NAME`)
+- `--memory`, `--cpu`, `--min-instances`, `--max-instances`
+- `--concurrency`, `--timeout`, `--port`
+- `--sa` (optional service account email)
+- `--no-enable-apis` (skip enabling APIs)
+- `--skip-test` (skip the health check)
 
-# Optional Configuration (with defaults)
-MEMORY=2Gi
-CPU=1
-MAX_INSTANCES=10
-MIN_INSTANCES=1
+Examples:
+```bash
+# Using environment variables
+PROJECT_ID=my-proj REGION=us-central1 SERVICE_NAME=electionwatch-api \
+  ./build_and_deploy.sh --memory 2Gi --cpu 1 --max-instances 5
+
+# Custom service account
+./build_and_deploy.sh --project my-proj --region us-central1 \
+  --service electionwatch-api --sa ew-agent-service@my-proj.iam.gserviceaccount.com
 ```
 
-#### Setting up MongoDB Secret Manager
+Cloud Run service name rules: lowercase letters, digits, hyphens; must start with a letter and not end with a hyphen.
 
-Before deploying, you need to store your MongoDB connection string securely in Google Secret Manager:
-
+#### Optional: Secrets (MongoDB, etc.)
+If you use persistent storage, store your MongoDB URI in Secret Manager and grant the service access:
 ```bash
-# Make the setup script executable
-chmod +x setup_mongodb_secret.sh
-
-# Run the MongoDB secret setup
-./setup_mongodb_secret.sh
+gcloud services enable secretmanager.googleapis.com
+echo 'mongodb+srv://...' | gcloud secrets create mongodb-atlas-uri --data-file=- --project <YOUR_PROJECT_ID>
+gcloud secrets add-iam-policy-binding mongodb-atlas-uri \
+  --member="serviceAccount:ew-agent-service@<YOUR_PROJECT_ID>.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor" --project <YOUR_PROJECT_ID>
+gcloud run services update <SERVICE_NAME> --region <REGION> \
+  --update-secrets MONGODB_ATLAS_URI=mongodb-atlas-uri:latest
 ```
 
-This script will:
-1. Enable the Secret Manager API
-2. Create a secret named `mongodb-atlas-uri`
-3. Store your MongoDB connection string securely
-4. Provide instructions for local development
+#### Advanced wrappers
+- `deploy.sh` delegates to `build_and_deploy.sh` and includes optional Secret Manager setup.
 
-#### Running the Deployment
-
-```bash
-# Make the script executable
-chmod +x deploy_gcloud.sh
-
-# Run the deployment
-./deploy_gcloud.sh
-```
-
-The script will:
-1. Validate configuration and prerequisites
-2. Set up Google Cloud project and APIs
-3. Build and push the Docker image
-4. Deploy to Cloud Run with the specified configuration
-5. Display service URLs and test commands
-
-#### Configuration Validation
-
-The script validates required configuration variables:
-- `PROJECT_ID`: Google Cloud project ID
-- `REGION`: Google Cloud region
-- `SERVICE_NAME`: Cloud Run service name
-
-Optional variables with defaults:
-- `MEMORY`: Container memory (default: 2Gi)
-- `CPU`: CPU allocation (default: 1)
-- `MAX_INSTANCES`: Maximum instances (default: 10)
-- `MIN_INSTANCES`: Minimum instances (default: 1)
-
-#### Security Features
-
-The deployment now includes enhanced security measures:
-
-**Secret Manager Integration**
-- MongoDB connection strings are stored securely in Google Secret Manager
-- No sensitive credentials in deployment scripts or environment variables
-- Automatic fallback to environment variables for local development
-- Service account permissions managed through IAM
-
-**Secure Configuration**
-- Configuration values read from environment variables or config files
-- Validation of required configuration before deployment
-- Clear error messages for missing configuration
-- Support for different deployment environments (dev, staging, prod)
+#### Troubleshooting
+- Billing error when enabling services: link a billing account to your project.
+- Invalid service name: follow the service name rules above.
+- Permission denied: run `gcloud auth login` and ensure you have `roles/run.admin` and Cloud Build permissions.
 
 ## 📦 Dependency Management
 
@@ -289,7 +231,7 @@ The system uses MongoDB Atlas for persistent storage:
 ## 📁 Project Structure
 
 ```
-ml/
+ew-agents/
 ├── main.py                 # FastAPI server and endpoints
 ├── requirements.txt        # Python dependencies
 ├── ew_agents/             # Agent definitions and tools

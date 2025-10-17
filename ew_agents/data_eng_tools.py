@@ -105,18 +105,19 @@ def process_social_media_data(content: str, source_type: str = "user_input", met
             "timestamp": datetime.now().isoformat()
         }
 
-def process_csv_data(csv_content: str, expected_columns: list = []) -> dict:
+def process_csv_data(csv_content: str, expected_columns: Optional[List[str]] = None) -> dict:
     """
-    Process user-uploaded CSV data for analysis.
+    Enhanced CSV processing with platform detection and flexible column mapping.
+    Supports Twitter, TikTok, Facebook, and other social media platforms.
     
     Args:
         csv_content: Raw CSV content as string
         expected_columns: Expected column names for validation
     
     Returns:
-        Dict with processed CSV data and statistics
+        Dict with processed CSV data and platform-specific analysis
     """
-    logger.info(f"Processing user-uploaded CSV data")
+    logger.info(f"Processing enhanced CSV data with platform detection")
     
     try:
         import csv
@@ -136,48 +137,502 @@ def process_csv_data(csv_content: str, expected_columns: list = []) -> dict:
         # Get column information
         fieldnames = csv_reader.fieldnames or []
         
+        # Detect platform and create column mapping
+        platform_info = _detect_social_platform(fieldnames)
+        column_mapping = _create_column_mapping(platform_info["platform"], fieldnames)
+        
+        # Process content based on platform
+        processed_data = _process_platform_specific_data(rows, platform_info, column_mapping)
+        
         # Validate expected columns if provided
         missing_columns = []
         if expected_columns:
             missing_columns = [col for col in expected_columns if col not in fieldnames]
         
-        # Extract tweet content for analysis
-        tweet_content = []
-        for row in rows:
-            # Try to find tweet content in various possible columns
-            tweet_text = row.get('Tweet') or row.get('tweet') or row.get('text') or ''
-            if tweet_text:
-                tweet_content.append(tweet_text)
+        # Create platform-optimized summary
+        content_summary = _create_platform_summary(processed_data, platform_info)
         
-        # Basic statistics
-        total_rows = len(rows)
-        non_empty_rows = len([row for row in rows if any(row.values())])
-        
-        processed_data = {
+        result = {
             "success": True,
-            "total_rows": total_rows,
-            "non_empty_rows": non_empty_rows,
+            "platform_detected": platform_info["platform"],
+            "platform_confidence": platform_info["confidence"],
+            "total_rows": len(rows),
+            "non_empty_rows": len([row for row in rows if any(row.values())]),
             "columns": fieldnames,
             "column_count": len(fieldnames),
             "missing_expected_columns": missing_columns,
-            "sample_data": rows[:3],  # First 3 rows as sample
-            "data": rows,  # Full data for processing
-            "tweet_content": tweet_content,  # Extracted tweet content for analysis
+            "content_summary": content_summary,
+            "structured_posts": processed_data["structured_posts"],
+            "raw_content": processed_data["raw_content"],
+            "platform_metadata": processed_data["platform_metadata"],
             "processing_timestamp": datetime.now().isoformat(),
-            "message": f"Successfully processed CSV with {total_rows} rows and {len(fieldnames)} columns"
+            "message": f"Successfully processed {platform_info['platform']} data with {len(rows)} rows, {len(fieldnames)} columns"
         }
         
-        logger.info(f"✅ CSV processing completed: {total_rows} rows, {len(fieldnames)} columns extracted, {len(tweet_content)} tweets found")
-        return processed_data
+        logger.info(f"✅ Enhanced CSV processing completed: {platform_info['platform']} platform detected, {len(rows)} rows processed")
+        return result
         
     except Exception as e:
-        logger.error(f"❌ CSV processing failed: {e}")
+        logger.error(f"❌ Enhanced CSV processing failed: {e}")
         return {
             "success": False,
             "error": str(e),
             "content_length": len(csv_content),
             "timestamp": datetime.now().isoformat()
         }
+
+def _detect_social_platform(fieldnames: List[str]) -> Dict[str, Any]:
+    """Detect social media platform based on column names."""
+    
+    # Platform-specific column patterns
+    platform_patterns = {
+        "tiktok": [
+            "authorMeta", "diggCount", "webVideoUrl", "Transcript", 
+            "searchHashtag", "mentions", "createTimeISO"
+        ],
+        "twitter": [
+            "Tweet_ID", "Twitter_User", "RetweetedUser", "Retweets",
+            "Tweet", "Party", "Date"
+        ],
+        "facebook": [
+            "Post_ID", "Page_Name", "Post_Message", "Shares",
+            "Comments", "Reactions", "Posted_Date"
+        ],
+        "instagram": [
+            "Post_ID", "Username", "Caption", "Likes",
+            "Comments", "Hashtags", "Posted_Date"
+        ],
+        "youtube": [
+            "Video_ID", "Channel_Name", "Title", "Description",
+            "Views", "Likes", "Comments", "Published_Date"
+        ]
+    }
+    
+    # Score each platform based on column matches
+    platform_scores = {}
+    for platform, patterns in platform_patterns.items():
+        score = 0
+        for pattern in patterns:
+            if any(pattern.lower() in col.lower() for col in fieldnames):
+                score += 1
+        platform_scores[platform] = score
+    
+    # Find the platform with highest score
+    best_platform = max(platform_scores.items(), key=lambda x: x[1])
+    
+    # Calculate confidence based on score vs total patterns
+    max_possible_score = len(platform_patterns[best_platform[0]])
+    confidence = best_platform[1] / max_possible_score if max_possible_score > 0 else 0
+    
+    return {
+        "platform": best_platform[0],
+        "confidence": confidence,
+        "scores": platform_scores
+    }
+
+def _create_column_mapping(platform: str, fieldnames: List[str]) -> Dict[str, str]:
+    """Create platform-specific column mapping."""
+    
+    # Platform-specific column mappings
+    mappings = {
+        "tiktok": {
+            "content": ["text", "Transcript"],
+            "user": ["authorMeta/name", "authorMeta/nickName"],
+            "user_id": ["authorMeta/id"],
+            "engagement": ["diggCount"],
+            "hashtags": ["searchHashtag/name"],
+            "mentions": ["mentions/0"],
+            "timestamp": ["createTimeISO", "createTime"],
+            "url": ["webVideoUrl"]
+        },
+        "twitter": {
+            "content": ["Tweet", "tweet", "text"],
+            "user": ["Twitter_User", "user", "username"],
+            "user_id": ["Tweet_ID", "id"],
+            "engagement": ["Retweets", "retweets", "likes"],
+            "hashtags": ["hashtags", "tags"],
+            "mentions": ["RetweetedUser", "mentions"],
+            "timestamp": ["Date", "date", "created_at"],
+            "party": ["Party", "political_party"]
+        },
+        "facebook": {
+            "content": ["Post_Message", "message", "content"],
+            "user": ["Page_Name", "page_name"],
+            "user_id": ["Post_ID", "id"],
+            "engagement": ["Shares", "Comments", "Reactions"],
+            "hashtags": ["hashtags", "tags"],
+            "mentions": ["mentions"],
+            "timestamp": ["Posted_Date", "date"]
+        }
+    }
+    
+    # Get mapping for detected platform
+    platform_mapping = mappings.get(platform, {})
+    
+    # Find actual column names that match the mapping
+    actual_mapping = {}
+    for category, possible_names in platform_mapping.items():
+        for possible_name in possible_names:
+            for fieldname in fieldnames:
+                if possible_name.lower() == fieldname.lower():
+                    actual_mapping[category] = fieldname
+                    break
+            if category in actual_mapping:
+                break
+    
+    return actual_mapping
+
+def _process_platform_specific_data(rows: List[Dict], platform_info: Dict, column_mapping: Dict) -> Dict[str, Any]:
+    """Process data based on detected platform."""
+    
+    platform = platform_info["platform"]
+    structured_posts = []
+    raw_content = []
+    platform_metadata = {
+        "platform": platform,
+        "total_engagement": 0,
+        "unique_users": set(),
+        "hashtags_found": set(),
+        "mentions_found": set()
+    }
+    
+    for i, row in enumerate(rows):
+        # Extract content
+        content = ""
+        for content_col in ["content", "text"]:
+            if content_col in column_mapping and column_mapping[content_col] in row:
+                content = row[column_mapping[content_col]]
+                break
+        
+        # Fallback to direct column matching if mapping didn't work
+        if not content:
+            for col in ["Tweet", "tweet", "text", "content", "message", "post"]:
+                if col in row and row[col]:
+                    content = row[col].strip()
+                    break
+        
+        if not content:
+            continue
+        
+        # Extract user information
+        user = "unknown"
+        user_id = f"user_{i+1}"
+        if "user" in column_mapping and column_mapping["user"] in row:
+            user = row[column_mapping["user"]]
+        if "user_id" in column_mapping and column_mapping["user_id"] in row:
+            user_id = row[column_mapping["user_id"]]
+        
+        # Extract engagement metrics
+        engagement = 0
+        if "engagement" in column_mapping and column_mapping["engagement"] in row:
+            try:
+                engagement = int(row[column_mapping["engagement"]].replace(",", ""))
+            except:
+                pass
+        
+        # Extract timestamp
+        timestamp = ""
+        if "timestamp" in column_mapping and column_mapping["timestamp"] in row:
+            timestamp = row[column_mapping["timestamp"]]
+        
+        # Extract hashtags and mentions
+        hashtags = []
+        mentions = []
+        if "hashtags" in column_mapping and column_mapping["hashtags"] in row:
+            hashtags = _extract_hashtags(row[column_mapping["hashtags"]])
+        if "mentions" in column_mapping and column_mapping["mentions"] in row:
+            mentions = _extract_mentions(row[column_mapping["mentions"]])
+        
+        # Create structured post
+        post_obj = {
+            "id": user_id,
+            "user": user,
+            "content": content,
+            "platform": platform,
+            "engagement": engagement,
+            "timestamp": timestamp,
+            "hashtags": hashtags,
+            "mentions": mentions,
+            "row_index": i + 1
+        }
+        
+        structured_posts.append(post_obj)
+        raw_content.append(content)
+        
+        # Update platform metadata
+        platform_metadata["total_engagement"] += engagement
+        platform_metadata["unique_users"].add(user)
+        platform_metadata["hashtags_found"].update(hashtags)
+        platform_metadata["mentions_found"].update(mentions)
+    
+    # Convert sets to lists for JSON serialization
+    platform_metadata["unique_users"] = list(platform_metadata["unique_users"])
+    platform_metadata["hashtags_found"] = list(platform_metadata["hashtags_found"])
+    platform_metadata["mentions_found"] = list(platform_metadata["mentions_found"])
+    
+    return {
+        "structured_posts": structured_posts,
+        "raw_content": raw_content,
+        "platform_metadata": platform_metadata
+    }
+
+def _extract_hashtags(text: str) -> List[str]:
+    """Extract hashtags from text."""
+    import re
+    hashtags = re.findall(r'#\w+', text)
+    return hashtags
+
+def _extract_mentions(text: str) -> List[str]:
+    """Extract mentions from text."""
+    import re
+    mentions = re.findall(r'@\w+', text)
+    return mentions
+
+def _create_platform_summary(processed_data: Dict, platform_info: Dict) -> Dict[str, Any]:
+    """Create platform-specific content summary."""
+    
+    structured_posts = processed_data["structured_posts"]
+    platform_metadata = processed_data["platform_metadata"]
+    
+    # Extract key insights based on platform
+    if platform_info["platform"] == "tiktok":
+        summary = {
+            "platform_type": "video_social_media",
+            "total_videos": len(structured_posts),
+            "avg_engagement": platform_metadata["total_engagement"] / len(structured_posts) if structured_posts else 0,
+            "top_hashtags": list(platform_metadata["hashtags_found"])[:10],
+            "content_type": "video_transcripts_and_captions"
+        }
+    elif platform_info["platform"] == "twitter":
+        summary = {
+            "platform_type": "microblogging",
+            "total_tweets": len(structured_posts),
+            "avg_engagement": platform_metadata["total_engagement"] / len(structured_posts) if structured_posts else 0,
+            "top_hashtags": list(platform_metadata["hashtags_found"])[:10],
+            "content_type": "tweets_and_retweets"
+        }
+    else:
+        summary = {
+            "platform_type": "social_media",
+            "total_posts": len(structured_posts),
+            "avg_engagement": platform_metadata["total_engagement"] / len(structured_posts) if structured_posts else 0,
+            "top_hashtags": list(platform_metadata["hashtags_found"])[:10],
+            "content_type": "social_media_posts"
+        }
+    
+    # Add common analysis
+    summary.update({
+        "unique_users": len(platform_metadata["unique_users"]),
+        "topics_detected": _extract_topics(processed_data["raw_content"]),
+        "language_detected": _detect_language(processed_data["raw_content"]),
+        "risk_keywords": _detect_risk_keywords(processed_data["raw_content"])
+    })
+    
+    return summary
+
+def process_text_content_optimized(content: str, content_type: str = "social_media", max_tokens: int = 1000) -> Dict[str, Any]:
+    """
+    Process text content with optimized token usage and structured output.
+    
+    Args:
+        content: Raw text content
+        content_type: Type of content (social_media, news, document, etc.)
+        max_tokens: Maximum tokens to use for processing
+    
+    Returns:
+        Dict with processed content and analysis summary
+    """
+    logger.info(f"Processing {content_type} content with token optimization")
+    
+    try:
+        # Split content into manageable chunks
+        lines = content.strip().split('\n')
+        words = content.split()
+        
+        # Basic content analysis
+        content_stats = {
+            "total_lines": len(lines),
+            "total_words": len(words),
+            "avg_line_length": len(words) / max(len(lines), 1),
+            "content_type": content_type
+        }
+        
+        # Extract key information efficiently
+        key_phrases = _extract_key_phrases(content, max_phrases=10)
+        entities = _extract_entities_fast(content)
+        sentiment = _analyze_sentiment_fast(content)
+        
+        # Create token-efficient summary
+        summary = {
+            "content_length": len(content),
+            "key_phrases": key_phrases,
+            "detected_entities": entities,
+            "sentiment_score": sentiment,
+            "risk_indicators": _detect_risk_indicators_fast(content),
+            "topics": _extract_topics_fast(content)
+        }
+        
+        # Structure output for pipeline handoff
+        processed_data = {
+            "success": True,
+            "content_type": content_type,
+            "content_summary": summary,
+            "full_content": content if len(content) < max_tokens else content[:max_tokens] + "...",
+            "processing_timestamp": datetime.now().isoformat(),
+            "token_optimized": True,
+            "message": f"Successfully processed {content_type} content with {len(words)} words"
+        }
+        
+        logger.info(f"✅ Text processing completed: {len(words)} words, {len(key_phrases)} key phrases extracted")
+        return processed_data
+        
+    except Exception as e:
+        logger.error(f"❌ Text processing failed: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "content_length": len(content),
+            "timestamp": datetime.now().isoformat()
+        }
+
+def _extract_key_phrases(text: str, max_phrases: int = 10) -> List[str]:
+    """Extract key phrases efficiently."""
+    # Simple keyword-based extraction
+    keywords = ['election', 'vote', 'candidate', 'campaign', 'politics', 'government', 
+                'president', 'minister', 'party', 'democracy', 'fraud', 'rig', 'threat']
+    
+    phrases = []
+    text_lower = text.lower()
+    
+    for keyword in keywords:
+        if keyword in text_lower:
+            # Find context around keyword
+            idx = text_lower.find(keyword)
+            start = max(0, idx - 20)
+            end = min(len(text), idx + len(keyword) + 20)
+            context = text[start:end].strip()
+            if context not in phrases:
+                phrases.append(context)
+    
+    return phrases[:max_phrases]
+
+def _extract_entities_fast(text: str) -> List[Dict[str, str]]:
+    """Fast entity extraction without heavy NLP."""
+    entities = []
+    
+    # Simple pattern matching for common entities
+    import re
+    
+    # Names (capitalized words)
+    names = re.findall(r'\b[A-Z][a-z]+ [A-Z][a-z]+\b', text)
+    for name in names[:5]:  # Limit to 5 names
+        entities.append({"type": "PERSON", "text": name})
+    
+    # Organizations (words with "Party", "Government", etc.)
+    orgs = re.findall(r'\b[A-Z][a-zA-Z]* (Party|Government|Ministry|Commission)\b', text)
+    for org in orgs[:3]:  # Limit to 3 organizations
+        entities.append({"type": "ORGANIZATION", "text": org})
+    
+    # Locations (countries, cities)
+    locations = re.findall(r'\b(Nigeria|Kenya|Ghana|South Africa|Lagos|Nairobi|Accra)\b', text)
+    for loc in locations[:3]:  # Limit to 3 locations
+        entities.append({"type": "LOCATION", "text": loc})
+    
+    return entities
+
+def _analyze_sentiment_fast(text: str) -> float:
+    """Fast sentiment analysis."""
+    positive_words = ['good', 'great', 'excellent', 'positive', 'support', 'vote', 'democracy']
+    negative_words = ['bad', 'terrible', 'fraud', 'rig', 'threat', 'violence', 'attack']
+    
+    text_lower = text.lower()
+    positive_count = sum(1 for word in positive_words if word in text_lower)
+    negative_count = sum(1 for word in negative_words if word in text_lower)
+    
+    total_words = len(text.split())
+    if total_words == 0:
+        return 0.0
+    
+    # Simple sentiment score between -1 and 1
+    sentiment = (positive_count - negative_count) / max(total_words, 1)
+    return max(-1.0, min(1.0, sentiment))
+
+def _detect_risk_indicators_fast(text: str) -> List[str]:
+    """Fast risk indicator detection."""
+    risk_indicators = []
+    text_lower = text.lower()
+    
+    risk_keywords = {
+        'violence': ['violence', 'attack', 'kill', 'bomb', 'terror'],
+        'fraud': ['fraud', 'rig', 'fake', 'fake news', 'manipulation'],
+        'threat': ['threat', 'danger', 'warning', 'alert'],
+        'disinformation': ['fake', 'false', 'lie', 'misinformation']
+    }
+    
+    for category, keywords in risk_keywords.items():
+        for keyword in keywords:
+            if keyword in text_lower:
+                risk_indicators.append(category)
+                break
+    
+    return list(set(risk_indicators))
+
+def _extract_topics_fast(text: str) -> List[str]:
+    """Fast topic extraction."""
+    topics = []
+    text_lower = text.lower()
+    
+    topic_keywords = {
+        'election': ['election', 'vote', 'voting', 'ballot'],
+        'politics': ['politics', 'political', 'government', 'minister'],
+        'campaign': ['campaign', 'candidate', 'party', 'rally'],
+        'democracy': ['democracy', 'freedom', 'rights', 'constitution']
+    }
+    
+    for topic, keywords in topic_keywords.items():
+        for keyword in keywords:
+            if keyword in text_lower:
+                topics.append(topic)
+                break
+    
+    return list(set(topics))
+
+def _extract_topics(texts: List[str]) -> List[str]:
+    """Extract common topics from text content."""
+    topics = []
+    keywords = ['election', 'vote', 'candidate', 'campaign', 'politics', 'government', 'president', 'minister']
+    
+    for text in texts:
+        text_lower = text.lower()
+        for keyword in keywords:
+            if keyword in text_lower:
+                topics.append(keyword)
+    
+    return list(set(topics))[:5]  # Return top 5 unique topics
+
+def _detect_language(texts: List[str]) -> str:
+    """Simple language detection."""
+    # Basic detection - can be enhanced with proper language detection
+    sample_text = ' '.join(texts[:3]) if texts else ""
+    if any(char in sample_text for char in ['à', 'é', 'è', 'ù', 'ç']):
+        return "fr"
+    elif any(char in sample_text for char in ['ñ', 'á', 'é', 'í', 'ó', 'ú']):
+        return "es"
+    else:
+        return "en"
+
+def _detect_risk_keywords(texts: List[str]) -> List[str]:
+    """Detect potential risk keywords in content."""
+    risk_keywords = ['violence', 'fraud', 'rig', 'threat', 'attack', 'kill', 'bomb', 'terror']
+    found_keywords = []
+    
+    for text in texts:
+        text_lower = text.lower()
+        for keyword in risk_keywords:
+            if keyword in text_lower:
+                found_keywords.append(keyword)
+    
+    return list(set(found_keywords))
 
 def run_nlp_pipeline(text: str, language: str = "en") -> Dict[str, Any]:
     """
@@ -699,6 +1154,167 @@ def process_document_with_multimodal(document_data: str, document_type: str = "p
         }
 
 # =============================================================================
+# TEXT AGGREGATION HELPERS (Batch-friendly)
+# =============================================================================
+
+def extract_posts(text: str) -> List[str]:
+    """Extract line-like posts from raw text input.
+    Keeps simple heuristics to avoid empty/placeholder lines.
+    """
+    if not text:
+        return []
+    lines = [ln.strip() for ln in text.splitlines()]
+    posts = [ln for ln in lines if ln and len(ln) > 1]
+    return posts[:500]  # soft cap to protect memory
+
+def aggregate_clean_text(posts: List[str]) -> str:
+    """Aggregate posts into a single cleaned text blob suitable for downstream batch analysis."""
+    if not posts:
+        return ""
+    # lightweight normalization
+    normalized = [p.replace("\t", " ") for p in posts]
+    return "\n".join(normalized)
+
+def chunk_for_batch(text: str, max_chars: int = 3000) -> List[str]:
+    """Chunk a large text into manageable slices for batch classification (char-based conservative split)."""
+    if not text:
+        return []
+    return [text[i:i+max_chars] for i in range(0, len(text), max_chars)]
+
+def create_pipeline_handoff(processed_data: Dict[str, Any], target_agents: Optional[List[str]] = None) -> Dict[str, Any]:
+    """
+    Create structured handoff data for downstream agents with minimal token usage.
+    
+    Args:
+        processed_data: Data from DataEngAgent processing
+        target_agents: List of target agents for handoff
+    
+    Returns:
+        Structured handoff data optimized for each agent
+    """
+    logger.info(f"Creating pipeline handoff for {target_agents or 'all agents'}")
+    
+    try:
+        target_agents = target_agents or ['OsintAgent', 'LexiconAgent', 'TrendAnalysisAgent']
+        
+        # Extract key information from processed data with fallbacks
+        content_summary = processed_data.get('content_summary', {})
+        structured_posts = processed_data.get('structured_posts', [])
+        raw_content = processed_data.get('raw_content', [])
+        
+        # Handle cases where data might be in different formats
+        if not structured_posts and 'processed_posts' in processed_data:
+            structured_posts = processed_data['processed_posts']
+        if not raw_content and 'raw_texts' in processed_data:
+            raw_content = processed_data['raw_texts']
+        if not raw_content and 'text_content' in processed_data:
+            raw_content = [processed_data['text_content']]
+        
+        # Create agent-specific handoffs
+        handoff_data = {}
+        
+        for agent in target_agents:
+            if agent == 'OsintAgent':
+                handoff_data[agent] = {
+                    "content_type": "social_media_analysis",
+                    "posts_count": len(structured_posts),
+                    "sample_posts": structured_posts[:5],  # First 5 posts
+                    "key_phrases": content_summary.get('key_phrases', []),
+                    "entities": content_summary.get('detected_entities', []),
+                    "risk_indicators": content_summary.get('risk_indicators', []),
+                    "topics": content_summary.get('topics', []),
+                    "sentiment_overview": content_summary.get('sentiment_score', 0.0)
+                }
+            
+            elif agent == 'LexiconAgent':
+                handoff_data[agent] = {
+                    "content_type": "language_analysis",
+                    "raw_texts": raw_content[:10],  # First 10 texts for lexicon analysis
+                    "language_detected": content_summary.get('language_detected', 'en'),
+                    "key_phrases": content_summary.get('key_phrases', []),
+                    "risk_keywords": content_summary.get('risk_keywords', [])
+                }
+            
+            elif agent == 'TrendAnalysisAgent':
+                handoff_data[agent] = {
+                    "content_type": "temporal_analysis",
+                    "posts_timeline": structured_posts,
+                    "content_summary": content_summary,
+                    "risk_indicators": content_summary.get('risk_indicators', []),
+                    "topics": content_summary.get('topics', [])
+                }
+        
+        # Create unified handoff structure
+        unified_handoff = {
+            "success": True,
+            "source_agent": "DataEngAgent",
+            "target_agents": target_agents,
+            "agent_specific_data": handoff_data,
+            "unified_summary": {
+                "total_content_items": len(structured_posts),
+                "content_type": processed_data.get('content_type', 'unknown'),
+                "processing_timestamp": processed_data.get('processing_timestamp'),
+                "key_insights": _extract_key_insights(processed_data)
+            },
+            "token_optimized": True,
+            "handoff_timestamp": datetime.now().isoformat()
+        }
+        
+        logger.info(f"✅ Pipeline handoff created for {len(target_agents)} agents")
+        return unified_handoff
+        
+    except Exception as e:
+        logger.error(f"❌ Pipeline handoff creation failed: {e}")
+        # Return a minimal but functional handoff structure
+        return {
+            "success": True,
+            "source_agent": "DataEngAgent",
+            "target_agents": target_agents or ['OsintAgent', 'LexiconAgent', 'TrendAnalysisAgent'],
+            "agent_specific_data": {
+                "OsintAgent": {"content_type": "fallback_analysis", "posts_count": 0},
+                "LexiconAgent": {"content_type": "fallback_analysis", "raw_texts": []},
+                "TrendAnalysisAgent": {"content_type": "fallback_analysis", "posts_timeline": []}
+            },
+            "unified_summary": {
+                "total_content_items": 0,
+                "content_type": "unknown",
+                "processing_timestamp": datetime.now().isoformat(),
+                "key_insights": ["Fallback handoff due to processing error"]
+            },
+            "token_optimized": True,
+            "handoff_timestamp": datetime.now().isoformat(),
+            "fallback_mode": True,
+            "original_error": str(e)
+        }
+
+def _extract_key_insights(processed_data: Dict[str, Any]) -> List[str]:
+    """Extract key insights from processed data."""
+    insights = []
+    
+    content_summary = processed_data.get('content_summary', {})
+    
+    # Add insights based on available data
+    if content_summary.get('risk_indicators'):
+        insights.append(f"Risk indicators detected: {', '.join(content_summary['risk_indicators'])}")
+    
+    if content_summary.get('topics'):
+        insights.append(f"Topics identified: {', '.join(content_summary['topics'])}")
+    
+    if content_summary.get('sentiment_score') is not None:
+        sentiment = content_summary['sentiment_score']
+        if sentiment > 0.3:
+            insights.append("Overall positive sentiment detected")
+        elif sentiment < -0.3:
+            insights.append("Overall negative sentiment detected")
+        else:
+            insights.append("Neutral sentiment detected")
+    
+    if processed_data.get('structured_posts'):
+        insights.append(f"Processed {len(processed_data['structured_posts'])} social media posts")
+    
+    return insights[:5]  # Limit to 5 insights
+
+# =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
 
@@ -942,6 +1558,110 @@ def detect_multimodal_misinformation(components: Dict[str, Any]) -> List[Dict[st
 # TOOL REGISTRATION FOR ADK AGENTS (REMOVED)
 # =============================================================================
 
+def test_optimized_pipeline(csv_content: Optional[str] = None, text_content: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Test the optimized processing pipeline with sample data.
+    
+    Args:
+        csv_content: Sample CSV content for testing
+        text_content: Sample text content for testing
+    
+    Returns:
+        Test results and performance metrics
+    """
+    logger.info("🧪 Testing optimized processing pipeline")
+    
+    test_results = {
+        "timestamp": datetime.now().isoformat(),
+        "tests": {},
+        "performance_metrics": {}
+    }
+    
+    try:
+        # Test CSV processing if provided
+        if csv_content:
+            logger.info("Testing CSV processing...")
+            csv_start = datetime.now()
+            csv_result = process_csv_data(csv_content)
+            csv_end = datetime.now()
+            
+            test_results["tests"]["csv_processing"] = {
+                "success": csv_result.get("success", False),
+                "processing_time": (csv_end - csv_start).total_seconds(),
+                "rows_processed": csv_result.get("total_rows", 0),
+                "tweets_extracted": len(csv_result.get("raw_content", [])),
+                "columns_found": len(csv_result.get("columns", [])),
+                "content_summary": csv_result.get("content_summary", {})
+            }
+        
+        # Test text processing if provided
+        if text_content:
+            logger.info("Testing text processing...")
+            text_start = datetime.now()
+            text_result = process_text_content_optimized(text_content)
+            text_end = datetime.now()
+            
+            test_results["tests"]["text_processing"] = {
+                "success": text_result.get("success", False),
+                "processing_time": (text_end - text_start).total_seconds(),
+                "words_processed": len(text_content.split()),
+                "key_phrases_extracted": len(text_result.get("content_summary", {}).get("key_phrases", [])),
+                "entities_found": len(text_result.get("content_summary", {}).get("detected_entities", [])),
+                "sentiment_score": text_result.get("content_summary", {}).get("sentiment_score", 0.0)
+            }
+        
+        # Test pipeline handoff if we have processed data
+        if csv_content or text_content:
+            logger.info("Testing pipeline handoff...")
+            handoff_start = datetime.now()
+            
+            # Create sample processed data
+            sample_data = {
+                "content_summary": {
+                    "key_phrases": ["election", "vote", "candidate"],
+                    "detected_entities": [{"type": "PERSON", "text": "Test Candidate"}],
+                    "sentiment_score": 0.1,
+                    "risk_indicators": ["fraud"],
+                    "topics": ["election", "politics"]
+                },
+                "structured_posts": [
+                    {"id": "test_1", "user": "test_user", "content": "Test post about elections"}
+                ],
+                "raw_content": ["Test post about elections"],
+                "content_type": "social_media",
+                "processing_timestamp": datetime.now().isoformat()
+            }
+            
+            handoff_result = create_pipeline_handoff(sample_data)
+            handoff_end = datetime.now()
+            
+            test_results["tests"]["pipeline_handoff"] = {
+                "success": handoff_result.get("success", False),
+                "processing_time": (handoff_end - handoff_start).total_seconds(),
+                "target_agents": handoff_result.get("target_agents", []),
+                "agent_specific_data": len(handoff_result.get("agent_specific_data", {})),
+                "unified_summary": handoff_result.get("unified_summary", {})
+            }
+        
+        # Calculate performance metrics
+        total_tests = len(test_results["tests"])
+        successful_tests = sum(1 for test in test_results["tests"].values() if test.get("success", False))
+        
+        test_results["performance_metrics"] = {
+            "total_tests": total_tests,
+            "successful_tests": successful_tests,
+            "success_rate": successful_tests / total_tests if total_tests > 0 else 0,
+            "average_processing_time": sum(test.get("processing_time", 0) for test in test_results["tests"].values()) / total_tests if total_tests > 0 else 0
+        }
+        
+        logger.info(f"✅ Pipeline testing completed: {successful_tests}/{total_tests} tests passed")
+        return test_results
+        
+    except Exception as e:
+        logger.error(f"❌ Pipeline testing failed: {e}")
+        test_results["error"] = str(e)
+        return test_results
+
 # Export all processing functions
 __all__ = [
     'process_social_media_data',
@@ -949,8 +1669,8 @@ __all__ = [
     'run_nlp_pipeline', 
     'extract_text_from_image',
     'extract_audio_transcript_from_video',
-    'analyze_multimodal_content',
-    'process_document_with_multimodal',
     'store_analysis_results',
     'query_stored_results',
+    'create_pipeline_handoff',
+    'test_optimized_pipeline',
 ]
